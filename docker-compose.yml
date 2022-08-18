@@ -1,0 +1,14 @@
+version: "3"
+
+services:
+  api:
+    image: 'myth-api:latest'
+    depends_on:
+        - db
+    env_file:
+        - .env
+    ports:
+      - "86:80"
+    build:
+      context: .
+      dockerfile: Dockerfile
