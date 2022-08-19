@@ -4,11 +4,36 @@ services:
   api:
     image: 'myth-api:latest'
     env_file:
-        - app/.env
+        - .env
     ports:
       - '${APP_PORT-8080}:80'
     volumes:
-      - './app:/code/app'
+      - './:/code'
+      - './requirements.txt:/code/requirements.txt'
+    depends_on:
+      - db
     build:
       context: .
       dockerfile: Dockerfile
+  db:
+    image: postgres:12
+    volumes:
+      - app-db-data:/var/lib/postgresql/data/pgdata
+    env_file:
+      - .env
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+
+  pgadmin:
+    image: dpage/pgadmin4
+    networks:
+      - default
+    ports:
+      - '${PG_ADMIN_PORT-8081}:5050'
+    depends_on:
+      - db
+    env_file:
+      - .env
+
+volumes:
+  app-db-data:
