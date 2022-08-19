@@ -3,12 +3,12 @@ version: "3"
 services:
   api:
     image: 'myth-api:latest'
-    depends_on:
-        - db
     env_file:
-        - .env
+        - app/.env
     ports:
-      - "86:80"
+      - '${APP_PORT-8080}:80'
+    volumes:
+      - './app:/code/app'
     build:
       context: .
       dockerfile: Dockerfile
