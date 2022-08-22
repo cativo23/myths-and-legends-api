@@ -1,0 +1,308 @@
+#!/usr/bin/env bash
+
+UNAMEOUT="$(uname -s)"
+
+# Verify operating system is supported...
+case "${UNAMEOUT}" in
+    Linux*)             MACHINE=linux;;
+    Darwin*)            MACHINE=mac;;
+    *)                  MACHINE="UNKNOWN"
+esac
+
+if [ "$MACHINE" == "UNKNOWN" ]; then
+    echo "Unsupported operating system [$(uname -s)]. This file supports macOS, Linux, and Windows (WSL2)." >&2
+
+    exit 1
+fi
+
+# Determine if stdout is a terminal...
+if test -t 1; then
+    # Determine if colors are supported...
+    ncolors=$(tput colors)
+
+    if test -n "$ncolors" && test "$ncolors" -ge 8; then
+        BOLD="$(tput bold)"
+        YELLOW="$(tput setaf 3)"
+        GREEN="$(tput setaf 2)"
+        NC="$(tput sgr0)"
+    fi
+fi
+
+# Function that prints the available commands...
+function display_help {
+    echo "Myhts and Legends"
+    echo
+    echo "${YELLOW}Usage:${NC}" >&2
+    echo "  ./myths COMMAND [options] [arguments]"
+    echo
+    echo "Unknown commands are passed to the docker-compose binary."
+    echo
+    echo "${YELLOW}docker-compose Commands:${NC}"
+    echo "  ${GREEN}myths up${NC}        Start the application"
+    echo "  ${GREEN}myths up -d${NC}     Start the application in the background"
+    echo "  ${GREEN}myths stop${NC}      Stop the application"
+    echo "  ${GREEN}myths restart${NC}   Restart the application"
+    echo "  ${GREEN}myths ps${NC}        Display the status of all containers"
+    echo
+    echo "${YELLOW}Python Commands:${NC}"
+    echo "  ${GREEN}myths python ...${NC}   execute a .py file"
+    echo "  ${GREEN}myths python -V${NC}    display the python version"
+    echo
+    echo "${YELLOW}alembic Commands:${NC}"
+    echo "  ${GREEN}myths alembic ...${NC}                                                                        Run a Alembic command"
+    # shellcheck disable=SC2140
+    echo "  ${GREEN}myths alembic revision --autogenerate -m "\""Add column last_name to User model"\"" ${NC}           Start a new migration"
+    echo "  ${GREEN}myths alembic upgrade head${NC}                                                               Run migrations"
+    echo
+    echo "${YELLOW}Database Commands:${NC}"
+    echo "  ${GREEN}myths mysql${NC}     Start a MySQL CLI session within the 'mysql' container"
+    echo "  ${GREEN}myths mariadb${NC}   Start a MySQL CLI session within the 'mariadb' container"
+    echo "  ${GREEN}myths psql${NC}      Start a PostgreSQL CLI session within the 'pgsql' container"
+    echo "  ${GREEN}myths redis${NC}     Start a Redis CLI session within the 'redis' container"
+    echo
+    echo
+    echo "${YELLOW}Running Tests:${NC}"
+    echo "  ${GREEN}myths test${NC}          Run tests"
+    echo
+    echo "${YELLOW}Container CLI:${NC}"
+    echo "  ${GREEN}myths shell${NC}        Start a shell session within the application container"
+    echo "  ${GREEN}myths bash${NC}         Alias for 'myths shell'"
+    echo "  ${GREEN}myths root-shell${NC}   Start a root shell session within the application container"
+    echo "  ${GREEN}myths root-bash${NC}    Alias for 'myths root-shell'"
+    echo
+    echo "${YELLOW}Sharing:${NC}"
+    echo "  ${GREEN}myths share${NC}   Share the application publicly via a temporary URL"
+    echo
+    echo "${YELLOW}Rebuild:${NC}"
+    echo "  ${GREEN}myths build --no-cache${NC}       Rebuild all of the containers"
+
+    exit 1
+}
+
+# Proxy the "help" command...
+if [ $# -gt 0 ]; then
+    if [ "$1" == "help" ] || [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "--help" ]; then
+        display_help
+    fi
+else
+    display_help
+fi
+
+# Source the ".env" file so the environment variables are available...
+if [ -f ./.env ]; then
+    source ./.env
+fi
+
+# Define environment variables...
+export APP_PORT=${APP_PORT:-80}
+export APP_SERVICE=${APP_SERVICE:-"api"}
+export POSTGRES_PORT=${POSTGRES_PORT:-5432}
+export UID=${UID:-$(id -u)}
+export GID=${GID:-$(id -g)}
+
+export DOCKER_FILES=${DOCKER_FILES:-""}
+
+# Function that outputs api is not running...
+function myths_is_not_running {
+    echo "${BOLD}Myths and Legends API is not running.${NC}" >&2
+    echo "" >&2
+    echo "${BOLD}You may start using the following commands:${NC} './myths up' or './myths up -d'" >&2
+
+    exit 1
+}
+
+# Define Docker Compose command prefix...
+if [ -x "$(command -v docker-compose)" ]; then
+    DOCKER_COMPOSE=(docker-compose)
+else
+    DOCKER_COMPOSE=(docker compose)
+fi
+
+if [ -n "$DOCKER_FILES" ]; then
+    # Convert MEDS_FILES to an array...
+    DOCKER_FILES=("${DOCKER_FILES//:/ }")
+
+    for FILE in "${DOCKER_FILES[@]}"; do
+        if [ -f "$FILE" ]; then
+            DOCKER_COMPOSE+=(-f "$FILE")
+        else
+            echo "${BOLD}Unable to find Docker Compose file: '${FILE}'${NC}" >&2
+
+            exit 1
+        fi
+    done
+fi
+
+EXEC="yes"
+
+if [ -z "$MYTHS_SKIP_CHECKS" ]; then
+    # Ensure that Docker is running...
+    if ! docker info > /dev/null 2>&1; then
+        echo "${BOLD}Docker is not running.${NC}" >&2
+
+        exit 1
+    fi
+
+    # Determine if API is currently up...
+    if "${DOCKER_COMPOSE[@]}" ps "$APP_SERVICE" 2>&1 | grep 'Exit\|exited'; then
+        echo "${BOLD}Shutting down old API processes...${NC}" >&2
+
+        "${DOCKER_COMPOSE[@]}" down > /dev/null 2>&1
+
+        EXEC="no"
+    elif [ -z "$("${DOCKER_COMPOSE[@]}" ps -q)" ]; then
+        EXEC="no"
+    fi
+fi
+
+ARGS=()
+
+
+# Proxy the "python" command...
+if [ "$1" == "python" ]; then
+    shift 1
+
+    if [ "$EXEC" == "yes" ]; then
+        ARGS+=(exec -u myths)
+        [ ! -t 0 ] && ARGS+=(-T)
+        ARGS+=("$APP_SERVICE" "python" "$@")
+    else
+        myths_is_not_running
+    fi
+
+
+# Proxy docker-compose commands to the docker-compose binary on the application container...
+elif [ "$1" == "docker-compose" ]; then
+    shift 1
+
+    if [ "$EXEC" == "yes" ]; then
+        ARGS+=(exec -u myths)
+        [ ! -t 0 ] && ARGS+=(-T)
+        ARGS+=("$APP_SERVICE" "${DOCKER_COMPOSE[@]}")
+    else
+        myths_is_not_running
+    fi
+
+# Proxy Artisan commands to the "artisan" binary on the application container...
+elif [ "$1" == "alembic" ] || [ "$1" == "al" ]; then
+    shift 1
+
+    if [ "$EXEC" == "yes" ]; then
+        ARGS+=(exec -u myths)
+        [ ! -t 0 ] && ARGS+=(-T)
+        ARGS+=("$APP_SERVICE" alembic "$@")
+    else
+        myths_is_not_running
+    fi
+
+# Proxy the "test" command to the "php artisan test" Artisan command...
+elif [ "$1" == "test" ]; then
+    shift 1
+
+    if [ "$EXEC" == "yes" ]; then
+        ARGS+=(exec -u myths)
+        [ ! -t 0 ] && ARGS+=(-T)
+        ARGS+=("$APP_SERVICE" python test "$@")
+    else
+        myths_is_not_running
+    fi
+
+# Initiate a MySQL CLI terminal session within the "mysql" container...
+elif [ "$1" == "mysql" ]; then
+    shift 1
+
+    if [ "$EXEC" == "yes" ]; then
+        ARGS+=(exec)
+        [ ! -t 0 ] && ARGS+=(-T)
+        ARGS+=(mysql bash -c)
+        ARGS+=("MYSQL_PWD=\${MYSQL_PASSWORD} mysql -u \${MYSQL_USER} \${MYSQL_DATABASE}")
+    else
+        myths_is_not_running
+    fi
+
+# Initiate a MySQL CLI terminal session within the "mariadb" container...
+elif [ "$1" == "mariadb" ]; then
+    shift 1
+
+    if [ "$EXEC" == "yes" ]; then
+        ARGS+=(exec)
+        [ ! -t 0 ] && ARGS+=(-T)
+        ARGS+=(mariadb bash -c)
+        ARGS+=("MYSQL_PWD=\${MYSQL_PASSWORD} mysql -u \${MYSQL_USER} \${MYSQL_DATABASE}")
+    else
+        myths_is_not_running
+    fi
+
+# Initiate a PostgreSQL CLI terminal session within the "pgsql" container...
+elif [ "$1" == "psql" ]; then
+    shift 1
+
+    if [ "$EXEC" == "yes" ]; then
+        ARGS+=(exec)
+        [ ! -t 0 ] && ARGS+=(-T)
+        ARGS+=(pgsql bash -c)
+        ARGS+=("PGPASSWORD=\${PGPASSWORD} psql -U \${POSTGRES_USER} \${POSTGRES_DB}")
+    else
+        myths_is_not_running
+    fi
+
+# Initiate a Bash shell within the application container...
+elif [ "$1" == "shell" ] || [ "$1" == "bash" ]; then
+    shift 1
+
+    if [ "$EXEC" == "yes" ]; then
+        ARGS+=(exec -u myths)
+        [ ! -t 0 ] && ARGS+=(-T)
+        ARGS+=("$APP_SERVICE" bash "$@")
+    else
+        myths_is_not_running
+    fi
+
+# Initiate a root user Bash shell within the application container...
+elif [ "$1" == "root-shell" ] || [ "$1" == "root-bash" ]; then
+    shift 1
+
+    if [ "$EXEC" == "yes" ]; then
+        ARGS+=(exec)
+        [ ! -t 0 ] && ARGS+=(-T)
+        ARGS+=("$APP_SERVICE" bash "$@")
+    else
+        myths_is_not_running
+    fi
+
+# Initiate a Redis CLI terminal session within the "redis" container...
+elif [ "$1" == "redis" ] ; then
+    shift 1
+
+    if [ "$EXEC" == "yes" ]; then
+        ARGS+=(exec)
+        [ ! -t 0 ] && ARGS+=(-T)
+        ARGS+=(redis redis-cli)
+    else
+        myths_is_not_running
+    fi
+
+# Share the site...
+elif [ "$1" == "share" ]; then
+    shift 1
+
+    if [ "$EXEC" == "yes" ]; then
+        docker run --init --rm -p "$MEDS_SHARE_DASHBOARD":4040 -t beyondcodegmbh/expose-server:latest share http://host.docker.internal:"$APP_PORT" \
+            --server-host="$MEDS_SHARE_SERVER_HOST" \
+            --server-port="$MEDS_SHARE_SERVER_PORT" \
+            --auth="$MEDS_SHARE_TOKEN" \
+            --subdomain="$MEDS_SHARE_SUBDOMAIN" \
+            "$@"
+
+        exit
+    else
+        myths_is_not_running
+    fi
+
+# Pass unknown commands to the "docker-compose" binary...
+else
+    ARGS+=("$@")
+fi
+
+# Run Docker Compose with the defined arguments...
+"${DOCKER_COMPOSE[@]}" "${ARGS[@]}"

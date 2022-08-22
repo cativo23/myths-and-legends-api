@@ -15,6 +15,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - UID=${UID:-1000}
+        - GID=${GID:-1001}
   db:
     image: postgres:12
     volumes:
