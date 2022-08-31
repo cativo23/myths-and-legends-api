@@ -1,0 +1,29 @@
+_id: req_wrk_6807c5d036fa40748fe9894cb6edb172b8ff061b
+type: Request
+parentId: wrk_6807c5d036fa40748fe9894cb6edb172
+modified: 1661134001399
+created: 1661134001399
+url: "{{ base_url }}/api/v1/login/test-token"
+name: Test Token
+description: ""
+method: POST
+body: {}
+parameters: []
+headers: []
+authentication:
+  clientId: "{{ oauth2ClientId }}"
+  grantType: password
+  scope: ""
+  type: oauth2
+  clientSecret: "{{ oauth2ClientSecret }}"
+  username: "{{ oauth2Username }}"
+  password: "{{ oauth2Password }}"
+  accessTokenUrl: /api/v1/login/access-token
+metaSortKey: -1661134001399
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global
