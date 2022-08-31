@@ -1,0 +1,21 @@
+_id: req_wrk_6807c5d036fa40748fe9894cb6edb172fa1f77df
+type: Request
+parentId: wrk_6807c5d036fa40748fe9894cb6edb172
+modified: 1661134001393
+created: 1661134001393
+url: "{{ base_url }}/api/v1/countries/{{ id }}"
+name: Get Country
+description: ""
+method: GET
+body: {}
+parameters: []
+headers: []
+authentication: {}
+metaSortKey: -1661134001393
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global

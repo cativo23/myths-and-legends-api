@@ -1,0 +1,21 @@
+_id: req_wrk_6807c5d036fa40748fe9894cb6edb1729ba18d70
+type: Request
+parentId: wrk_6807c5d036fa40748fe9894cb6edb172
+modified: 1661134001398
+created: 1661134001398
+url: "{{ base_url }}/api/v1/password-recovery/{{ email }}"
+name: Recover Password
+description: ""
+method: POST
+body: {}
+parameters: []
+headers: []
+authentication: {}
+metaSortKey: -1661134001398
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global
