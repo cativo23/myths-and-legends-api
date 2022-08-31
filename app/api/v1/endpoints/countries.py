@@ -3,7 +3,7 @@ from fastapi.params import Body
 from sqlalchemy.orm import Session
 
 from app.api import deps
-from app.api.v1 import models
+from app.api.v1.models import Country
 from app.api.v1.schemas.country import CountryCreate
 from app.core.config import settings
 
@@ -18,12 +18,19 @@ fakeDatabase = {
 }
 
 
+@router.get("/")
+def list_countries(
+        db: Session = Depends(deps.get_db),
+):
+    all_countries = db.query(Country).all()
+    return all_countries
+
 @router.post("/")
 def add_country(
         db: Session = Depends(deps.get_db),
         country: CountryCreate = Body(...),
 ):
-    item = models.Country(name=country.name, status=country.status)
+    item = Country(name=country.name, status=country.status)
     db.add(item)
     db.commit()
     db.refresh(item)

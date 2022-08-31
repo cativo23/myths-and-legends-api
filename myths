@@ -287,17 +287,24 @@ elif [ "$1" == "share" ]; then
     shift 1
 
     if [ "$EXEC" == "yes" ]; then
-        docker run --init --rm -p "$MEDS_SHARE_DASHBOARD":4040 -t beyondcodegmbh/expose-server:latest share http://host.docker.internal:"$APP_PORT" \
-            --server-host="$MEDS_SHARE_SERVER_HOST" \
-            --server-port="$MEDS_SHARE_SERVER_PORT" \
-            --auth="$MEDS_SHARE_TOKEN" \
-            --subdomain="$MEDS_SHARE_SUBDOMAIN" \
+        docker run --init --rm -p "$MYTHS_SHARE_DASHBOARD":4040 -t beyondcodegmbh/expose-server:latest share http://host.docker.internal:"$APP_PORT" \
+            --server-host="$MYTHS_SHARE_SERVER_HOST" \
+            --server-port="$MYTHS_SHARE_SERVER_PORT" \
+            --auth="$MYTHS_SHARE_TOKEN" \
+            --subdomain="$MYTHS_SHARE_SUBDOMAIN" \
             "$@"
 
         exit
     else
         myths_is_not_running
     fi
+
+# Start the project...
+elif [ "$1" == "start" ]; then
+    shift 1
+
+    "${DOCKER_COMPOSE[@]}" up -d "$@" && "${DOCKER_COMPOSE[@]}" logs -f "$APP_SERVICE"
+    exit
 
 # Pass unknown commands to the "docker-compose" binary...
 else

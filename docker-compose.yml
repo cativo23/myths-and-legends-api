@@ -18,8 +18,15 @@ services:
       args:
         - UID=${UID:-1000}
         - GID=${GID:-1001}
+    networks:
+      - myths
+
   db:
     image: postgres:12
+    ports:
+      - '${POSTGRES_FORWARD_PORT-5432}:5432'
+    networks:
+      - myths
     volumes:
       - app-db-data:/var/lib/postgresql/data/pgdata
     env_file:
@@ -30,13 +37,25 @@ services:
   pgadmin:
     image: dpage/pgadmin4
     networks:
-      - default
+      - myths
     ports:
       - '${PG_ADMIN_PORT-8081}:5050'
     depends_on:
       - db
     env_file:
       - .env
+
+  mailhog:
+    image: 'mailhog/mailhog:latest'
+    ports:
+      - '${FORWARD_MAILHOG_PORT:-1025}:1025'
+      - '${FORWARD_MAILHOG_DASHBOARD_PORT:-8025}:8025'
+    networks:
+      - myths
+
+networks:
+    myths:
+        driver: bridge
 
 volumes:
   app-db-data:
