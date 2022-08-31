@@ -1,0 +1,29 @@
+_id: req_wrk_6807c5d036fa40748fe9894cb6edb172c60ef986
+type: Request
+parentId: wrk_6807c5d036fa40748fe9894cb6edb172
+modified: 1661134001395
+created: 1661134001395
+url: "{{ base_url }}/api/v1/countries/"
+name: Add Country
+description: ""
+method: POST
+body:
+  mimeType: application/json
+  text: |-
+    {
+      "name": "string",
+      "status": true
+    }
+parameters: []
+headers:
+  - name: Content-Type
+    value: application/json
+authentication: {}
+metaSortKey: -1661134001395
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global
