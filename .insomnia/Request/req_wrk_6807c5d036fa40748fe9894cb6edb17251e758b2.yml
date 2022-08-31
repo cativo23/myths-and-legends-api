@@ -1,0 +1,30 @@
+_id: req_wrk_6807c5d036fa40748fe9894cb6edb17251e758b2
+type: Request
+parentId: wrk_6807c5d036fa40748fe9894cb6edb172
+modified: 1661928276479
+created: 1661134001396
+url: "{{ base_url }}/api/v1/reset-password/"
+name: Reset Password
+description: ""
+method: POST
+body:
+  mimeType: application/json
+  text: |-
+    {
+      "token": "string",
+      "new_password": "string"
+    }
+parameters: []
+headers:
+  - name: Content-Type
+    value: application/json
+    id: pair_768119e9cc124ba4a8fb1c8cb6ce21ce
+authentication: {}
+metaSortKey: -1661134001396
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global
