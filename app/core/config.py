@@ -27,7 +27,6 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str
 
-    """
     POSTGRES_HOST: str
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
@@ -45,7 +44,6 @@ class Settings(BaseSettings):
             host=values.get("POSTGRES_HOST"),
             path=f"/{values.get('POSTGRES_DB') or ''}",
         )
-    """
 
     SMTP_TLS: bool = True
     SMTP_PORT: Optional[int] = None
@@ -79,7 +77,7 @@ class Settings(BaseSettings):
 
     class Config:
         case_sensitive = True
-        env_file = f"{Path.cwd()}/app/.env"
+        # env_file = f"{Path.cwd()}/app/.env"
 
 
 settings = Settings()
