@@ -6,7 +6,7 @@ from jose import jwt
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
-from .v1.crud import user as user_crud
+from .v1.services import user as user_crud
 from .v1.models import User as UserModel
 from .v1.schemas import TokenPayload as TokenPayloadSchema
 
@@ -15,7 +15,7 @@ from app.core.config import settings
 from app.db.session import SessionLocal
 
 reusable_oauth2 = OAuth2PasswordBearer(
-    tokenUrl=f"/api/v{settings.API_VERSION}/login/access-token"
+    tokenUrl=f"/api/v{settings.API_VERSION}/auth/login"
 )
 
 

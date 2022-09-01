@@ -1,11 +1,11 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 from typing import Any
 
 from fastapi import APIRouter, Body, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from ..crud import user as user_crud
+from ..services import user as user_crud
 from ..models import User as UserModel
 from ..schemas import User as UserSchema, Msg as MsgSchema, Token
 from app.api import deps
@@ -21,7 +21,7 @@ from app.utils import (
 router = APIRouter()
 
 
-@router.post("/login/access-token", response_model=Token)
+@router.post("/login", response_model=Token)
 def login_access_token(
         db: Session = Depends(deps.get_db), form_data: OAuth2PasswordRequestForm = Depends()
 ) -> Any:
@@ -41,12 +41,12 @@ def login_access_token(
         "access_token": security.create_access_token(
             user.id, expires_delta=access_token_expires
         ),
-        "expires_at": access_token_expires,
-        "token_type": "bearer",
+        "expires_at": datetime.utcnow() + access_token_expires,
+        "token_type": "Bearer",
     }
 
 
-@router.post("/login/test-token", response_model=UserSchema)
+@router.post("/me", response_model=UserSchema)
 def test_token(current_user: UserModel = Depends(deps.get_current_user)) -> Any:
     """
     Test access token
@@ -54,6 +54,7 @@ def test_token(current_user: UserModel = Depends(deps.get_current_user)) -> Any:
     return current_user
 
 
+# TODO: Check this
 @router.post("/password-recovery/{email}", response_model=MsgSchema)
 def recover_password(email: str, db: Session = Depends(deps.get_db)) -> Any:
     """

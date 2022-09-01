@@ -15,6 +15,7 @@ ecdsa==0.18.0
 email-validator==1.2.1
 emails==0.6
 fastapi==0.79.0
+fastapi-pagination==0.9.3
 greenlet==1.1.2
 h11==0.13.0
 httptools==0.4.0
