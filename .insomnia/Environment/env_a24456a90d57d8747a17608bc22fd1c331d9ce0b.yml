@@ -5,7 +5,7 @@ modified: 1658093419940
 created: 1658093419940
 name: Base Environment
 data:
-  base_url: "{{ scheme }}://{{ host }}{{ base_path }}"
+  base_url: "{{ scheme }}://{{ host }}:{{ port }}{{ base_path }}"
 dataPropertyOrder: null
 color: null
 isPrivate: false
