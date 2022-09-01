@@ -1,0 +1,20 @@
+_id: env_env_a24456a90d57d8747a17608bc22fd1c331d9ce0b_sub
+type: Environment
+parentId: env_a24456a90d57d8747a17608bc22fd1c331d9ce0b
+modified: 1661134443356
+created: 1660795148120
+name: OpenAPI env
+data:
+  scheme: https
+  base_path: /api/v1
+  host: localhost
+  port: "8080"
+dataPropertyOrder:
+  "&":
+    - scheme
+    - base_path
+    - host
+    - port
+color: "#4d79ff"
+isPrivate: false
+metaSortKey: 1660795148120

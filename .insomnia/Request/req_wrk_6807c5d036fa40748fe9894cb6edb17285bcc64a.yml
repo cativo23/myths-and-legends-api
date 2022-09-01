@@ -1,0 +1,21 @@
+_id: req_wrk_6807c5d036fa40748fe9894cb6edb17285bcc64a
+type: Request
+parentId: wrk_6807c5d036fa40748fe9894cb6edb172
+modified: 1661134222963
+created: 1661134001401
+url: "{{ base_url }}/api/v1/"
+name: Index
+description: ""
+method: GET
+body: {}
+parameters: []
+headers: []
+authentication: {}
+metaSortKey: -1661134001401
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global

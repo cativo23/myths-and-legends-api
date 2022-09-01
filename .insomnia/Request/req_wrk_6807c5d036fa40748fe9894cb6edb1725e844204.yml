@@ -1,0 +1,22 @@
+_id: req_wrk_6807c5d036fa40748fe9894cb6edb1725e844204
+type: Request
+parentId: wrk_6807c5d036fa40748fe9894cb6edb172
+modified: 1661134001400
+created: 1661134001400
+url: "{{ base_url }}/api/v1/login/access-token"
+name: Login Access Token
+description: ""
+method: POST
+body:
+  mimeType: application/x-www-form-urlencoded
+parameters: []
+headers: []
+authentication: {}
+metaSortKey: -1661134001400
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global

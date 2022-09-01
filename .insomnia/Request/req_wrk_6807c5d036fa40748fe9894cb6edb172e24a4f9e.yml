@@ -1,0 +1,33 @@
+_id: req_wrk_6807c5d036fa40748fe9894cb6edb172e24a4f9e
+type: Request
+parentId: fld_wrk_6807c5d036fa40748fe9894cb6edb1723a21295d
+modified: 1660795148110
+created: 1660795148110
+url: "{{ base_url }}/store/order"
+name: Place an order for a pet
+description: ""
+method: POST
+body:
+  mimeType: application/json
+  text: |-
+    {
+      "id": 0,
+      "petId": 0,
+      "quantity": 0,
+      "shipDate": "2022-08-18T03:59:07.923Z",
+      "status": "string",
+      "complete": true
+    }
+parameters: []
+headers:
+  - name: Content-Type
+    value: application/json
+authentication: {}
+metaSortKey: -1660795148110
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global
