@@ -12,7 +12,7 @@ class CountryBase(BaseModel):
 # Properties to receive via API on creation
 class CountryCreate(CountryBase):
     name: str
-    status: bool
+    status: Optional[bool] = True
 
 
 # Properties to receive via API on update
