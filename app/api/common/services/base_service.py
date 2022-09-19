@@ -1,6 +1,8 @@
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 
 from fastapi.encoders import jsonable_encoder
+from fastapi_pagination.bases import AbstractPage
+from fastapi_pagination.ext.sqlalchemy import paginate
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -11,23 +13,26 @@ CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
 
-class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
+class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def __init__(self, model: Type[ModelType]):
         """
-        CRUD object with default methods to Create, Read, Update, Delete (CRUD).
-        **Parameters**
+        CRUD Service object with default methods to Create, Read, Update, Delete (CRUD).
+
+        **Parameters:**
+
         * `model`: A SQLAlchemy model class
         * `schema`: A Pydantic model (schema) class
         """
         self.model = model
 
-    def get(self, db: Session, id: Any) -> Optional[ModelType]:
-        return db.query(self.model).filter(self.model.id == id).first()
+    def get(self, db: Session, item_id: Any) -> Optional[ModelType]:
+        return db.query(self.model).filter(self.model.id == item_id).first()
 
-    def get_multi(
-        self, db: Session, *, skip: int = 0, limit: int = 100
-    ) -> List[ModelType]:
-        return db.query(self.model).offset(skip).limit(limit).all()
+    def get_all(
+        self, db: Session
+    ) -> AbstractPage:
+        results = db.query(self.model)
+        return paginate(results)
 
     def create(self, db: Session, *, obj_in: CreateSchemaType) -> ModelType:
         obj_in_data = jsonable_encoder(obj_in)
@@ -57,8 +62,8 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.refresh(db_obj)
         return db_obj
 
-    def remove(self, db: Session, *, id: int) -> ModelType:
-        obj = db.query(self.model).get(id)
+    def remove(self, db: Session, *, item_id: int) -> ModelType:
+        obj = db.query(self.model).get(item_id)
         db.delete(obj)
         db.commit()
         return obj

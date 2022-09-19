@@ -3,14 +3,12 @@ from typing import Any, Dict, Optional, Union
 from sqlalchemy.orm import Session
 
 from app.core.security import get_password_hash, verify_password
-from app.api.common.crud import CRUDBase
+from app.api.common.services import CRUDBaseService
 from ..models.user import User
 from ..schemas.user import UserCreate, UserUpdate
 
 
-class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
-    def get_by_email(self, db: Session, *, email: str) -> Optional[User]:
-        return db.query(User).filter(User.email == email).first()
+class UserService(CRUDBaseService[User, UserCreate, UserUpdate]):
 
     def create(self, db: Session, *, obj_in: UserCreate) -> User:
         db_obj = User(
@@ -45,11 +43,17 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             return None
         return user_by_email
 
-    def is_active(self, user_to_check: User) -> bool:
+    @staticmethod
+    def is_active(user_to_check: User) -> bool:
         return user_to_check.is_active
 
-    def is_superuser(self, user_to_check: User) -> bool:
+    @staticmethod
+    def is_superuser(user_to_check: User) -> bool:
         return user_to_check.is_superuser
 
+    @staticmethod
+    def get_by_email(db: Session, *, email: str) -> Optional[User]:
+        return db.query(User).filter(User.email == email).first()
 
-user = CRUDUser(User)
+
+user = UserService(User)

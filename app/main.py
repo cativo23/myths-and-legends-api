@@ -3,14 +3,15 @@ from fastapi import FastAPI
 
 from app.api.v1.router import api_router
 from app.core.config import settings
-
-from typing import Union
+from fastapi_pagination import add_pagination
 
 app = FastAPI(
     title=settings.PROJECT_NAME, openapi_url=f"/api/v{settings.API_VERSION}/openapi.json"
 )
 
 app.include_router(api_router, prefix=f"/api/v{settings.API_VERSION}")
+
+add_pagination(app)
 
 
 @app.get("/")
@@ -33,4 +34,3 @@ def index():
                 ],
             }
     }
-
