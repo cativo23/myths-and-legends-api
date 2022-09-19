@@ -25,13 +25,13 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """
         self.model = model
 
-    def get(self, db: Session, id: Any) -> Optional[ModelType]:
-        return db.query(self.model).filter(self.model.id == id).first()
+    def get(self, db: Session, item_id: Any) -> Optional[ModelType]:
+        return db.query(self.model).filter(self.model.id == item_id).first()
 
-    def get_multi(
-        self, db: Session, *, skip: int = 0, limit: int = 100
+    def get_all(
+        self, db: Session
     ) -> AbstractPage:
-        results = db.query(self.model).offset(skip).limit(limit)
+        results = db.query(self.model)
         return paginate(results)
 
     def create(self, db: Session, *, obj_in: CreateSchemaType) -> ModelType:
@@ -62,8 +62,8 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.refresh(db_obj)
         return db_obj
 
-    def remove(self, db: Session, *, id: int) -> ModelType:
-        obj = db.query(self.model).get(id)
+    def remove(self, db: Session, *, item_id: int) -> ModelType:
+        obj = db.query(self.model).get(item_id)
         db.delete(obj)
         db.commit()
         return obj

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 # Shared properties
@@ -11,8 +11,8 @@ class CountryBase(BaseModel):
 
 # Properties to receive via API on creation
 class CountryCreate(CountryBase):
-    name: str
-    status: Optional[bool] = True
+    name: str = Field(None, title="Country Name", max_length=100, example="Nigeria")
+    status: Optional[bool] = Field(True, title="Country Status", example=True)
 
 
 # Properties to receive via API on update
