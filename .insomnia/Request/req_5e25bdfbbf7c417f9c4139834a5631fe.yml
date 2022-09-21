@@ -1,18 +1,18 @@
-_id: req_wrk_6807c5d036fa40748fe9894cb6edb172c60ef986
+_id: req_5e25bdfbbf7c417f9c4139834a5631fe
 type: Request
 parentId: fld_3f7c418b99a845b2b0e73c19aeabfcb4
-modified: 1663737113340
-created: 1661134001395
-url: "{{ base_url }}/countries"
-name: Add Country
+modified: 1663738063591
+created: 1662014232774
+url: "{{ base_url }}/countries/50"
+name: Update Country
 description: ""
-method: POST
+method: PUT
 body:
   mimeType: application/json
   text: |-
     {
       "name": "El Salvador",
-    	"status": true
+    	"status": false
     }
 parameters: []
 headers:
@@ -20,7 +20,7 @@ headers:
     value: application/json
     id: pair_d64ce11657a9458c96c5c5ffe6061c75
 authentication: {}
-metaSortKey: -1662012666152.75
+metaSortKey: -1662012666140.25
 isPrivate: false
 settingStoreCookies: true
 settingSendCookies: true

@@ -1,18 +1,17 @@
-_id: req_wrk_6807c5d036fa40748fe9894cb6edb172c60ef986
+_id: req_23e2155160914cf7ba5983a0f97f87e7
 type: Request
-parentId: fld_3f7c418b99a845b2b0e73c19aeabfcb4
-modified: 1663737113340
-created: 1661134001395
-url: "{{ base_url }}/countries"
-name: Add Country
+parentId: fld_52f91e876c5248e4ad9b8c4637e74978
+modified: 1663738569270
+created: 1663713440197
+url: "{{ base_url }}/characters/1"
+name: Update Chjaracter
 description: ""
-method: POST
+method: PUT
 body:
   mimeType: application/json
   text: |-
     {
-      "name": "El Salvador",
-    	"status": true
+      "name": "Cadejo Blanco y Negro"
     }
 parameters: []
 headers:
@@ -20,7 +19,7 @@ headers:
     value: application/json
     id: pair_d64ce11657a9458c96c5c5ffe6061c75
 authentication: {}
-metaSortKey: -1662012666152.75
+metaSortKey: -1662012666140.25
 isPrivate: false
 settingStoreCookies: true
 settingSendCookies: true

@@ -1,17 +1,17 @@
-_id: req_13fc0bbe61774b4b8471df4294545199
+_id: req_d51b62d7f6bc451992cb9b2a4c4f9837
 type: Request
-parentId: wrk_6807c5d036fa40748fe9894cb6edb172
-modified: 1660795114807
-created: 1658093419952
-url: index
-name: Index
+parentId: fld_52f91e876c5248e4ad9b8c4637e74978
+modified: 1663737132568
+created: 1663713440198
+url: "{{ base_url }}/characters/1"
+name: Get Character
 description: ""
 method: GET
 body: {}
 parameters: []
 headers: []
 authentication: {}
-metaSortKey: -1658093419952
+metaSortKey: -1662012666146.5
 isPrivate: false
 settingStoreCookies: true
 settingSendCookies: true
