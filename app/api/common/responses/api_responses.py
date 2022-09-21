@@ -2,6 +2,7 @@ from typing import TypeVar
 
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
+from starlette import status
 
 from app.db.base_class import Base
 
@@ -12,54 +13,54 @@ ModelType = TypeVar("ModelType", bound=Base)
 
 def not_found(obj_name: str = None):
     return JSONResponse(
-        status_code=404,
+        status_code=status.HTTP_404_NOT_FOUND,
         content=ApiResponse(
             message="The %s with this id does not exist in the system." % obj_name,
             data=None,
-            status=404
+            status=status.HTTP_404_NOT_FOUND
         ).dict()
     )
 
 
 def found(obj_name: str = None, obj: ModelType = None):
     return JSONResponse(
-        status_code=200,
+        status_code=status.HTTP_200_OK,
         content=ApiResponse(
             message="The %s is returned correctly" % obj_name,
             data=jsonable_encoder(obj),
-            status=200
+            status=status.HTTP_200_OK
         ).dict()
     )
 
 
 def created(obj_name: str = None, obj: ModelType = None):
     return JSONResponse(
-        status_code=201,
+        status_code=status.HTTP_201_CREATED,
         content=ApiResponse(
             message="The %s is created correctly" % obj_name,
             data=jsonable_encoder(obj),
-            status=201
+            status=status.HTTP_201_CREATED
         ).dict()
     )
 
 
 def updated(obj_name: str = None, obj: ModelType = None):
     return JSONResponse(
-        status_code=200,
+        status_code=status.HTTP_200_OK,
         content=ApiResponse(
             message="The %s is updated correctly" % obj_name,
             data=jsonable_encoder(obj),
-            status=200
+            status=status.HTTP_200_OK
         ).dict()
     )
 
 
 def deleted(obj_name: str = None):
     return JSONResponse(
-        status_code=200,
+        status_code=status.HTTP_200_OK,
         content=ApiResponse(
             message="The %s is deleted correctly" % obj_name,
             data=None,
-            status=200
+            status=status.HTTP_200_OK
         ).dict()
     )
