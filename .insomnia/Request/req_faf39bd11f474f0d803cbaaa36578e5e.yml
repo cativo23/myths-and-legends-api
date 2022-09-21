@@ -1,0 +1,21 @@
+_id: req_faf39bd11f474f0d803cbaaa36578e5e
+type: Request
+parentId: fld_52f91e876c5248e4ad9b8c4637e74978
+modified: 1663738573068
+created: 1663713440197
+url: "{{ base_url }}/characters/1"
+name: Remove Character
+description: ""
+method: DELETE
+body: {}
+parameters: []
+headers: []
+authentication: {}
+metaSortKey: -1662012666134
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global

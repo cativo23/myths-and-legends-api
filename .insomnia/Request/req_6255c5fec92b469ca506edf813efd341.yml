@@ -1,17 +1,17 @@
-_id: req_wrk_6807c5d036fa40748fe9894cb6edb17285bcc64a
+_id: req_6255c5fec92b469ca506edf813efd341
 type: Request
-parentId: wrk_6807c5d036fa40748fe9894cb6edb172
-modified: 1661134222963
-created: 1661134001401
-url: "{{ base_url }}/api/v1/"
-name: Index
+parentId: fld_52f91e876c5248e4ad9b8c4637e74978
+modified: 1663737089280
+created: 1663736581155
+url: "{{ base_url }}/characters/search/?term=Cadejo"
+name: Search Character
 description: ""
 method: GET
 body: {}
 parameters: []
 headers: []
 authentication: {}
-metaSortKey: -1661134001401
+metaSortKey: -1662012666143.375
 isPrivate: false
 settingStoreCookies: true
 settingSendCookies: true

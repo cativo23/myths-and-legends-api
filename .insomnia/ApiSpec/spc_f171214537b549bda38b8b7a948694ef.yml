@@ -1,43 +1,581 @@
 _id: spc_f171214537b549bda38b8b7a948694ef
 type: ApiSpec
 parentId: wrk_6807c5d036fa40748fe9894cb6edb172
-modified: 1661134420088
+modified: 1662007749167
 created: 1658093419931
 fileName: Myth API
-contents: '{"openapi":"3.0.2","info":{"title":"Myth
-  API","version":"0.1.0"},"paths":{"/api/v1/":{"get":{"tags":["home"],"summary":"Index","operationId":"index_api_v1__get","responses":{"200":{"description":"Successful
-  Response","content":{"application/json":{"schema":{}}}}}}},"/api/v1/login/access-token":{"post":{"tags":["login"],"summary":"Login
-  Access Token","description":"OAuth2 compatible token login, get an access
-  token for future
-  requests","operationId":"login_access_token_api_v1_login_access_token_post","requestBody":{"content":{"application/x-www-form-urlencoded":{"schema":{"$ref":"#/components/schemas/Body_login_access_token_api_v1_login_access_token_post"}}},"required":true},"responses":{"200":{"description":"Successful
-  Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Token"}}}},"422":{"description":"Validation
-  Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/login/test-token":{"post":{"tags":["login"],"summary":"Test
-  Token","description":"Test access
-  token","operationId":"test_token_api_v1_login_test_token_post","responses":{"200":{"description":"Successful
-  Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/User"}}}}},"security":[{"OAuth2PasswordBearer":[]}]}},"/api/v1/password-recovery/{email}":{"post":{"tags":["login"],"summary":"Recover
-  Password","description":"Password
-  Recovery","operationId":"recover_password_api_v1_password_recovery__email__post","parameters":[{"required":true,"schema":{"title":"Email","type":"string"},"name":"email","in":"path"}],"responses":{"200":{"description":"Successful
-  Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Msg"}}}},"422":{"description":"Validation
-  Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/reset-password/":{"post":{"tags":["login"],"summary":"Reset
-  Password","description":"Reset
-  password","operationId":"reset_password_api_v1_reset_password__post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/Body_reset_password_api_v1_reset_password__post"}}},"required":true},"responses":{"200":{"description":"Successful
-  Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Msg"}}}},"422":{"description":"Validation
-  Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/countries/":{"post":{"tags":["countries"],"summary":"Add
-  Country","operationId":"add_country_api_v1_countries__post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/CountryCreate"}}},"required":true},"responses":{"200":{"description":"Successful
-  Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation
-  Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/countries/{id}":{"get":{"tags":["countries"],"summary":"Get
-  Country","operationId":"get_country_api_v1_countries__id__get","parameters":[{"required":true,"schema":{"title":"Id","type":"integer"},"name":"id","in":"path"}],"responses":{"200":{"description":"Successful
-  Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation
-  Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/":{"get":{"summary":"Index","operationId":"index__get","responses":{"200":{"description":"Successful
-  Response","content":{"application/json":{"schema":{}}}}}}}},"components":{"schemas":{"Body_login_access_token_api_v1_login_access_token_post":{"title":"Body_login_access_token_api_v1_login_access_token_post","required":["username","password"],"type":"object","properties":{"grant_type":{"title":"Grant
-  Type","pattern":"password","type":"string"},"username":{"title":"Username","type":"string"},"password":{"title":"Password","type":"string"},"scope":{"title":"Scope","type":"string","default":""},"client_id":{"title":"Client
-  Id","type":"string"},"client_secret":{"title":"Client
-  Secret","type":"string"}}},"Body_reset_password_api_v1_reset_password__post":{"title":"Body_reset_password_api_v1_reset_password__post","required":["token","new_password"],"type":"object","properties":{"token":{"title":"Token","type":"string"},"new_password":{"title":"New
-  Password","type":"string"}}},"CountryCreate":{"title":"CountryCreate","required":["name","status"],"type":"object","properties":{"name":{"title":"Name","type":"string"},"status":{"title":"Status","type":"boolean"}}},"HTTPValidationError":{"title":"HTTPValidationError","type":"object","properties":{"detail":{"title":"Detail","type":"array","items":{"$ref":"#/components/schemas/ValidationError"}}}},"Msg":{"title":"Msg","required":["msg"],"type":"object","properties":{"msg":{"title":"Msg","type":"string"}}},"Token":{"title":"Token","required":["access_token","token_type"],"type":"object","properties":{"access_token":{"title":"Access
-  Token","type":"string"},"token_type":{"title":"Token
-  Type","type":"string"}}},"User":{"title":"User","type":"object","properties":{"email":{"title":"Email","type":"string","format":"email"},"is_active":{"title":"Is
-  Active","type":"boolean","default":true},"is_superuser":{"title":"Is
-  Superuser","type":"boolean","default":false},"full_name":{"title":"Full
-  Name","type":"string"},"id":{"title":"Id","type":"integer"}}},"ValidationError":{"title":"ValidationError","required":["loc","msg","type"],"type":"object","properties":{"loc":{"title":"Location","type":"array","items":{"anyOf":[{"type":"string"},{"type":"integer"}]}},"msg":{"title":"Message","type":"string"},"type":{"title":"Error
-  Type","type":"string"}}}},"securitySchemes":{"OAuth2PasswordBearer":{"type":"oauth2","flows":{"password":{"scopes":{},"tokenUrl":"/api/v1/login/access-token"}}}}}}'
+contents: >-
+  {
+  	"openapi": "3.0.2",
+  	"info":
+  	{
+  		"title": "Myth API",
+  		"version": "0.1.0"
+  	},
+  	"paths":
+  	{
+  		"/api/v1/":
+  		{
+  			"get":
+  			{
+  				"tags": ["home"],
+  				"summary": "Index",
+  				"operationId": "index_api_v1__get",
+  				"responses":
+  				{
+  					"200":
+  					{
+  						"description": "Successful Response",
+  						"content":
+  						{
+  							"application/json":
+  							{
+  								"schema":
+  								{}
+  							}
+  						}
+  					}
+  				}
+  			}
+  		},
+  		"/api/v1/login/access-token":
+  		{
+  			"post":
+  			{
+  				"tags": ["login"],
+  				"summary": "Login Access Token",
+  				"description": "OAuth2 compatible token login, get an access token for future requests",
+  				"operationId": "login_access_token_api_v1_login_access_token_post",
+  				"requestBody":
+  				{
+  					"content":
+  					{
+  						"application/x-www-form-urlencoded":
+  						{
+  							"schema":
+  							{
+  								"$ref": "#/components/schemas/Body_login_access_token_api_v1_login_access_token_post"
+  							}
+  						}
+  					},
+  					"required": true
+  				},
+  				"responses":
+  				{
+  					"200":
+  					{
+  						"description": "Successful Response",
+  						"content":
+  						{
+  							"application/json":
+  							{
+  								"schema":
+  								{
+  									"$ref": "#/components/schemas/Token"
+  								}
+  							}
+  						}
+  					},
+  					"422":
+  					{
+  						"description": "Validation Error",
+  						"content":
+  						{
+  							"application/json":
+  							{
+  								"schema":
+  								{
+  									"$ref": "#/components/schemas/HTTPValidationError"
+  								}
+  							}
+  						}
+  					}
+  				}
+  			}
+  		},
+  		"/api/v1/login/test-token":
+  		{
+  			"post":
+  			{
+  				"tags": ["login"],
+  				"summary": "Test Token",
+  				"description": "Test access token",
+  				"operationId": "test_token_api_v1_login_test_token_post",
+  				"responses":
+  				{
+  					"200":
+  					{
+  						"description": "Successful Response",
+  						"content":
+  						{
+  							"application/json":
+  							{
+  								"schema":
+  								{
+  									"$ref": "#/components/schemas/User"
+  								}
+  							}
+  						}
+  					}
+  				},
+  				"security": [
+  				{
+  					"OAuth2PasswordBearer": []
+  				}]
+  			}
+  		},
+  		"/api/v1/password-recovery/{email}":
+  		{
+  			"post":
+  			{
+  				"tags": ["login"],
+  				"summary": "Recover Password",
+  				"description": "Password Recovery",
+  				"operationId": "recover_password_api_v1_password_recovery__email__post",
+  				"parameters": [
+  				{
+  					"required": true,
+  					"schema":
+  					{
+  						"title": "Email",
+  						"type": "string"
+  					},
+  					"name": "email",
+  					"in": "path"
+  				}],
+  				"responses":
+  				{
+  					"200":
+  					{
+  						"description": "Successful Response",
+  						"content":
+  						{
+  							"application/json":
+  							{
+  								"schema":
+  								{
+  									"$ref": "#/components/schemas/Msg"
+  								}
+  							}
+  						}
+  					},
+  					"422":
+  					{
+  						"description": "Validation Error",
+  						"content":
+  						{
+  							"application/json":
+  							{
+  								"schema":
+  								{
+  									"$ref": "#/components/schemas/HTTPValidationError"
+  								}
+  							}
+  						}
+  					}
+  				}
+  			}
+  		},
+  		"/api/v1/reset-password/":
+  		{
+  			"post":
+  			{
+  				"tags": ["login"],
+  				"summary": "Reset Password",
+  				"description": "Reset password",
+  				"operationId": "reset_password_api_v1_reset_password__post",
+  				"requestBody":
+  				{
+  					"content":
+  					{
+  						"application/json":
+  						{
+  							"schema":
+  							{
+  								"$ref": "#/components/schemas/Body_reset_password_api_v1_reset_password__post"
+  							}
+  						}
+  					},
+  					"required": true
+  				},
+  				"responses":
+  				{
+  					"200":
+  					{
+  						"description": "Successful Response",
+  						"content":
+  						{
+  							"application/json":
+  							{
+  								"schema":
+  								{
+  									"$ref": "#/components/schemas/Msg"
+  								}
+  							}
+  						}
+  					},
+  					"422":
+  					{
+  						"description": "Validation Error",
+  						"content":
+  						{
+  							"application/json":
+  							{
+  								"schema":
+  								{
+  									"$ref": "#/components/schemas/HTTPValidationError"
+  								}
+  							}
+  						}
+  					}
+  				}
+  			}
+  		},
+  		"/api/v1/countries/":
+  		{
+  			"post":
+  			{
+  				"tags": ["countries"],
+  				"summary": "Add Country",
+  				"operationId": "add_country_api_v1_countries__post",
+  				"requestBody":
+  				{
+  					"content":
+  					{
+  						"application/json":
+  						{
+  							"schema":
+  							{
+  								"$ref": "#/components/schemas/CountryCreate"
+  							}
+  						}
+  					},
+  					"required": true
+  				},
+  				"responses":
+  				{
+  					"200":
+  					{
+  						"description": "Successful Response",
+  						"content":
+  						{
+  							"application/json":
+  							{
+  								"schema":
+  								{}
+  							}
+  						}
+  					},
+  					"422":
+  					{
+  						"description": "Validation Error",
+  						"content":
+  						{
+  							"application/json":
+  							{
+  								"schema":
+  								{
+  									"$ref": "#/components/schemas/HTTPValidationError"
+  								}
+  							}
+  						}
+  					}
+  				}
+  			}
+  		},
+  		"/api/v1/countries/{id}":
+  		{
+  			"get":
+  			{
+  				"tags": ["countries"],
+  				"summary": "Get Country",
+  				"operationId": "get_country_api_v1_countries__id__get",
+  				"parameters": [
+  				{
+  					"required": true,
+  					"schema":
+  					{
+  						"title": "Id",
+  						"type": "integer"
+  					},
+  					"name": "id",
+  					"in": "path"
+  				}],
+  				"responses":
+  				{
+  					"200":
+  					{
+  						"description": "Successful Response",
+  						"content":
+  						{
+  							"application/json":
+  							{
+  								"schema":
+  								{}
+  							}
+  						}
+  					},
+  					"422":
+  					{
+  						"description": "Validation Error",
+  						"content":
+  						{
+  							"application/json":
+  							{
+  								"schema":
+  								{
+  									"$ref": "#/components/schemas/HTTPValidationError"
+  								}
+  							}
+  						}
+  					}
+  				}
+  			}
+  		},
+  		"/":
+  		{
+  			"get":
+  			{
+  				"summary": "Index",
+  				"operationId": "index__get",
+  				"responses":
+  				{
+  					"200":
+  					{
+  						"description": "Successful Response",
+  						"content":
+  						{
+  							"application/json":
+  							{
+  								"schema":
+  								{}
+  							}
+  						}
+  					}
+  				}
+  			}
+  		}
+  	},
+  	"components":
+  	{
+  		"schemas":
+  		{
+  			"Body_login_access_token_api_v1_login_access_token_post":
+  			{
+  				"title": "Body_login_access_token_api_v1_login_access_token_post",
+  				"required": ["username", "password"],
+  				"type": "object",
+  				"properties":
+  				{
+  					"grant_type":
+  					{
+  						"title": "Grant Type",
+  						"pattern": "password",
+  						"type": "string"
+  					},
+  					"username":
+  					{
+  						"title": "Username",
+  						"type": "string"
+  					},
+  					"password":
+  					{
+  						"title": "Password",
+  						"type": "string"
+  					},
+  					"scope":
+  					{
+  						"title": "Scope",
+  						"type": "string",
+  						"default": ""
+  					},
+  					"client_id":
+  					{
+  						"title": "Client Id",
+  						"type": "string"
+  					},
+  					"client_secret":
+  					{
+  						"title": "Client Secret",
+  						"type": "string"
+  					}
+  				}
+  			},
+  			"Body_reset_password_api_v1_reset_password__post":
+  			{
+  				"title": "Body_reset_password_api_v1_reset_password__post",
+  				"required": ["token", "new_password"],
+  				"type": "object",
+  				"properties":
+  				{
+  					"token":
+  					{
+  						"title": "Token",
+  						"type": "string"
+  					},
+  					"new_password":
+  					{
+  						"title": "New Password",
+  						"type": "string"
+  					}
+  				}
+  			},
+  			"CountryCreate":
+  			{
+  				"title": "CountryCreate",
+  				"required": ["name", "status"],
+  				"type": "object",
+  				"properties":
+  				{
+  					"name":
+  					{
+  						"title": "Name",
+  						"type": "string"
+  					},
+  					"status":
+  					{
+  						"title": "Status",
+  						"type": "boolean"
+  					}
+  				}
+  			},
+  			"HTTPValidationError":
+  			{
+  				"title": "HTTPValidationError",
+  				"type": "object",
+  				"properties":
+  				{
+  					"detail":
+  					{
+  						"title": "Detail",
+  						"type": "array",
+  						"items":
+  						{
+  							"$ref": "#/components/schemas/ValidationError"
+  						}
+  					}
+  				}
+  			},
+  			"Msg":
+  			{
+  				"title": "Msg",
+  				"required": ["msg"],
+  				"type": "object",
+  				"properties":
+  				{
+  					"msg":
+  					{
+  						"title": "Msg",
+  						"type": "string"
+  					}
+  				}
+  			},
+  			"Token":
+  			{
+  				"title": "Token",
+  				"required": ["access_token", "token_type"],
+  				"type": "object",
+  				"properties":
+  				{
+  					"access_token":
+  					{
+  						"title": "Access Token",
+  						"type": "string"
+  					},
+  					"token_type":
+  					{
+  						"title": "Token Type",
+  						"type": "string"
+  					}
+  				}
+  			},
+  			"User":
+  			{
+  				"title": "User",
+  				"type": "object",
+  				"properties":
+  				{
+  					"email":
+  					{
+  						"title": "Email",
+  						"type": "string",
+  						"format": "email"
+  					},
+  					"is_active":
+  					{
+  						"title": "Is Active",
+  						"type": "boolean",
+  						"default": true
+  					},
+  					"is_superuser":
+  					{
+  						"title": "Is Superuser",
+  						"type": "boolean",
+  						"default": false
+  					},
+  					"full_name":
+  					{
+  						"title": "Full Name",
+  						"type": "string"
+  					},
+  					"id":
+  					{
+  						"title": "Id",
+  						"type": "integer"
+  					}
+  				}
+  			},
+  			"ValidationError":
+  			{
+  				"title": "ValidationError",
+  				"required": ["loc", "msg", "type"],
+  				"type": "object",
+  				"properties":
+  				{
+  					"loc":
+  					{
+  						"title": "Location",
+  						"type": "array",
+  						"items":
+  						{
+  							"anyOf": [
+  							{
+  								"type": "string"
+  							},
+  							{
+  								"type": "integer"
+  							}]
+  						}
+  					},
+  					"msg":
+  					{
+  						"title": "Message",
+  						"type": "string"
+  					},
+  					"type":
+  					{
+  						"title": "Error Type",
+  						"type": "string"
+  					}
+  				}
+  			}
+  		},
+  		"securitySchemes":
+  		{
+  			"OAuth2PasswordBearer":
+  			{
+  				"type": "oauth2",
+  				"flows":
+  				{
+  					"password":
+  					{
+  						"scopes":
+  						{},
+  						"tokenUrl": "/api/v1/login/access-token"
+  					}
+  				}
+  			}
+  		}
+  	}
+  }
 contentType: yaml

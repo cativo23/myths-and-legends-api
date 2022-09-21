@@ -1,0 +1,33 @@
+_id: req_ed9bd5e6bd334dd39cb65243530fcba4
+type: Request
+parentId: fld_52f91e876c5248e4ad9b8c4637e74978
+modified: 1663738453811
+created: 1663713440195
+url: "{{ base_url }}/characters"
+name: Add Character
+description: ""
+method: POST
+body:
+  mimeType: application/json
+  text: >-
+    {
+      "name": "Cadejo Blanco y Negro",
+    	"type": "Animal",
+    	"gender": "Unknown",
+    	"country_id": 5088,
+    	"description": "El Cadejo es un ente sobrenatural que toma la forma de un canino, aparece por las noches y se dispone a seguir a las personas que tranquilamente quieren llegar a sus destinos. Se dice que el Cadejo Blanco fue creado por Dios para proteger a sus hijos debido al caos que reinaba en la Tierra. Por otro lado, el Cadejo Negro fue creado por Satanás y representa el mal, un ser que hipnotiza a sus victimas con sus temibles ojos rojos para luego, robarles su alma."
+    }
+parameters: []
+headers:
+  - name: Content-Type
+    value: application/json
+    id: pair_d64ce11657a9458c96c5c5ffe6061c75
+authentication: {}
+metaSortKey: -1662012666152.75
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global

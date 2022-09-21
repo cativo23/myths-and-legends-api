@@ -1,0 +1,21 @@
+_id: req_0feae9543dad48b48ca3959127ad2391
+type: Request
+parentId: fld_3f7c418b99a845b2b0e73c19aeabfcb4
+modified: 1663563723891
+created: 1662015074134
+url: "{{ base_url }}/countries/4"
+name: Remove Country
+description: ""
+method: DELETE
+body: {}
+parameters: []
+headers: []
+authentication: {}
+metaSortKey: -1662012666134
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global

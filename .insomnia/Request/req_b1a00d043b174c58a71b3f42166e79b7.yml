@@ -1,0 +1,21 @@
+_id: req_b1a00d043b174c58a71b3f42166e79b7
+type: Request
+parentId: fld_3f7c418b99a845b2b0e73c19aeabfcb4
+modified: 1663563290853
+created: 1663475630094
+url: "{{ base_url }}/countries/21"
+name: Get Country
+description: ""
+method: GET
+body: {}
+parameters: []
+headers: []
+authentication: {}
+metaSortKey: -1662012666146.5
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global
