@@ -11,7 +11,7 @@ class CountryBase(BaseModel):
 
 # Properties to receive via API on creation
 class CountryCreate(CountryBase):
-    name: str = Field(None, title="Country Name", max_length=100, example="Nigeria")
+    name: str = Field(..., title="Country Name", max_length=100, example="Nigeria")
     status: Optional[bool] = Field(True, title="Country Status", example=True)
 
 
