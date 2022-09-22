@@ -7,6 +7,7 @@ from app.api.common.services import CRUDBaseService
 from .country_service import country as country_service
 from ..models import Character
 from ..schemas import CharacterCreate, CharacterUpdate
+from ...common.exceptions import ExistsException, NotFoundException, InactiveException
 
 
 class CharacterService(CRUDBaseService[Character, CharacterCreate, CharacterUpdate]):
@@ -17,7 +18,7 @@ class CharacterService(CRUDBaseService[Character, CharacterCreate, CharacterUpda
         """
         return db.query(self.model).filter(self.model.name.ilike(f"%{term}%")).all()
 
-    def create(self, db: Session, *, obj_in: CharacterCreate) -> Character:
+    def create(self, db: Session, *, obj_in: CharacterCreate, image_path: str = None) -> Character:
 
         self.validate_country(db, obj_in.country_id)
 
@@ -28,6 +29,8 @@ class CharacterService(CRUDBaseService[Character, CharacterCreate, CharacterUpda
                 name=obj_in.name,
             )
 
+        obj_in.image = image_path
+
         return super().create(db, obj_in=obj_in)
 
     def update(
@@ -37,6 +40,10 @@ class CharacterService(CRUDBaseService[Character, CharacterCreate, CharacterUpda
             update_data = obj_in
         else:
             update_data = obj_in.dict(exclude_unset=True)
+
+        print(update_data)
+
+        self.validate_country(db, update_data.get('country_id'))
 
         existing_character = self.get_by_name(db, name=obj_in.name, exclude=db_obj.id)
 

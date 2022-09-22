@@ -1,7 +1,8 @@
+import time
 from typing import Any
 
-from fastapi import APIRouter, Depends
-from fastapi.params import Path, Body
+from fastapi import APIRouter, Depends, Form, UploadFile
+from fastapi.params import Path, Body, File
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -10,6 +11,7 @@ from ..services import character as character_service
 from ...common.pagination.json_api_page import JsonApiPage
 from ...common.responses import not_found, found, updated, created, deleted
 from ....api import deps
+from ....core.config import settings
 
 router = APIRouter()
 
@@ -27,14 +29,23 @@ def list_characters(
 
 
 @router.post("/")
-def add_character(
+async def add_character(
         db: Session = Depends(deps.get_db),
-        character: CharacterCreate = Body(...),
+        image_file: UploadFile = File(...),
+        character: CharacterCreate = Depends(CharacterCreate.as_form),
 ):
     """
         Add a Character.
     """
-    character_created = character_service.create(db, obj_in=character)
+    path = 'app/images/' + str(int(time.time())) + '-' + image_file.filename
+    with open(path, 'wb') as file:
+        content = await image_file.read()
+        file.write(content)
+        file.close()
+
+    save_path = f"{settings.SERVER_HOST}:{str(settings.APP_PORT)}/api/v{settings.API_VERSION}/{path.replace('app/','')}"
+
+    character_created = character_service.create(db, obj_in=character, image_path=save_path)
 
     return created(obj_name="Character", obj=character_created)
 
