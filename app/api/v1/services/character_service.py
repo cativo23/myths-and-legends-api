@@ -24,9 +24,8 @@ class CharacterService(CRUDBaseService[Character, CharacterCreate, CharacterUpda
         existing_character = self.get_by_name(db, name=obj_in.name)
 
         if existing_character:
-            raise HTTPException(
-                status_code=422,
-                detail="Character already exists",
+            raise ExistsException(
+                name=obj_in.name,
             )
 
         return super().create(db, obj_in=obj_in)
@@ -42,9 +41,8 @@ class CharacterService(CRUDBaseService[Character, CharacterCreate, CharacterUpda
         existing_character = self.get_by_name(db, name=obj_in.name, exclude=db_obj.id)
 
         if existing_character:
-            raise HTTPException(
-                status_code=422,
-                detail="Character already exists",
+            raise ExistsException(
+                name=obj_in.name,
             )
 
         return super().update(db, db_obj=db_obj, obj_in=update_data)
@@ -63,15 +61,13 @@ class CharacterService(CRUDBaseService[Character, CharacterCreate, CharacterUpda
         country = country_service.validate_existence(db, item_id=country_id)
 
         if not country:
-            raise HTTPException(
-                status_code=422,
-                detail="Country does not exist",
+            raise NotFoundException(
+                name="Country",
             )
 
         if not country.status:
-            raise HTTPException(
-                status_code=422,
-                detail="Country is inactive",
+            raise InactiveException(
+                name="Country",
             )
 
 
