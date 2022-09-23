@@ -30,5 +30,6 @@ class CountryInDBBase(CountryBase):
 
 # Additional properties to return via API
 class Country(CountryInDBBase):
+    characters: Optional[list]
     pass
 

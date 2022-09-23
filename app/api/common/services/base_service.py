@@ -1,12 +1,13 @@
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
+from typing import Any, Dict, Generic, Optional, Type, TypeVar, Union
 
-from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi_pagination.bases import AbstractPage
 from fastapi_pagination.ext.sqlalchemy import paginate
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.exc import ArgumentError
+from sqlalchemy.orm import Session, subqueryload
 
+from app.api.common.exceptions.api_exception import RelationshipNotFoundException
 from app.db.base_class import Base
 
 ModelType = TypeVar("ModelType", bound=Base)
@@ -26,14 +27,26 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """
         self.model = model
 
-    def get(self, db: Session, item_id: Any) -> Optional[ModelType]:
-        return db.query(self.model).filter(self.model.id == item_id).first()
+    def get(self, db: Session, item_id: Any, relations: dict) -> Optional[ModelType]:
+        try:
+            return db.query(self.model).filter(self.model.id == item_id) \
+                .options(*[subqueryload(r) for r in relations]).first()
+        except ArgumentError as error:
+            raise RelationshipNotFoundException(
+                name=error.args[0].split('"')[1],
+            )
 
     def get_all(
-            self, db: Session
+            self, db: Session,
+            relations: dict,
     ) -> AbstractPage:
-        results = db.query(self.model)
-        return paginate(results)
+        try:
+            results = db.query(self.model).options(*[subqueryload(r) for r in relations])
+            return paginate(results)
+        except ArgumentError as error:
+            raise RelationshipNotFoundException(
+                name=error.args[0].split('"')[1],
+            )
 
     def create(self, db: Session, *, obj_in: CreateSchemaType) -> ModelType:
         obj_in_data = jsonable_encoder(obj_in)

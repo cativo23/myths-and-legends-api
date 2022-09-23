@@ -18,11 +18,13 @@ router = APIRouter()
 def list_countries(
         *,
         db: Session = Depends(deps.get_db),
+        relations: str = None,
 ) -> Any:
     """
         Lists all countries.
     """
-    all_countries = country_service.get_all(db)
+    relations = relations.split(',') if relations else []
+    all_countries = country_service.get_all(db, relations=relations)
     return all_countries
 
 
@@ -40,8 +42,14 @@ def add_country(
 
 
 @router.get("/{country_id}")
-def get_country(db: Session = Depends(deps.get_db), country_id: int = Path(...)) -> JSONResponse:
-    country = country_service.get(db, item_id=country_id)
+def get_country(
+        db: Session = Depends(deps.get_db),
+        country_id: int = Path(...),
+        relations: str = None,
+) -> JSONResponse:
+    relations = relations.split(',') if relations else []
+
+    country = country_service.get(db, item_id=country_id, relations=relations)
 
     if not country:
         return not_found(obj_name="Country")

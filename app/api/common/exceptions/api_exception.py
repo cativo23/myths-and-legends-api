@@ -30,6 +30,12 @@ class InactiveException(APIException):
         self.status = status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
+class RelationshipNotFoundException(APIException):
+    def __init__(self, name: str):
+        super().__init__(message=f"Relationship \"{name}\" does not exist")
+        self.status = status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
 def add_exception_handler(app: FastAPI) -> None:
     @app.exception_handler(APIException)
     async def exists_exception_handler(request: Request, exc: APIException):

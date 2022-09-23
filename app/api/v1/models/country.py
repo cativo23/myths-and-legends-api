@@ -13,4 +13,4 @@ class Country(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     status = Column(Boolean(), default=True)
-    characters = relationship("Character", back_populates="country")
+    characters = relationship("Character", back_populates="country", lazy="noload")

@@ -20,11 +20,13 @@ router = APIRouter()
 def list_characters(
         *,
         db: Session = Depends(deps.get_db),
+        relations: str = None,
 ) -> Any:
     """
         Lists all characters.
     """
-    all_countries = character_service.get_all(db)
+    relations = relations.split(',') if relations else []
+    all_countries = character_service.get_all(db, relations=relations)
     return all_countries
 
 
@@ -51,8 +53,14 @@ async def add_character(
 
 
 @router.get("/{character_id}")
-def get_character(db: Session = Depends(deps.get_db), character_id: int = Path(...)) -> JSONResponse:
-    character = character_service.get(db, item_id=character_id)
+def get_character(
+        db: Session = Depends(deps.get_db),
+        character_id: int = Path(...),
+        relations: str = None
+) -> JSONResponse:
+    relations = relations.split(',') if relations else []
+
+    character = character_service.get(db, item_id=character_id, relations=relations)
 
     if not character:
         return not_found(obj_name="Character")

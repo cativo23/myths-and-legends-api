@@ -21,4 +21,4 @@ class Character(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     description = Column(String, default="")
     country_id = Column(Integer, ForeignKey("country.id"))
-    country = relationship("Country", back_populates="characters")
+    country = relationship("Country", back_populates="characters", lazy="noload")
