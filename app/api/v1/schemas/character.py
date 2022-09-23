@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 from app.api.common.decorators import as_form
 from app.api.v1.enums import CharacterType, Gender
+from app.api.v1.schemas import Country
 
 
 # Shared properties
@@ -44,4 +45,6 @@ class CharacterInDBBase(CharacterBase):
 
 # Additional properties to return via API
 class Character(CharacterInDBBase):
-    pass
+    gender: Optional[Gender]
+    image: Optional[str]
+    country: Optional[Country]
