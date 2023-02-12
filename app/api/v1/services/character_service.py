@@ -1,9 +1,10 @@
 from typing import Any, Dict, Optional, Union
 
-from fastapi import HTTPException
+from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
 from app.api.common.services import CRUDBaseService
+from . import image_service
 from .country_service import country as country_service
 from ..models import Character
 from ..schemas import CharacterCreate, CharacterUpdate
@@ -18,7 +19,7 @@ class CharacterService(CRUDBaseService[Character, CharacterCreate, CharacterUpda
         """
         return db.query(self.model).filter(self.model.name.ilike(f"%{term}%")).all()
 
-    def create(self, db: Session, *, obj_in: CharacterCreate, image_path: str = None) -> Character:
+    def create(self, db: Session, *, obj_in: CharacterCreate, image_file: UploadFile = None) -> Character:
 
         self.validate_country(db, obj_in.country_id)
 
@@ -29,19 +30,23 @@ class CharacterService(CRUDBaseService[Character, CharacterCreate, CharacterUpda
                 name=obj_in.name,
             )
 
+        image_path = image_service.save(image_file)
+
         obj_in.image = image_path
 
         return super().create(db, obj_in=obj_in)
 
     def update(
-            self, db: Session, *, db_obj: Character, obj_in: Union[CharacterUpdate, Dict[str, Any]]
+            self,
+            db: Session, *,
+            db_obj: Character,
+            obj_in: Union[CharacterUpdate, Dict[str, Any]],
+            image_file: UploadFile = None
     ) -> Character:
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
             update_data = obj_in.dict(exclude_unset=True)
-
-        print(update_data)
 
         self.validate_country(db, update_data.get('country_id'))
 
@@ -51,6 +56,15 @@ class CharacterService(CRUDBaseService[Character, CharacterCreate, CharacterUpda
             raise ExistsException(
                 name=obj_in.name,
             )
+
+        print(db_obj.image)
+
+        if db_obj.image and image_file:
+            image_service.delete(db_obj.image)
+
+        image_path = image_service.save(image_file)
+
+        update_data['image'] = image_path
 
         return super().update(db, db_obj=db_obj, obj_in=update_data)
 

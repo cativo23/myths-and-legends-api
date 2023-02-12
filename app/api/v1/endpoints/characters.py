@@ -7,11 +7,10 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from ..schemas import CharacterCreate, CharacterUpdate, Character as CharacterSchema
-from ..services import character as character_service
+from ..services import character as character_service, image_service
 from ...common.pagination.json_api_page import JsonApiPage
 from ...common.responses import not_found, found, updated, created, deleted
 from ....api import deps
-from ....core.config import settings
 
 router = APIRouter()
 
@@ -35,19 +34,12 @@ async def add_character(
         db: Session = Depends(deps.get_db),
         image_file: UploadFile = File(...),
         character: CharacterCreate = Depends(CharacterCreate.as_form),
-):
+) -> JSONResponse:
     """
         Add a Character.
     """
-    path = 'app/images/' + str(int(time.time())) + '-' + image_file.filename
-    with open(path, 'wb') as file:
-        content = await image_file.read()
-        file.write(content)
-        file.close()
 
-    save_path = f"{settings.SERVER_HOST}:{str(settings.APP_PORT)}/api/v{settings.API_VERSION}/{path.replace('app/','')}"
-
-    character_created = character_service.create(db, obj_in=character, image_path=save_path)
+    character_created = character_service.create(db, obj_in=character, image_file=image_file)
 
     return created(obj_name="Character", obj=character_created)
 
@@ -72,7 +64,8 @@ def get_character(
 def update_character(*,
                      db: Session = Depends(deps.get_db),
                      character_id: int,
-                     character_in: CharacterUpdate
+                     image_file: UploadFile = File(...),
+                     character_in: CharacterUpdate = Depends(CharacterUpdate.as_form),
                      ) -> JSONResponse:
     """
     Update a character.

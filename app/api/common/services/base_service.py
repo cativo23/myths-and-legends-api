@@ -27,7 +27,7 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """
         self.model = model
 
-    def get(self, db: Session, item_id: Any, relations: dict) -> Optional[ModelType]:
+    def get(self, db: Session, item_id: Any, relations: dict = []) -> Optional[ModelType]:
         try:
             return db.query(self.model).filter(self.model.id == item_id) \
                 .options(*[subqueryload(r) for r in relations]).first()
