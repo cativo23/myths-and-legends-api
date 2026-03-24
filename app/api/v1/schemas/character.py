@@ -1,7 +1,7 @@
 from datetime import datetime as datetime_type
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from app.api.common.decorators import as_form
 from app.api.v1.enums import CharacterType, Gender
@@ -20,7 +20,7 @@ class CharacterCreate(CharacterBase):
     name: str = Field(..., title="Character Name", max_length=100, example="Cipitio")
     type: CharacterType = Field(CharacterType.human, title="Character type", example=CharacterType.human)
     gender: Gender = Field(Gender.female, title="Character Gender", example=Gender.female)
-    image: Optional[str]
+    image: Optional[str] = None
     description: str = Field(..., max_length=5000, example="Lorem Ipsum")
     country_id: int = Field(..., title="Country of this character", example=1)
 
@@ -37,14 +37,13 @@ class CharacterUpdate(CharacterBase):
 
 class CharacterInDBBase(CharacterBase):
     id: Optional[int] = None
-    created_at: datetime_type = Field(datetime_type.now(), title="When the Character was created in DB")
+    created_at: datetime_type = Field(default_factory=datetime_type.now, title="When the Character was created in DB")
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Additional properties to return via API
 class Character(CharacterInDBBase):
-    gender: Optional[Gender]
-    image: Optional[str]
-    country: Optional[Country]
+    gender: Optional[Gender] = None
+    image: Optional[str] = None
+    country: Optional[Country] = None
