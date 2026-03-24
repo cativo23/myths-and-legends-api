@@ -1,6 +1,6 @@
-from typing import Optional
+from typing import Optional, List
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 # Shared properties
@@ -24,12 +24,10 @@ class CountryUpdate(CountryBase):
 class CountryInDBBase(CountryBase):
     id: Optional[int] = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Additional properties to return via API
 class Country(CountryInDBBase):
-    characters: Optional[list]
-    pass
+    characters: Optional[List] = None
 

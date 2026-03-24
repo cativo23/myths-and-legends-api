@@ -46,7 +46,7 @@ class CharacterService(CRUDBaseService[Character, CharacterCreate, CharacterUpda
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
-            update_data = obj_in.dict(exclude_unset=True)
+            update_data = obj_in.model_dump(exclude_unset=True)
 
         self.validate_country(db, update_data.get('country_id'))
 

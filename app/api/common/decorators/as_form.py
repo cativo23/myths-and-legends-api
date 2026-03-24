@@ -1,23 +1,29 @@
 import inspect
-from typing import Type
+from typing import Type, get_origin
 
 from fastapi import Form
 from pydantic import BaseModel
-from pydantic.fields import ModelField
+from pydantic.fields import FieldInfo
 
 
 def as_form(cls: Type[BaseModel]):
     new_parameters = []
 
-    for field_name, model_field in cls.__fields__.items():
-        model_field: ModelField  # type: ignore
+    for field_name, field_info in cls.model_fields.items():
+        field_info: FieldInfo  # type: ignore
+
+        # Get the actual type annotation
+        annotation = field_info.annotation
+        if get_origin(annotation) is not None:
+            # Handle Optional and other generic types
+            pass
 
         new_parameters.append(
             inspect.Parameter(
-                model_field.alias,
+                field_info.alias or field_name,
                 inspect.Parameter.POSITIONAL_ONLY,
-                default=Form(...) if model_field.required else Form(model_field.default),
-                annotation=model_field.outer_type_,
+                default=Form(...) if field_info.is_required() else Form(field_info.default),
+                annotation=annotation,
             )
         )
 
