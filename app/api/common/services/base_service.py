@@ -1,11 +1,11 @@
-from typing import Any, Dict, Generic, Optional, Type, TypeVar, Union
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 
 from fastapi.encoders import jsonable_encoder
 from fastapi_pagination.bases import AbstractPage
 from fastapi_pagination.ext.sqlalchemy import paginate
 from pydantic import BaseModel
 from sqlalchemy.exc import ArgumentError
-from sqlalchemy.orm import Session, subqueryload
+from sqlalchemy.orm import Session, selectinload
 
 from app.api.common.exceptions.api_exception import RelationshipNotFoundException
 from app.db.base_class import Base
@@ -27,10 +27,12 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """
         self.model = model
 
-    def get(self, db: Session, item_id: Any, relations: dict = []) -> Optional[ModelType]:
+    def get(self, db: Session, item_id: int, relations: List[str] = None) -> Optional[ModelType]:
         try:
-            return db.query(self.model).filter(self.model.id == item_id) \
-                .options(*[subqueryload(r) for r in relations]).first()
+            query = db.query(self.model).filter(self.model.id == item_id)
+            if relations:
+                query = query.options(*[selectinload(getattr(self.model, r)) for r in relations])
+            return query.first()
         except ArgumentError as error:
             raise RelationshipNotFoundException(
                 name=error.args[0].split('"')[1],
@@ -38,11 +40,13 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     def get_all(
             self, db: Session,
-            relations: dict,
+            relations: List[str] = None,
     ) -> AbstractPage:
         try:
-            results = db.query(self.model).options(*[subqueryload(r) for r in relations])
-            return paginate(results)
+            query = db.query(self.model)
+            if relations:
+                query = query.options(*[selectinload(getattr(self.model, r)) for r in relations])
+            return paginate(query)
         except ArgumentError as error:
             raise RelationshipNotFoundException(
                 name=error.args[0].split('"')[1],
@@ -67,7 +71,7 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
-            update_data = obj_in.dict(exclude_unset=True)
+            update_data = obj_in.model_dump(exclude_unset=True)
         for field in obj_data:
             if field in update_data:
                 setattr(db_obj, field, update_data[field])
