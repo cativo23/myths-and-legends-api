@@ -1,17 +1,15 @@
-version: "3"
-
 services:
   api:
     image: 'myth-api:latest'
-    env_file:
-        - .env
     ports:
       - '${APP_PORT-8080}:80'
     volumes:
       - './:/code'
       - './requirements.txt:/code/requirements.txt'
+      - './.env:/code/.env:ro'
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     build:
       context: .
       dockerfile: Dockerfile
@@ -20,30 +18,43 @@ services:
         - GID=${GID:-1001}
     networks:
       - myths
+    command: uvicorn app.main:app --host 0.0.0.0 --port 80 --reload --reload-include '*.env' --reload-include '.env'
 
   db:
-    image: postgres:12
+    image: postgres:15-alpine
     ports:
       - '${POSTGRES_FORWARD_PORT-5432}:5432'
     networks:
       - myths
     volumes:
-      - app-db-data:/var/lib/postgresql/data/pgdata
+      - app-db-data:/var/lib/postgresql/data
     env_file:
       - .env
     environment:
-      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_USER=${POSTGRES_USER:-myths}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-myths}
+      - POSTGRES_DB=${POSTGRES_DB:-myths}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-myths} -d ${POSTGRES_DB:-myths}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   pgadmin:
-    image: dpage/pgadmin4
+    image: dpage/pgadmin4:latest
     networks:
       - myths
     ports:
-      - '${PG_ADMIN_PORT-8081}:5050'
+      - '${PG_ADMIN_PORT-8081}:80'
     depends_on:
       - db
     env_file:
       - .env
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL:-admin@example.com}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-admin123}
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
 
   mailhog:
     image: 'mailhog/mailhog:latest'
@@ -54,8 +65,9 @@ services:
       - myths
 
 networks:
-    myths:
-        driver: bridge
+  myths:
+    driver: bridge
 
 volumes:
   app-db-data:
+  pgadmin-data:
