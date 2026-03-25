@@ -1,13 +1,17 @@
 _id: env_env_a24456a90d57d8747a17608bc22fd1c331d9ce0b_sub
 type: Environment
 parentId: env_a24456a90d57d8747a17608bc22fd1c331d9ce0b
-modified: 1661134443356
+modified: 1662007533803
 created: 1660795148120
 name: OpenAPI env
 data:
-  scheme: https
+  scheme: http
   base_path: /api/v1
   host: localhost
+  oauth2ClientId: clientId
+  oauth2ClientSecret: clientSecret
+  oauth2Username: username
+  oauth2Password: password
   port: "8080"
 dataPropertyOrder:
   "&":

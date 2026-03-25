@@ -1,16 +1,27 @@
 _id: req_wrk_6807c5d036fa40748fe9894cb6edb1725e844204
 type: Request
-parentId: wrk_6807c5d036fa40748fe9894cb6edb172
-modified: 1661134001400
+parentId: fld_392593a492c04d9fb4070eea7137af43
+modified: 1662012643410
 created: 1661134001400
-url: "{{ base_url }}/api/v1/login/access-token"
-name: Login Access Token
+url: "{{ base_url }}/auth/login"
+name: Login
 description: ""
 method: POST
 body:
   mimeType: application/x-www-form-urlencoded
+  params:
+    - name: username
+      value: admin@google.com
+      id: pair_985a0def90c84c6491d5ba6c0807b9ed
+    - id: pair_a1ab2ec29a984dc3af54b5172a7db117
+      name: password
+      value: admin
+      description: ""
 parameters: []
-headers: []
+headers:
+  - name: Content-Type
+    value: application/x-www-form-urlencoded
+    id: pair_699317f02b414ff7b1b5ec3f24549878
 authentication: {}
 metaSortKey: -1661134001400
 isPrivate: false

@@ -1,23 +1,40 @@
 import secrets
-from typing import Any, Dict, List, Optional, Union
-from pathlib import Path
-from pydantic import AnyHttpUrl, BaseSettings, EmailStr, PostgresDsn, validator
+from typing import Any, List, Optional, Union
+
+from pydantic import EmailStr, PostgresDsn, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        case_sensitive=True,
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        env_nested_delimiter="__",
+    )
+
     API_VERSION: str = "1"
     APP_PORT: int = 8080
     SECRET_KEY: str = secrets.token_urlsafe(32)
     # 60 minutes * 24 hours * 8 days = 8 days
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
-    # SERVER_NAME: str
-    SERVER_HOST: AnyHttpUrl
+    SERVER_HOST: str = "http://localhost"
     # BACKEND_CORS_ORIGINS is a JSON-formatted list of origins
-    # e.g: '["http://localhost", "http://localhost:4200", "http://localhost:3000", \
-    # "http://localhost:8080", "http://local.dockertoolbox.tiangolo.com"]'
-    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
+    BACKEND_CORS_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:8080",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+    ]
 
-    @validator("BACKEND_CORS_ORIGINS", pre=True)
+    # Rate limiting
+    RATE_LIMIT_PER_MINUTE: int = 60
+    RATE_LIMIT_AUTH_PER_MINUTE: int = 10
+
+    @field_validator("BACKEND_CORS_ORIGINS", mode="before")
+    @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
@@ -25,24 +42,26 @@ class Settings(BaseSettings):
             return v
         raise ValueError(v)
 
-    PROJECT_NAME: str
+    PROJECT_NAME: str = "Myths and Legends API"
 
-    POSTGRES_HOST: str
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
-    POSTGRES_DB: str
+    POSTGRES_HOST: str = "localhost"
+    POSTGRES_USER: str = "myths"
+    POSTGRES_PASSWORD: str = "myths"
+    POSTGRES_DB: str = "myths"
     SQLALCHEMY_DATABASE_URI: Optional[PostgresDsn] = None
 
-    @validator("SQLALCHEMY_DATABASE_URI", pre=True)
-    def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
+    @field_validator("SQLALCHEMY_DATABASE_URI", mode="before")
+    @classmethod
+    def assemble_db_connection(cls, v: Optional[str], info) -> Any:
         if isinstance(v, str):
             return v
+        values = info.data
         return PostgresDsn.build(
             scheme="postgresql",
-            user=values.get("POSTGRES_USER"),
-            password=values.get("POSTGRES_PASSWORD"),
-            host=values.get("POSTGRES_HOST"),
-            path=f"/{values.get('POSTGRES_DB') or ''}",
+            username=values.get("POSTGRES_USER", "myths"),
+            password=values.get("POSTGRES_PASSWORD", "myths"),
+            host=values.get("POSTGRES_HOST", "localhost"),
+            path=f"{values.get('POSTGRES_DB') or 'myths'}",
         )
 
     SMTP_TLS: bool = True
@@ -53,17 +72,14 @@ class Settings(BaseSettings):
     EMAILS_FROM_EMAIL: Optional[EmailStr] = None
     EMAILS_FROM_NAME: Optional[str] = None
 
-    def get_project_name(cls, v: Optional[str], values: Dict[str, Any]) -> str:
-        if not v:
-            return values["PROJECT_NAME"]
-        return v
-
     EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 48
     EMAIL_TEMPLATES_DIR: str = "/app/email-templates/build"
     EMAILS_ENABLED: bool = False
 
-    @validator("EMAILS_ENABLED", pre=True)
-    def get_emails_enabled(cls, v: bool, values: Dict[str, Any]) -> bool:
+    @field_validator("EMAILS_ENABLED", mode="before")
+    @classmethod
+    def get_emails_enabled(cls, v: bool, info) -> bool:
+        values = info.data
         return bool(
             values.get("SMTP_HOST")
             and values.get("SMTP_PORT")
@@ -71,13 +87,23 @@ class Settings(BaseSettings):
         )
 
     EMAIL_TEST_USER: EmailStr = "test@example.com"  # type: ignore
-    FIRST_SUPERUSER: EmailStr
-    FIRST_SUPERUSER_PASSWORD: str
+    FIRST_SUPERUSER: EmailStr = "admin@example.com"  # type: ignore
+    FIRST_SUPERUSER_PASSWORD: str = "admin123"
     USERS_OPEN_REGISTRATION: bool = False
 
-    class Config:
-        case_sensitive = True
-        # env_file = f"{Path.cwd()}/app/.env"
+
+# Global settings instance - refreshed on module reload
+_settings: Optional[Settings] = None
 
 
-settings = Settings()
+def get_settings() -> Settings:
+    """
+    Get settings instance. In development with hot reload, this creates
+    a new instance each time the module is reloaded.
+    """
+    global _settings
+    _settings = Settings()
+    return _settings
+
+
+settings = get_settings()

@@ -2,8 +2,8 @@ FROM python:3.10
 
 LABEL maintainer="cativo23.kt@gmail.com"
 
-ARG UID
-ARG GID
+ARG UID=1000
+ARG GID=1001
 
 ENV UID=${UID}
 ENV GID=${GID}

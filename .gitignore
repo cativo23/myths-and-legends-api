@@ -130,3 +130,11 @@ dmypy.json
 
 #Jetbrains
 .idea/
+
+# Data 
+markdown_output_v*/
+Mitos-y-Leyendas-Salvadorenas.md
+web_search_output/
+prompts/
+generator.py
+template.md

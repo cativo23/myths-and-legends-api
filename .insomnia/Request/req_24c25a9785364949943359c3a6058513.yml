@@ -1,0 +1,31 @@
+_id: req_24c25a9785364949943359c3a6058513
+type: Request
+parentId: fld_52f91e876c5248e4ad9b8c4637e74978
+modified: 1663738127056
+created: 1663713440194
+url: "{{ base_url }}/characters"
+name: Get Characters
+description: ""
+method: GET
+body: {}
+parameters:
+  - id: pair_c91b9cf8174f48a0865c0c70b78a25ca
+    name: page
+    value: "1"
+    description: ""
+    disabled: false
+  - id: pair_53a1300f8f4c42bfae1a5ce08c86bb5d
+    name: size
+    value: "3"
+    description: ""
+    disabled: true
+headers: []
+authentication: {}
+metaSortKey: -1662012666159
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global

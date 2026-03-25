@@ -1,0 +1,21 @@
+_id: req_6255c5fec92b469ca506edf813efd341
+type: Request
+parentId: fld_52f91e876c5248e4ad9b8c4637e74978
+modified: 1663737089280
+created: 1663736581155
+url: "{{ base_url }}/characters/search/?term=Cadejo"
+name: Search Character
+description: ""
+method: GET
+body: {}
+parameters: []
+headers: []
+authentication: {}
+metaSortKey: -1662012666143.375
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global
