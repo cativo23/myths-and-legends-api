@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String, Text, ForeignKey, Index
+from sqlalchemy import String, Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
@@ -17,12 +17,8 @@ class Location(Base):
         ForeignKey("entity.id", ondelete="CASCADE"), nullable=False, index=True
     )
     department: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    municipality: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    municipality: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
     place_description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Relationships
     entity: Mapped["Entity"] = relationship("Entity", back_populates="locations")
-
-    __table_args__ = (
-        Index("ix_location_department", "department", "municipality"),
-    )

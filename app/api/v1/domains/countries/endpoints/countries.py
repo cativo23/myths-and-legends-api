@@ -13,7 +13,7 @@ from app.api.v1.shared.deps import get_db
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("/", response_model=list[CountrySchema])
 def list_countries(
         *,
         db: Session = Depends(get_db),
@@ -24,7 +24,7 @@ def list_countries(
     """
     relations = relations.split(',') if relations else []
     all_countries = country_service.get_multi(db, relations=relations)
-    return all_countries
+    return found(obj_name="Countries", obj=all_countries)
 
 
 @router.post("/")
