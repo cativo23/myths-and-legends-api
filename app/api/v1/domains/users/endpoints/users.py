@@ -13,6 +13,7 @@ from app.api.v1.domains.users.schemas.user import (
 from app.api.v1.domains.users.services.user import user as user_service
 from app.api.v1.shared.deps import get_db, get_current_active_superuser
 from app.api.common.pagination.json_api_page import JsonApiPage
+
 router = APIRouter()
 
 

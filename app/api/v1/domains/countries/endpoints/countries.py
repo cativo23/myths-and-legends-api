@@ -31,7 +31,9 @@ async def list_countries(
     - `sort`: Field to sort by (name, id, created_at)
     - `order`: Sort order (asc, desc)
     """
-    relations = [r.strip() for r in relations.split(",") if r.strip()] if relations else []
+    relations = (
+        [r.strip() for r in relations.split(",") if r.strip()] if relations else []
+    )
     all_countries = country_service.get_multi(db, relations=relations)
 
     # Sort results
@@ -59,7 +61,9 @@ async def get_country(
     country_id: int,
     relations: str | None = None,
 ) -> CountrySchema:
-    relations = [r.strip() for r in relations.split(",") if r.strip()] if relations else []
+    relations = (
+        [r.strip() for r in relations.split(",") if r.strip()] if relations else []
+    )
     country = country_service.get(db, item_id=country_id, relations=relations)
 
     if not country:

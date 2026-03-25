@@ -50,6 +50,4 @@ def setup_rate_limiter(app):
     - All other endpoints: Use default limit from settings
     """
     app.state.limiter = limiter
-    app.add_exception_handler(
-        RateLimitExceeded, rate_limit_exception_handler
-    )
+    app.add_exception_handler(RateLimitExceeded, rate_limit_exception_handler)

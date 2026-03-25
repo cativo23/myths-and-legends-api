@@ -11,8 +11,15 @@ class CountryBase(BaseModel):
 
 # Properties to receive via API on creation
 class CountryCreate(CountryBase):
-    name: str = Field(..., title="Country Name", max_length=100, json_schema_extra={"example": "Nigeria"})
-    status: Optional[bool] = Field(True, title="Country Status", json_schema_extra={"example": True})
+    name: str = Field(
+        ...,
+        title="Country Name",
+        max_length=100,
+        json_schema_extra={"example": "Nigeria"},
+    )
+    status: Optional[bool] = Field(
+        True, title="Country Status", json_schema_extra={"example": True}
+    )
 
 
 # Properties to receive via API on update

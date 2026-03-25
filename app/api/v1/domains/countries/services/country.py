@@ -39,9 +39,7 @@ class CountryService(CRUDBaseService[Country, CountryCreate, CountryUpdate]):
         """Get multiple countries with optional relations."""
         stmt = select(Country)
         if relations:
-            stmt = stmt.options(
-                *[selectinload(getattr(Country, r)) for r in relations]
-            )
+            stmt = stmt.options(*[selectinload(getattr(Country, r)) for r in relations])
         return db.execute(stmt).scalars().all()
 
 

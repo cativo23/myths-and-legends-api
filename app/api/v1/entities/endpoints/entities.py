@@ -80,9 +80,11 @@ async def get_entity(
         relations_summary.append(
             EntityRelationSummary(
                 id=r.id,
-                relation_type=r.relation_type.value
-                if hasattr(r.relation_type, "value")
-                else r.relation_type,
+                relation_type=(
+                    r.relation_type.value
+                    if hasattr(r.relation_type, "value")
+                    else r.relation_type
+                ),
                 description=r.description,
                 related_entity_id=related_entity.id,
                 related_entity_name=related_entity.name,
@@ -170,9 +172,11 @@ async def get_entity_relations(
         relations_summary.append(
             EntityRelationSummary(
                 id=r.id,
-                relation_type=r.relation_type.value
-                if hasattr(r.relation_type, "value")
-                else r.relation_type,
+                relation_type=(
+                    r.relation_type.value
+                    if hasattr(r.relation_type, "value")
+                    else r.relation_type
+                ),
                 description=r.description,
                 related_entity_id=related_entity.id,
                 related_entity_name=related_entity.name,
