@@ -2,10 +2,15 @@ from sqlalchemy.orm import Session
 
 from app.api.common.services.base_service import CRUDBaseService
 from app.api.v1.entities.models.characteristic import Characteristic
-from app.api.v1.entities.schemas.characteristic import CharacteristicCreate, CharacteristicUpdate
+from app.api.v1.entities.schemas.characteristic import (
+    CharacteristicCreate,
+    CharacteristicUpdate,
+)
 
 
-class CharacteristicService(CRUDBaseService[Characteristic, CharacteristicCreate, CharacteristicUpdate]):
+class CharacteristicService(
+    CRUDBaseService[Characteristic, CharacteristicCreate, CharacteristicUpdate]
+):
     def __init__(self):
         super().__init__(Characteristic)
 

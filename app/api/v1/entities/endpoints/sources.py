@@ -17,7 +17,9 @@ source_service = SourceService()
 @router.get("/", response_model=list[SourceSchema])
 def list_sources(
     db: Annotated[Session, Depends(get_db)],
-    source_type: Annotated[SourceType | None, Query(description="Filter by source type")] = None,
+    source_type: Annotated[
+        SourceType | None, Query(description="Filter by source type")
+    ] = None,
 ):
     """List all sources, optionally filtered by type"""
     if source_type:

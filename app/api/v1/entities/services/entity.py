@@ -67,15 +67,21 @@ class EntityService(CRUDBaseService[Entity, EntityCreate, EntityUpdate]):
         )
         return db.execute(stmt).scalars().all()
 
-    def get_relations_graph(self, db: Session, *, entity_id: int) -> list[EntityRelation]:
+    def get_relations_graph(
+        self, db: Session, *, entity_id: int
+    ) -> list[EntityRelation]:
         """Get all relations where entity appears (as origin OR destination)"""
-        stmt = select(EntityRelation).where(
-            or_(
-                EntityRelation.entity_origin_id == entity_id,
-                EntityRelation.entity_destination_id == entity_id,
+        stmt = (
+            select(EntityRelation)
+            .where(
+                or_(
+                    EntityRelation.entity_origin_id == entity_id,
+                    EntityRelation.entity_destination_id == entity_id,
+                )
             )
-        ).options(
-            selectinload(EntityRelation.entity_origin),
-            selectinload(EntityRelation.entity_destination),
+            .options(
+                selectinload(EntityRelation.entity_origin),
+                selectinload(EntityRelation.entity_destination),
+            )
         )
         return db.execute(stmt).scalars().all()

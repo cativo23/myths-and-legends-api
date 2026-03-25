@@ -25,6 +25,4 @@ class Source(Base):
     # Relationships
     entity: Mapped["Entity"] = relationship("Entity", back_populates="sources")
 
-    __table_args__ = (
-        Index("ix_source_entity_type", "entity_id", "source_type"),
-    )
+    __table_args__ = (Index("ix_source_entity_type", "entity_id", "source_type"),)

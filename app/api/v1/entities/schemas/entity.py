@@ -17,6 +17,7 @@ class EntityBase(BaseModel):
 
 class EntityCreate(EntityBase):
     """For creation - characteristics, locations, sources are handled separately"""
+
     pass
 
 
@@ -42,6 +43,7 @@ class EntityInDB(EntityBase):
 
 class Entity(EntityInDB):
     """Full response schema with nested relations"""
+
     # Nested relations - Pydantic will serialize these from SQLAlchemy models
     category: dict = {}
     entity_type: dict = {}
@@ -51,16 +53,19 @@ class Entity(EntityInDB):
 
     model_config = ConfigDict(from_attributes=True)
 
-    @field_validator('category', 'entity_type', mode='before')
+    @field_validator("category", "entity_type", mode="before")
     @classmethod
     def convert_model_to_dict(cls, v):
-        if hasattr(v, '__tablename__'):  # SQLAlchemy model
+        if hasattr(v, "__tablename__"):  # SQLAlchemy model
             return {c.name: getattr(v, c.name) for c in v.__table__.columns}
         return v
 
-    @field_validator('characteristics', 'locations', 'sources', mode='before')
+    @field_validator("characteristics", "locations", "sources", mode="before")
     @classmethod
     def convert_list_to_dicts(cls, v):
-        if v and hasattr(v[0], '__tablename__'):  # List of SQLAlchemy models
-            return [{c.name: getattr(item, c.name) for c in v[0].__table__.columns} for item in v]
+        if v and hasattr(v[0], "__tablename__"):  # List of SQLAlchemy models
+            return [
+                {c.name: getattr(item, c.name) for c in v[0].__table__.columns}
+                for item in v
+            ]
         return v or []

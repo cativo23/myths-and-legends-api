@@ -7,15 +7,15 @@ from app.core.config import settings
 from fastapi_pagination import add_pagination
 
 app = FastAPI(
-    title=settings.PROJECT_NAME, openapi_url=f"/api/v{settings.API_VERSION}/openapi.json"
+    title=settings.PROJECT_NAME,
+    openapi_url=f"/api/v{settings.API_VERSION}/openapi.json",
 )
 
 # Set all CORS enabled
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        str(origin).replace("/", "")
-        for origin in settings.BACKEND_CORS_ORIGINS
+        str(origin).replace("/", "") for origin in settings.BACKEND_CORS_ORIGINS
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -33,19 +33,16 @@ add_exception_handler(app)
 def index():
     return {
         "message": f"Welcome to {settings.PROJECT_NAME}!",
-        "data":
-            {
-                "description": 'This is the Myths and Legends API',
-                "author": 'Carlos Cativo <cativo23.kt@gmail.com>',
-                "important-urls": [
-                    {
-                        "docs": f"{settings.SERVER_HOST}:{settings.APP_PORT}/docs"
-                    },
-                    {
-                        "versions": {
-                            "v1": f"{settings.SERVER_HOST}:{settings.APP_PORT}/api/v1"
-                        }
+        "data": {
+            "description": "This is the Myths and Legends API",
+            "author": "Carlos Cativo <cativo23.kt@gmail.com>",
+            "important-urls": [
+                {"docs": f"{settings.SERVER_HOST}:{settings.APP_PORT}/docs"},
+                {
+                    "versions": {
+                        "v1": f"{settings.SERVER_HOST}:{settings.APP_PORT}/api/v1"
                     }
-                ],
-            }
+                },
+            ],
+        },
     }

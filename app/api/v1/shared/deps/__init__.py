@@ -1,4 +1,9 @@
-from app.api.v1.shared.deps.dependencies import get_db, get_current_user, get_current_active_user, get_current_active_superuser
+from app.api.v1.shared.deps.dependencies import (
+    get_db,
+    get_current_user,
+    get_current_active_user,
+    get_current_active_superuser,
+)
 
 __all__ = [
     "get_db",

@@ -3,10 +3,15 @@ from sqlalchemy.orm import Session
 
 from app.api.common.services.base_service import CRUDBaseService
 from app.api.v1.entities.models.entity_relation import EntityRelation, RelationType
-from app.api.v1.entities.schemas.entity_relation import EntityRelationCreate, EntityRelationUpdate
+from app.api.v1.entities.schemas.entity_relation import (
+    EntityRelationCreate,
+    EntityRelationUpdate,
+)
 
 
-class EntityRelationService(CRUDBaseService[EntityRelation, EntityRelationCreate, EntityRelationUpdate]):
+class EntityRelationService(
+    CRUDBaseService[EntityRelation, EntityRelationCreate, EntityRelationUpdate]
+):
     def __init__(self):
         super().__init__(EntityRelation)
 
@@ -41,7 +46,11 @@ class EntityRelationService(CRUDBaseService[EntityRelation, EntityRelationCreate
 
         # Create reverse for symmetric relations
         reverse = None
-        if relation_type in [RelationType.SIBLINGS, RelationType.ALLIES, RelationType.ENEMIES]:
+        if relation_type in [
+            RelationType.SIBLINGS,
+            RelationType.ALLIES,
+            RelationType.ENEMIES,
+        ]:
             reverse = EntityRelation(
                 entity_origin_id=destination_id,
                 entity_destination_id=origin_id,

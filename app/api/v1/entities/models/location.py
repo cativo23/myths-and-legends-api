@@ -17,7 +17,9 @@ class Location(Base):
         ForeignKey("entity.id", ondelete="CASCADE"), nullable=False, index=True
     )
     department: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    municipality: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    municipality: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, index=True
+    )
     place_description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Relationships

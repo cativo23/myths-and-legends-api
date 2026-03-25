@@ -14,8 +14,12 @@ class EntityType(Base):
     __tablename__ = "entity_type"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    name: Mapped[EntityTypeName] = mapped_column(String(50), unique=True, nullable=False)
+    name: Mapped[EntityTypeName] = mapped_column(
+        String(50), unique=True, nullable=False
+    )
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Relationships
-    entities: Mapped[list["Entity"]] = relationship("Entity", back_populates="entity_type")
+    entities: Mapped[list["Entity"]] = relationship(
+        "Entity", back_populates="entity_type"
+    )

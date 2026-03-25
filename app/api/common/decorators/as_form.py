@@ -22,7 +22,9 @@ def as_form(cls: Type[BaseModel]):
             inspect.Parameter(
                 field_info.alias or field_name,
                 inspect.Parameter.POSITIONAL_ONLY,
-                default=Form(...) if field_info.is_required() else Form(field_info.default),
+                default=(
+                    Form(...) if field_info.is_required() else Form(field_info.default)
+                ),
                 annotation=annotation,
             )
         )
@@ -33,5 +35,5 @@ def as_form(cls: Type[BaseModel]):
     sig = inspect.signature(as_form_func)
     sig = sig.replace(parameters=new_parameters)
     as_form_func.__signature__ = sig  # type: ignore
-    setattr(cls, 'as_form', as_form_func)
+    setattr(cls, "as_form", as_form_func)
     return cls

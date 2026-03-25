@@ -5,7 +5,11 @@ from fastapi.params import Path, Body
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from app.api.v1.domains.countries.schemas.country import CountryCreate, CountryUpdate, Country as CountrySchema
+from app.api.v1.domains.countries.schemas.country import (
+    CountryCreate,
+    CountryUpdate,
+    Country as CountrySchema,
+)
 from app.api.v1.domains.countries.services.country import country as country_service
 from app.api.common.responses import not_found, found, updated, created, deleted
 from app.api.v1.shared.deps import get_db
@@ -15,25 +19,25 @@ router = APIRouter()
 
 @router.get("/", response_model=list[CountrySchema])
 def list_countries(
-        *,
-        db: Session = Depends(get_db),
-        relations: str = None,
+    *,
+    db: Session = Depends(get_db),
+    relations: str = None,
 ) -> Any:
     """
-        Lists all countries.
+    Lists all countries.
     """
-    relations = relations.split(',') if relations else []
+    relations = relations.split(",") if relations else []
     all_countries = country_service.get_multi(db, relations=relations)
     return found(obj_name="Countries", obj=all_countries)
 
 
 @router.post("/")
 def add_country(
-        db: Session = Depends(get_db),
-        country: CountryCreate = Body(...),
+    db: Session = Depends(get_db),
+    country: CountryCreate = Body(...),
 ):
     """
-        Add a Country.
+    Add a Country.
     """
     country_created = country_service.create(db, obj_in=country)
 
@@ -42,11 +46,11 @@ def add_country(
 
 @router.get("/{country_id}")
 def get_country(
-        db: Session = Depends(get_db),
-        country_id: int = Path(...),
-        relations: str = None,
+    db: Session = Depends(get_db),
+    country_id: int = Path(...),
+    relations: str = None,
 ) -> JSONResponse:
-    relations = relations.split(',') if relations else []
+    relations = relations.split(",") if relations else []
 
     country = country_service.get(db, item_id=country_id, relations=relations)
 
@@ -57,11 +61,9 @@ def get_country(
 
 
 @router.put("/{country_id}", response_model=CountrySchema)
-def update_country(*,
-                   db: Session = Depends(get_db),
-                   country_id: int,
-                   country_in: CountryUpdate
-                   ) -> JSONResponse:
+def update_country(
+    *, db: Session = Depends(get_db), country_id: int, country_in: CountryUpdate
+) -> JSONResponse:
     """
     Update a country.
     """
@@ -76,10 +78,7 @@ def update_country(*,
 
 
 @router.delete("/{country_id}", response_model=Any)
-def delete_country(*,
-                   db: Session = Depends(get_db),
-                   country_id: int
-                   ) -> Any:
+def delete_country(*, db: Session = Depends(get_db), country_id: int) -> Any:
     """
     Delete a country.
     """

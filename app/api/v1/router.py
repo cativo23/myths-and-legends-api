@@ -5,7 +5,13 @@ from app.api.v1.domains.auth.endpoints.auth import router as auth_router
 from app.api.v1.domains.countries.endpoints.countries import router as countries_router
 from app.api.v1.domains.users.endpoints.users import router as users_router
 from app.api.v1.domains.images.endpoints.images import router as images_router
-from app.api.v1.entities.endpoints import entities, locations, sources, categories, entity_types
+from app.api.v1.entities.endpoints import (
+    entities,
+    locations,
+    sources,
+    categories,
+    entity_types,
+)
 
 api_router = APIRouter()
 

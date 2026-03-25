@@ -10,17 +10,18 @@ from app.api.v1.domains.countries.schemas.country import CountryCreate, CountryU
 class CountryService(CRUDBaseService[Country, CountryCreate, CountryUpdate]):
 
     def create(self, db: Session, *, obj_in: CountryCreate) -> Country:
-        db_obj = Country(
-            name=obj_in.name,
-            status=obj_in.status
-        )
+        db_obj = Country(name=obj_in.name, status=obj_in.status)
         db.add(db_obj)
         db.commit()
         db.refresh(db_obj)
         return db_obj
 
     def update(
-        self, db: Session, *, db_obj: Country, obj_in: Union[CountryUpdate, Dict[str, Any]]
+        self,
+        db: Session,
+        *,
+        db_obj: Country,
+        obj_in: Union[CountryUpdate, Dict[str, Any]]
     ) -> Country:
         if isinstance(obj_in, dict):
             update_data = obj_in
@@ -37,7 +38,10 @@ class CountryService(CRUDBaseService[Country, CountryCreate, CountryUpdate]):
         query = db.query(self.model)
         if relations:
             from sqlalchemy.orm import selectinload
-            query = query.options(*[selectinload(getattr(self.model, r)) for r in relations])
+
+            query = query.options(
+                *[selectinload(getattr(self.model, r)) for r in relations]
+            )
         return query.all()
 
 

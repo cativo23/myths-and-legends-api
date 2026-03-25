@@ -15,6 +15,8 @@ class LocationService(CRUDBaseService[Location, LocationCreate, LocationUpdate])
 
     def get_by_department(self, db: Session, *, department: str) -> list[Location]:
         """Get all locations in a department"""
-        return db.query(self.model).filter(
-            Location.department.ilike(f"%{department}%")
-        ).all()
+        return (
+            db.query(self.model)
+            .filter(Location.department.ilike(f"%{department}%"))
+            .all()
+        )

@@ -12,7 +12,9 @@ class CategoryService(CRUDBaseService[Category, CategoryCreate, CategoryUpdate])
 
     def get_with_entities(self, db: Session, *, id: int) -> Category | None:
         """Get category with entities"""
-        stmt = select(Category).where(Category.id == id).options(
-            selectinload(Category.entities)
+        stmt = (
+            select(Category)
+            .where(Category.id == id)
+            .options(selectinload(Category.entities))
         )
         return db.execute(stmt).scalar_one_or_none()

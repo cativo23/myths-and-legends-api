@@ -66,19 +66,46 @@ def init_seed_data(db: Session):
         image_url=None,
         is_active=True,
         characteristics=[
-            Characteristic(type=CharacteristicType.APPEARANCE, description="Long black hair covering her face"),
-            Characteristic(type=CharacteristicType.APPEARANCE, description="Beautiful female figure from behind"),
-            Characteristic(type=CharacteristicType.APPEARANCE, description="Horse-like face when seen from front"),
-            Characteristic(type=CharacteristicType.ABILITY, description="Can shapeshift and appear beautiful"),
-            Characteristic(type=CharacteristicType.WEAKNESS, description="Cannot cross running water"),
+            Characteristic(
+                type=CharacteristicType.APPEARANCE,
+                description="Long black hair covering her face",
+            ),
+            Characteristic(
+                type=CharacteristicType.APPEARANCE,
+                description="Beautiful female figure from behind",
+            ),
+            Characteristic(
+                type=CharacteristicType.APPEARANCE,
+                description="Horse-like face when seen from front",
+            ),
+            Characteristic(
+                type=CharacteristicType.ABILITY,
+                description="Can shapeshift and appear beautiful",
+            ),
+            Characteristic(
+                type=CharacteristicType.WEAKNESS,
+                description="Cannot cross running water",
+            ),
         ],
         locations=[
-            Location(department="La Libertad", municipality="Talnique", place_description="Rivers and streams"),
-            Location(department="San Salvador", place_description="Lake Ilopango shores"),
+            Location(
+                department="La Libertad",
+                municipality="Talnique",
+                place_description="Rivers and streams",
+            ),
+            Location(
+                department="San Salvador", place_description="Lake Ilopango shores"
+            ),
         ],
         sources=[
-            Source(source_type=SourceType.ORAL_TRADITION, title="Salvadoran Folk Tales"),
-            Source(source_type=SourceType.BOOK, title="Leyendas Salvadoreñas", author="Various authors"),
+            Source(
+                source_type=SourceType.ORAL_TRADITION, title="Salvadoran Folk Tales"
+            ),
+            Source(
+                source_type=SourceType.BOOK,
+                title="Leyendas Salvadoreñas",
+                author="Various authors",
+            ),
         ],
     )
 
@@ -94,17 +121,33 @@ def init_seed_data(db: Session):
         image_url=None,
         is_active=True,
         characteristics=[
-            Characteristic(type=CharacteristicType.APPEARANCE, description="Disproportionately large head"),
-            Characteristic(type=CharacteristicType.APPEARANCE, description="Small body with child-like appearance"),
-            Characteristic(type=CharacteristicType.ABILITY, description="Can disappear and reappear at will"),
-            Characteristic(type=CharacteristicType.ABILITY, description="Superhuman strength despite small size"),
+            Characteristic(
+                type=CharacteristicType.APPEARANCE,
+                description="Disproportionately large head",
+            ),
+            Characteristic(
+                type=CharacteristicType.APPEARANCE,
+                description="Small body with child-like appearance",
+            ),
+            Characteristic(
+                type=CharacteristicType.ABILITY,
+                description="Can disappear and reappear at will",
+            ),
+            Characteristic(
+                type=CharacteristicType.ABILITY,
+                description="Superhuman strength despite small size",
+            ),
         ],
         locations=[
-            Location(department="San Miguel", place_description="Mountains and rural areas"),
+            Location(
+                department="San Miguel", place_description="Mountains and rural areas"
+            ),
             Location(department="Usulután", place_description="Coffee plantations"),
         ],
         sources=[
-            Source(source_type=SourceType.ORAL_TRADITION, title="Tales of El Cipitillo"),
+            Source(
+                source_type=SourceType.ORAL_TRADITION, title="Tales of El Cipitillo"
+            ),
         ],
     )
 
@@ -120,13 +163,25 @@ def init_seed_data(db: Session):
         image_url=None,
         is_active=True,
         characteristics=[
-            Characteristic(type=CharacteristicType.APPEARANCE, description="Large white dog with glowing eyes"),
-            Characteristic(type=CharacteristicType.APPEARANCE, description="Chains that rattle when he moves"),
-            Characteristic(type=CharacteristicType.ABILITY, description="Can sense evil and danger"),
-            Characteristic(type=CharacteristicType.ABILITY, description="Immune to physical harm"),
+            Characteristic(
+                type=CharacteristicType.APPEARANCE,
+                description="Large white dog with glowing eyes",
+            ),
+            Characteristic(
+                type=CharacteristicType.APPEARANCE,
+                description="Chains that rattle when he moves",
+            ),
+            Characteristic(
+                type=CharacteristicType.ABILITY, description="Can sense evil and danger"
+            ),
+            Characteristic(
+                type=CharacteristicType.ABILITY, description="Immune to physical harm"
+            ),
         ],
         sources=[
-            Source(source_type=SourceType.ORAL_TRADITION, title="The Legend of the Cadejos"),
+            Source(
+                source_type=SourceType.ORAL_TRADITION, title="The Legend of the Cadejos"
+            ),
         ],
     )
 
@@ -142,13 +197,25 @@ def init_seed_data(db: Session):
         image_url=None,
         is_active=True,
         characteristics=[
-            Characteristic(type=CharacteristicType.APPEARANCE, description="Large black dog with red eyes"),
-            Characteristic(type=CharacteristicType.APPEARANCE, description="Hooves instead of paws"),
-            Characteristic(type=CharacteristicType.ABILITY, description="Can breathe fire"),
-            Characteristic(type=CharacteristicType.WEAKNESS, description="Repelled by blessed objects"),
+            Characteristic(
+                type=CharacteristicType.APPEARANCE,
+                description="Large black dog with red eyes",
+            ),
+            Characteristic(
+                type=CharacteristicType.APPEARANCE, description="Hooves instead of paws"
+            ),
+            Characteristic(
+                type=CharacteristicType.ABILITY, description="Can breathe fire"
+            ),
+            Characteristic(
+                type=CharacteristicType.WEAKNESS,
+                description="Repelled by blessed objects",
+            ),
         ],
         sources=[
-            Source(source_type=SourceType.ORAL_TRADITION, title="The Legend of the Cadejos"),
+            Source(
+                source_type=SourceType.ORAL_TRADITION, title="The Legend of the Cadejos"
+            ),
         ],
     )
 
@@ -164,16 +231,34 @@ def init_seed_data(db: Session):
         image_url=None,
         is_active=True,
         characteristics=[
-            Characteristic(type=CharacteristicType.PHYSICAL, description="Height of 1,950 meters"),
-            Characteristic(type=CharacteristicType.PHYSICAL, description="Perfect cone shape"),
-            Characteristic(type=CharacteristicType.ABILITY, description="Continuous volcanic activity"),
+            Characteristic(
+                type=CharacteristicType.PHYSICAL, description="Height of 1,950 meters"
+            ),
+            Characteristic(
+                type=CharacteristicType.PHYSICAL, description="Perfect cone shape"
+            ),
+            Characteristic(
+                type=CharacteristicType.ABILITY,
+                description="Continuous volcanic activity",
+            ),
         ],
         locations=[
-            Location(department="Sonsonate", municipality="Sonsonate", place_description="Cordillera de Apaneca"),
+            Location(
+                department="Sonsonate",
+                municipality="Sonsonate",
+                place_description="Cordillera de Apaneca",
+            ),
         ],
         sources=[
-            Source(source_type=SourceType.DOCUMENT, title="Geological Survey of El Salvador"),
-            Source(source_type=SourceType.WEB, title="Smithsonian Global Volcanism Program", url="https://volcano.si.edu"),
+            Source(
+                source_type=SourceType.DOCUMENT,
+                title="Geological Survey of El Salvador",
+            ),
+            Source(
+                source_type=SourceType.WEB,
+                title="Smithsonian Global Volcanism Program",
+                url="https://volcano.si.edu",
+            ),
         ],
     )
 
@@ -189,17 +274,28 @@ def init_seed_data(db: Session):
         image_url=None,
         is_active=True,
         characteristics=[
-            Characteristic(type=CharacteristicType.APPEARANCE, description="Woman in white dress"),
-            Characteristic(type=CharacteristicType.APPEARANCE, description="Long flowing hair"),
-            Characteristic(type=CharacteristicType.ABILITY, description="Heart-wrenching cry heard from far away"),
-            Characteristic(type=CharacteristicType.WEAKNESS, description="Bound to bodies of water"),
+            Characteristic(
+                type=CharacteristicType.APPEARANCE, description="Woman in white dress"
+            ),
+            Characteristic(
+                type=CharacteristicType.APPEARANCE, description="Long flowing hair"
+            ),
+            Characteristic(
+                type=CharacteristicType.ABILITY,
+                description="Heart-wrenching cry heard from far away",
+            ),
+            Characteristic(
+                type=CharacteristicType.WEAKNESS, description="Bound to bodies of water"
+            ),
         ],
         locations=[
             Location(department="Santa Ana", place_description="Rivers and lakes"),
             Location(department="Chalatenango", place_description="Lempa River banks"),
         ],
         sources=[
-            Source(source_type=SourceType.ORAL_TRADITION, title="The Legend of La Llorona"),
+            Source(
+                source_type=SourceType.ORAL_TRADITION, title="The Legend of La Llorona"
+            ),
         ],
     )
 
@@ -215,11 +311,23 @@ def init_seed_data(db: Session):
         image_url=None,
         is_active=True,
         characteristics=[
-            Characteristic(type=CharacteristicType.APPEARANCE, description="Small humanoid, about 3 feet tall"),
-            Characteristic(type=CharacteristicType.APPEARANCE, description="Large sombrero hat"),
-            Characteristic(type=CharacteristicType.APPEARANCE, description="Backwards feet"),
-            Characteristic(type=CharacteristicType.ABILITY, description="Can become invisible"),
-            Characteristic(type=CharacteristicType.ABILITY, description="Whistles to attract attention"),
+            Characteristic(
+                type=CharacteristicType.APPEARANCE,
+                description="Small humanoid, about 3 feet tall",
+            ),
+            Characteristic(
+                type=CharacteristicType.APPEARANCE, description="Large sombrero hat"
+            ),
+            Characteristic(
+                type=CharacteristicType.APPEARANCE, description="Backwards feet"
+            ),
+            Characteristic(
+                type=CharacteristicType.ABILITY, description="Can become invisible"
+            ),
+            Characteristic(
+                type=CharacteristicType.ABILITY,
+                description="Whistles to attract attention",
+            ),
         ],
         locations=[
             Location(department="Morazán", place_description="Forests and mountains"),
@@ -242,21 +350,51 @@ def init_seed_data(db: Session):
         image_url=None,
         is_active=True,
         characteristics=[
-            Characteristic(type=CharacteristicType.APPEARANCE, description="Dressed in colonial-era clothing"),
-            Characteristic(type=CharacteristicType.APPEARANCE, description="Transparent, ghostly figures"),
-            Characteristic(type=CharacteristicType.WEAKNESS, description="Bound to their mansion"),
+            Characteristic(
+                type=CharacteristicType.APPEARANCE,
+                description="Dressed in colonial-era clothing",
+            ),
+            Characteristic(
+                type=CharacteristicType.APPEARANCE,
+                description="Transparent, ghostly figures",
+            ),
+            Characteristic(
+                type=CharacteristicType.WEAKNESS, description="Bound to their mansion"
+            ),
         ],
         locations=[
-            Location(department="Sonsonate", municipality="Sonsonate", place_description="Historic center mansion"),
+            Location(
+                department="Sonsonate",
+                municipality="Sonsonate",
+                place_description="Historic center mansion",
+            ),
         ],
         sources=[
-            Source(source_type=SourceType.BOOK, title="Legends of Sonsonate", author="Local historians"),
-            Source(source_type=SourceType.ORAL_TRADITION, title="The Curse of the Girola Family"),
+            Source(
+                source_type=SourceType.BOOK,
+                title="Legends of Sonsonate",
+                author="Local historians",
+            ),
+            Source(
+                source_type=SourceType.ORAL_TRADITION,
+                title="The Curse of the Girola Family",
+            ),
         ],
     )
 
     # Add all entities with their nested relations
-    db.add_all([ciguanaba, cipitillo, cadejo_blanco, cadejo_negro, volcan_izalco, la_llorona, el_duende, familia_girola])
+    db.add_all(
+        [
+            ciguanaba,
+            cipitillo,
+            cadejo_blanco,
+            cadejo_negro,
+            volcan_izalco,
+            la_llorona,
+            el_duende,
+            familia_girola,
+        ]
+    )
     db.flush()  # Get IDs for all entities
 
     # === Create Relations ===
@@ -291,6 +429,13 @@ def init_seed_data(db: Session):
     )
 
     # Add relations
-    db.add_all([relation_ciguanaba_cipitillo, relation_cipitillo_ciguanaba, relation_cadejos_enemies, relation_cadejos_enemies_reverse])
+    db.add_all(
+        [
+            relation_ciguanaba_cipitillo,
+            relation_cipitillo_ciguanaba,
+            relation_cadejos_enemies,
+            relation_cadejos_enemies_reverse,
+        ]
+    )
 
     db.commit()

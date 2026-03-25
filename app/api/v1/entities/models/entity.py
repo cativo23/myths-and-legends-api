@@ -20,9 +20,15 @@ class Entity(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    alternative_names: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
-    category_id: Mapped[int] = mapped_column(ForeignKey("category.id"), nullable=False, index=True)
-    entity_type_id: Mapped[int] = mapped_column(ForeignKey("entity_type.id"), nullable=False, index=True)
+    alternative_names: Mapped[list[str] | None] = mapped_column(
+        ARRAY(String), nullable=True
+    )
+    category_id: Mapped[int] = mapped_column(
+        ForeignKey("category.id"), nullable=False, index=True
+    )
+    entity_type_id: Mapped[int] = mapped_column(
+        ForeignKey("entity_type.id"), nullable=False, index=True
+    )
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     origin: Mapped[str | None] = mapped_column(Text, nullable=True)
     behavior: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -32,7 +38,9 @@ class Entity(Base):
 
     # Relationships
     category: Mapped["Category"] = relationship("Category", back_populates="entities")
-    entity_type: Mapped["EntityType"] = relationship("EntityType", back_populates="entities")
+    entity_type: Mapped["EntityType"] = relationship(
+        "EntityType", back_populates="entities"
+    )
     characteristics: Mapped[list["Characteristic"]] = relationship(
         "Characteristic", back_populates="entity", cascade="all, delete-orphan"
     )

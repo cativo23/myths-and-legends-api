@@ -23,6 +23,4 @@ class Characteristic(Base):
     # Relationships
     entity: Mapped["Entity"] = relationship("Entity", back_populates="characteristics")
 
-    __table_args__ = (
-        Index("ix_characteristic_entity_type", "entity_id", "type"),
-    )
+    __table_args__ = (Index("ix_characteristic_entity_type", "entity_id", "type"),)

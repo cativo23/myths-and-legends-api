@@ -27,11 +27,15 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """
         self.model = model
 
-    def get(self, db: Session, item_id: int, relations: List[str] = None) -> Optional[ModelType]:
+    def get(
+        self, db: Session, item_id: int, relations: List[str] = None
+    ) -> Optional[ModelType]:
         try:
             query = db.query(self.model).filter(self.model.id == item_id)
             if relations:
-                query = query.options(*[selectinload(getattr(self.model, r)) for r in relations])
+                query = query.options(
+                    *[selectinload(getattr(self.model, r)) for r in relations]
+                )
             return query.first()
         except ArgumentError as error:
             raise RelationshipNotFoundException(
@@ -39,13 +43,16 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             )
 
     def get_all(
-            self, db: Session,
-            relations: List[str] = None,
+        self,
+        db: Session,
+        relations: List[str] = None,
     ) -> AbstractPage:
         try:
             query = db.query(self.model)
             if relations:
-                query = query.options(*[selectinload(getattr(self.model, r)) for r in relations])
+                query = query.options(
+                    *[selectinload(getattr(self.model, r)) for r in relations]
+                )
             return paginate(query)
         except ArgumentError as error:
             raise RelationshipNotFoundException(
@@ -61,11 +68,11 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return db_obj
 
     def update(
-            self,
-            db: Session,
-            *,
-            db_obj: ModelType,
-            obj_in: Union[UpdateSchemaType, Dict[str, Any]]
+        self,
+        db: Session,
+        *,
+        db_obj: ModelType,
+        obj_in: Union[UpdateSchemaType, Dict[str, Any]]
     ) -> ModelType:
         obj_data = jsonable_encoder(db_obj)
         if isinstance(obj_in, dict):

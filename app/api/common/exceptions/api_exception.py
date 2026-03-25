@@ -7,7 +7,12 @@ from fastapi import Request, FastAPI, status
 
 
 class APIException(Exception):
-    def __init__(self, message: str, status_code: int = status.HTTP_400_BAD_REQUEST, data: Any = None):
+    def __init__(
+        self,
+        message: str,
+        status_code: int = status.HTTP_400_BAD_REQUEST,
+        data: Any = None,
+    ):
         self.message = message
         self.status = status_code
         self.data = data
@@ -15,7 +20,10 @@ class APIException(Exception):
 
 class ExistsException(APIException):
     def __init__(self, name: str):
-        super().__init__(message=f"{name} already exists", status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        super().__init__(
+            message=f"{name} already exists",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        )
 
 
 class NotFoundException(APIException):
@@ -32,7 +40,7 @@ class InactiveException(APIException):
 
 class RelationshipNotFoundException(APIException):
     def __init__(self, name: str):
-        super().__init__(message=f"Relationship \"{name}\" does not exist")
+        super().__init__(message=f'Relationship "{name}" does not exist')
         self.status = status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
@@ -41,9 +49,5 @@ def add_exception_handler(app: FastAPI) -> None:
     async def exists_exception_handler(request: Request, exc: APIException):
         return JSONResponse(
             status_code=exc.status,
-            content={
-                "status": exc.status,
-                "message": exc.message,
-                "data": exc.data
-            },
+            content={"status": exc.status, "message": exc.message, "data": exc.data},
         )

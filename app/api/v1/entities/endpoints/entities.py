@@ -8,7 +8,10 @@ from app.db.session import get_db
 from app.api.v1.entities.services.entity import EntityService
 from app.api.v1.entities.services.entity_relation import EntityRelationService
 from app.api.v1.entities.schemas.entity import Entity, EntityCreate, EntityUpdate
-from app.api.v1.entities.schemas.entity_with_relations import EntityWithRelations, EntityRelationSummary
+from app.api.v1.entities.schemas.entity_with_relations import (
+    EntityWithRelations,
+    EntityRelationSummary,
+)
 from app.api.v1.entities.enums import EntityTypeName, CategoryName
 
 router = APIRouter(prefix="/entities", tags=["entities"])
@@ -20,9 +23,15 @@ relation_service = EntityRelationService()
 @router.get("/", response_model=Page[Entity])
 def list_entities(
     db: Annotated[Session, Depends(get_db)],
-    entity_type: Annotated[EntityTypeName | None, Query(description="Filter by entity type")] = None,
-    category: Annotated[CategoryName | None, Query(description="Filter by category")] = None,
-    is_active: Annotated[bool | None, Query(description="Filter by active status")] = True,
+    entity_type: Annotated[
+        EntityTypeName | None, Query(description="Filter by entity type")
+    ] = None,
+    category: Annotated[
+        CategoryName | None, Query(description="Filter by category")
+    ] = None,
+    is_active: Annotated[
+        bool | None, Query(description="Filter by active status")
+    ] = True,
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 20,
 ):
@@ -37,6 +46,7 @@ def list_entities(
     )
     # Disable pagination check since we're using simple paginate
     from fastapi_pagination.utils import disable_installed_extensions_check
+
     disable_installed_extensions_check()
     return paginate(entities, Params(page=page, size=size))
 
@@ -76,7 +86,11 @@ def get_entity(
         relations_summary.append(
             EntityRelationSummary(
                 id=r.id,
-                relation_type=r.relation_type if isinstance(r.relation_type, str) else r.relation_type.value,
+                relation_type=(
+                    r.relation_type
+                    if isinstance(r.relation_type, str)
+                    else r.relation_type.value
+                ),
                 description=r.description,
                 related_entity_id=related_entity.id,
                 related_entity_name=related_entity.name,
@@ -165,7 +179,11 @@ def get_entity_relations(
         relations_summary.append(
             EntityRelationSummary(
                 id=r.id,
-                relation_type=r.relation_type if isinstance(r.relation_type, str) else r.relation_type.value,
+                relation_type=(
+                    r.relation_type
+                    if isinstance(r.relation_type, str)
+                    else r.relation_type.value
+                ),
                 description=r.description,
                 related_entity_id=related_entity.id,
                 related_entity_name=related_entity.name,
