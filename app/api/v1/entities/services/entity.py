@@ -10,8 +10,7 @@ from app.api.v1.entities.enums import EntityTypeName, CategoryName
 
 
 class EntityService(CRUDBaseService[Entity, EntityCreate, EntityUpdate]):
-    def __init__(self):
-        super().__init__(Entity)
+    """Service for Entity CRUD operations."""
 
     def _get_base_query(self) -> Select:
         """Build base query with common eager loading"""

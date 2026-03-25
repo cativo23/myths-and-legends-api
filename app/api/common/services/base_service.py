@@ -4,6 +4,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi_pagination.bases import AbstractPage
 from fastapi_pagination.ext.sqlalchemy import paginate
 from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.exc import ArgumentError
 from sqlalchemy.orm import Session, selectinload
 
@@ -16,27 +17,50 @@ UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
 
 class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
+    """
+    SQLAlchemy 2.0 CRUD Service with default methods for Create, Read, Update, Delete.
+
+    **Parameters:**
+    - `model`: A SQLAlchemy model class
+    - `schema`: A Pydantic model (schema) class
+    """
+
     def __init__(self, model: Type[ModelType]):
-        """
-        CRUD Service object with default methods to Create, Read, Update, Delete (CRUD).
-
-        **Parameters:**
-
-        * `model`: A SQLAlchemy model class
-        * `schema`: A Pydantic model (schema) class
-        """
         self.model = model
 
+    def _build_query(self, relations: List[str] | None = None):
+        """Build a select query with optional eager loading."""
+        stmt = select(self.model)
+        if relations:
+            stmt = stmt.options(
+                *[selectinload(getattr(self.model, r)) for r in relations]
+            )
+        return stmt
+
     def get(
-        self, db: Session, item_id: int, relations: List[str] = None
+        self, db: Session, item_id: int, relations: List[str] | None = None
     ) -> Optional[ModelType]:
+        """Get a single item by ID with optional relations."""
         try:
-            query = db.query(self.model).filter(self.model.id == item_id)
-            if relations:
-                query = query.options(
-                    *[selectinload(getattr(self.model, r)) for r in relations]
-                )
-            return query.first()
+            stmt = self._build_query(relations).where(self.model.id == item_id)
+            return db.execute(stmt).scalar_one_or_none()
+        except ArgumentError as error:
+            raise RelationshipNotFoundException(
+                name=error.args[0].split('"')[1],
+            )
+
+    def get_multi(
+        self,
+        db: Session,
+        *,
+        skip: int = 0,
+        limit: int = 100,
+        relations: List[str] | None = None,
+    ) -> list[ModelType]:
+        """Get multiple items with pagination and optional relations."""
+        try:
+            stmt = self._build_query(relations).offset(skip).limit(limit)
+            return db.execute(stmt).scalars().all()
         except ArgumentError as error:
             raise RelationshipNotFoundException(
                 name=error.args[0].split('"')[1],
@@ -45,21 +69,19 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def get_all(
         self,
         db: Session,
-        relations: List[str] = None,
+        relations: List[str] | None = None,
     ) -> AbstractPage:
+        """Get all items with pagination (fastapi-pagination)."""
         try:
-            query = db.query(self.model)
-            if relations:
-                query = query.options(
-                    *[selectinload(getattr(self.model, r)) for r in relations]
-                )
-            return paginate(query)
+            stmt = self._build_query(relations)
+            return paginate(db, stmt)
         except ArgumentError as error:
             raise RelationshipNotFoundException(
                 name=error.args[0].split('"')[1],
             )
 
     def create(self, db: Session, *, obj_in: CreateSchemaType) -> ModelType:
+        """Create a new item."""
         obj_in_data = jsonable_encoder(obj_in)
         db_obj = self.model(**obj_in_data)
         db.add(db_obj)
@@ -72,8 +94,9 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db: Session,
         *,
         db_obj: ModelType,
-        obj_in: Union[UpdateSchemaType, Dict[str, Any]]
+        obj_in: Union[UpdateSchemaType, Dict[str, Any]],
     ) -> ModelType:
+        """Update an existing item."""
         obj_data = jsonable_encoder(db_obj)
         if isinstance(obj_in, dict):
             update_data = obj_in
@@ -88,13 +111,13 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return db_obj
 
     def remove(self, db: Session, *, item_id: int) -> ModelType:
-        obj = db.query(self.model).get(item_id)
-        db.delete(obj)
-        db.commit()
+        """Delete an item by ID."""
+        obj = self.get(db, item_id=item_id)
+        if obj:
+            db.delete(obj)
+            db.commit()
         return obj
 
     def validate_existence(self, db: Session, *, item_id: int) -> Optional[ModelType]:
-        db_obj = self.get(db, item_id=item_id)
-        if not db_obj:
-            return None
-        return db_obj
+        """Validate that an item exists by ID."""
+        return self.get(db, item_id=item_id)

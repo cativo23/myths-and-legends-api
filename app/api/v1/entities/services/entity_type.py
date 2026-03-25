@@ -9,8 +9,7 @@ from app.api.v1.entities.schemas.entity_type import EntityTypeCreate, EntityType
 class EntityTypeService(
     CRUDBaseService[EntityType, EntityTypeCreate, EntityTypeUpdate]
 ):
-    def __init__(self):
-        super().__init__(EntityType)
+    """Service for EntityType CRUD operations."""
 
     def get_with_entities(self, db: Session, *, id: int) -> EntityType | None:
         """Get entity type with entities"""

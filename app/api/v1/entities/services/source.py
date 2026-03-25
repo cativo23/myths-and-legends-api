@@ -6,8 +6,7 @@ from app.api.v1.entities.schemas.source import SourceCreate, SourceUpdate
 
 
 class SourceService(CRUDBaseService[Source, SourceCreate, SourceUpdate]):
-    def __init__(self):
-        super().__init__(Source)
+    """Service for Source CRUD operations."""
 
     def get_by_entity(self, db: Session, *, entity_id: int) -> list[Source]:
         """Get all sources for an entity"""

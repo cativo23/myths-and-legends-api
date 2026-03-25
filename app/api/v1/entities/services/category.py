@@ -7,8 +7,7 @@ from app.api.v1.entities.schemas.category import CategoryCreate, CategoryUpdate
 
 
 class CategoryService(CRUDBaseService[Category, CategoryCreate, CategoryUpdate]):
-    def __init__(self):
-        super().__init__(Category)
+    """Service for Category CRUD operations."""
 
     def get_with_entities(self, db: Session, *, id: int) -> Category | None:
         """Get category with entities"""

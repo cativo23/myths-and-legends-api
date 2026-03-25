@@ -1,27 +1,33 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from sqlalchemy.orm import Session
 
-from app.db.session import get_db
-from app.api.v1.entities.services.source import SourceService
+from app.api.v1.shared.deps import get_db
+from app.api.v1.entities.services import source
 from app.api.v1.entities.models.source import Source
 from app.api.v1.entities.schemas.source import Source as SourceSchema
 from app.api.v1.entities.enums import SourceType
 
 router = APIRouter(prefix="/sources", tags=["sources"])
 
-source_service = SourceService()
-
 
 @router.get("/", response_model=list[SourceSchema])
-def list_sources(
+async def list_sources(
     db: Annotated[Session, Depends(get_db)],
     source_type: Annotated[
         SourceType | None, Query(description="Filter by source type")
     ] = None,
+    sort: Annotated[str | None, Query(description="Sort field")] = "name",
+    order: Annotated[str, Query(description="Sort order")] = "asc",
 ):
     """List all sources, optionally filtered by type"""
+    query = db.query(Source)
     if source_type:
-        return db.query(Source).filter(Source.source_type == source_type).all()
-    return db.query(Source).all()
+        query = query.filter(Source.source_type == source_type)
+    sources = query.all()
+
+    # Sort results
+    if order.lower() == "desc":
+        return sorted(sources, key=lambda x: getattr(x, sort, x.id), reverse=True)
+    return sorted(sources, key=lambda x: getattr(x, sort, x.id))

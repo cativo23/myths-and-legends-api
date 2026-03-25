@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional, Union
 
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.orm import Session, selectinload
 
 from app.api.common.services import CRUDBaseService
 from app.api.v1.domains.countries.models.country import Country
@@ -8,8 +9,10 @@ from app.api.v1.domains.countries.schemas.country import CountryCreate, CountryU
 
 
 class CountryService(CRUDBaseService[Country, CountryCreate, CountryUpdate]):
+    """Service for Country CRUD operations."""
 
     def create(self, db: Session, *, obj_in: CountryCreate) -> Country:
+        """Create a new country."""
         db_obj = Country(name=obj_in.name, status=obj_in.status)
         db.add(db_obj)
         db.commit()
@@ -21,8 +24,9 @@ class CountryService(CRUDBaseService[Country, CountryCreate, CountryUpdate]):
         db: Session,
         *,
         db_obj: Country,
-        obj_in: Union[CountryUpdate, Dict[str, Any]]
+        obj_in: Union[CountryUpdate, Dict[str, Any]],
     ) -> Country:
+        """Update a country."""
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
@@ -32,17 +36,13 @@ class CountryService(CRUDBaseService[Country, CountryCreate, CountryUpdate]):
     def get_multi(
         self, db: Session, *, relations: Optional[List[str]] = None
     ) -> List[Country]:
-        """
-        Get multiple countries.
-        """
-        query = db.query(self.model)
+        """Get multiple countries with optional relations."""
+        stmt = select(Country)
         if relations:
-            from sqlalchemy.orm import selectinload
-
-            query = query.options(
-                *[selectinload(getattr(self.model, r)) for r in relations]
+            stmt = stmt.options(
+                *[selectinload(getattr(Country, r)) for r in relations]
             )
-        return query.all()
+        return db.execute(stmt).scalars().all()
 
 
 country = CountryService(Country)

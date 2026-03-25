@@ -11,8 +11,7 @@ from app.api.v1.entities.schemas.characteristic import (
 class CharacteristicService(
     CRUDBaseService[Characteristic, CharacteristicCreate, CharacteristicUpdate]
 ):
-    def __init__(self):
-        super().__init__(Characteristic)
+    """Service for Characteristic CRUD operations."""
 
     def get_by_entity(self, db: Session, *, entity_id: int) -> list[Characteristic]:
         """Get all characteristics for an entity"""

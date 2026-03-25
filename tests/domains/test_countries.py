@@ -88,8 +88,8 @@ class TestCountriesEndpoints:
         response = client.get("/api/v1/countries/")
         assert response.status_code == 200
         data = response.json()
-        # All endpoints return ApiResponse wrapper with "data" field
-        assert data["data"] == []
+        # Direct response (no ApiResponse wrapper)
+        assert data == []
 
     def test_list_countries(self, client: TestClient, db: Session):
         """Test listing countries with data."""
@@ -103,7 +103,7 @@ class TestCountriesEndpoints:
         response = client.get("/api/v1/countries/")
         assert response.status_code == 200
         data = response.json()
-        assert len(data["data"]) == 2
+        assert len(data) == 2
 
     def test_create_country(self, client: TestClient):
         """Test creating a country."""
@@ -113,8 +113,8 @@ class TestCountriesEndpoints:
         )
         assert response.status_code == 201
         data = response.json()
-        assert data["data"]["name"] == "El Salvador"
-        assert data["data"]["status"] is True
+        assert data["name"] == "El Salvador"
+        assert data["status"] is True
 
     def test_get_country_by_id(self, client: TestClient, db: Session):
         """Test getting a country by ID."""
@@ -125,14 +125,14 @@ class TestCountriesEndpoints:
         response = client.get(f"/api/v1/countries/{country.id}")
         assert response.status_code == 200
         data = response.json()
-        assert data["data"]["name"] == "Honduras"
+        assert data["name"] == "Honduras"
 
     def test_get_country_not_found(self, client: TestClient):
         """Test getting a non-existent country."""
         response = client.get("/api/v1/countries/999")
         assert response.status_code == 404
         data = response.json()
-        assert data["data"] is None
+        assert "detail" in data
 
     def test_update_country(self, client: TestClient, db: Session):
         """Test updating a country."""
@@ -146,7 +146,7 @@ class TestCountriesEndpoints:
         )
         assert response.status_code == 200
         data = response.json()
-        assert data["data"]["name"] == "Republic of Nicaragua"
+        assert data["name"] == "Republic of Nicaragua"
 
     def test_delete_country(self, client: TestClient, db: Session):
         """Test deleting a country."""
@@ -155,7 +155,7 @@ class TestCountriesEndpoints:
         db.commit()
 
         response = client.delete(f"/api/v1/countries/{country.id}")
-        assert response.status_code == 200
+        assert response.status_code == 204
 
         # Verify deletion
         response = client.get(f"/api/v1/countries/{country.id}")

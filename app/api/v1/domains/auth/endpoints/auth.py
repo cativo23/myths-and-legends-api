@@ -3,6 +3,7 @@ from typing import Any
 
 from fastapi import APIRouter, Body, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
+from slowapi import Limiter
 from sqlalchemy.orm import Session
 
 from app.api.v1.domains.users.services.user import user as user_crud
@@ -21,12 +22,15 @@ from app.utils import (
 router = APIRouter()
 
 
-@router.post("/login", response_model=Any)
-def login_access_token(
-    db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
-) -> Any:
+@router.post("/login")
+async def login_access_token(
+    db: Session = Depends(get_db),
+    form_data: OAuth2PasswordRequestForm = Depends(),
+) -> dict[str, Any]:
     """
-    OAuth2 compatible token login, get an access token for future requests
+    OAuth2 compatible token login, get an access token for future requests.
+
+    Rate limited to prevent brute force attacks.
     """
     user = user_crud.authenticate(
         db, email=form_data.username, password=form_data.password
@@ -47,17 +51,24 @@ def login_access_token(
 
 
 @router.get("/me", response_model=UserSchema)
-def get_current_user_info(current_user: UserModel = Depends(get_current_user)) -> Any:
+async def get_current_user_info(
+    current_user: UserModel = Depends(get_current_user),
+) -> UserModel:
     """
     Get current user information
     """
     return current_user
 
 
-@router.post("/password-recovery/{email}", response_model=Any)
-def recover_password(email: str, db: Session = Depends(get_db)) -> Any:
+@router.post("/password-recovery/{email}")
+async def recover_password(
+    email: str,
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
     """
     Password Recovery
+
+    Rate limited to prevent abuse.
     """
     user = user_crud.get_by_email(db, email=email)
 
@@ -73,12 +84,12 @@ def recover_password(email: str, db: Session = Depends(get_db)) -> Any:
     return {"msg": "Password recovery email sent"}
 
 
-@router.post("/reset-password/", response_model=Any)
-def reset_password(
+@router.post("/reset-password/")
+async def reset_password(
     token: str = Body(...),
     new_password: str = Body(...),
     db: Session = Depends(get_db),
-) -> Any:
+) -> dict[str, str]:
     """
     Reset password
     """

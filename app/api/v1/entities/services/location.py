@@ -6,8 +6,7 @@ from app.api.v1.entities.schemas.location import LocationCreate, LocationUpdate
 
 
 class LocationService(CRUDBaseService[Location, LocationCreate, LocationUpdate]):
-    def __init__(self):
-        super().__init__(Location)
+    """Service for Location CRUD operations."""
 
     def get_by_entity(self, db: Session, *, entity_id: int) -> list[Location]:
         """Get all locations for an entity"""

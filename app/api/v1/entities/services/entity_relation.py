@@ -12,8 +12,7 @@ from app.api.v1.entities.schemas.entity_relation import (
 class EntityRelationService(
     CRUDBaseService[EntityRelation, EntityRelationCreate, EntityRelationUpdate]
 ):
-    def __init__(self):
-        super().__init__(EntityRelation)
+    """Service for EntityRelation CRUD operations."""
 
     def get_by_entity(self, db: Session, *, entity_id: int) -> list[EntityRelation]:
         """Get all relations for an entity (both directions)"""

@@ -1,5 +1,6 @@
 from typing import Any, Dict, Optional, Union
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.security import get_password_hash, verify_password
@@ -9,8 +10,10 @@ from app.api.v1.domains.users.schemas.user import UserCreate, UserUpdate
 
 
 class UserService(CRUDBaseService[User, UserCreate, UserUpdate]):
+    """Service for User CRUD operations."""
 
     def create(self, db: Session, *, obj_in: UserCreate) -> User:
+        """Create a new user."""
         db_obj = User(
             email=obj_in.email,
             hashed_password=get_password_hash(obj_in.password),
@@ -23,8 +26,13 @@ class UserService(CRUDBaseService[User, UserCreate, UserUpdate]):
         return db_obj
 
     def update(
-        self, db: Session, *, db_obj: User, obj_in: Union[UserUpdate, Dict[str, Any]]
+        self,
+        db: Session,
+        *,
+        db_obj: User,
+        obj_in: Union[UserUpdate, Dict[str, Any]],
     ) -> User:
+        """Update a user."""
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
@@ -35,7 +43,10 @@ class UserService(CRUDBaseService[User, UserCreate, UserUpdate]):
             update_data["hashed_password"] = hashed_password
         return super().update(db, db_obj=db_obj, obj_in=update_data)
 
-    def authenticate(self, db: Session, *, email: str, password: str) -> Optional[User]:
+    def authenticate(
+        self, db: Session, *, email: str, password: str
+    ) -> Optional[User]:
+        """Authenticate user by email and password."""
         user_by_email = self.get_by_email(db, email=email)
         if not user_by_email:
             return None
@@ -45,15 +56,19 @@ class UserService(CRUDBaseService[User, UserCreate, UserUpdate]):
 
     @staticmethod
     def is_active(user_to_check: User) -> bool:
+        """Check if user is active."""
         return user_to_check.is_active
 
     @staticmethod
     def is_superuser(user_to_check: User) -> bool:
+        """Check if user is superuser."""
         return user_to_check.is_superuser
 
     @staticmethod
     def get_by_email(db: Session, *, email: str) -> Optional[User]:
-        return db.query(User).filter(User.email == email).first()
+        """Get user by email address."""
+        stmt = select(User).where(User.email == email)
+        return db.execute(stmt).scalar_one_or_none()
 
 
 user = UserService(User)
