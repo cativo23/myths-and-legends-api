@@ -10,10 +10,10 @@ import sys
 import time
 from typing import Any
 
-from pythonjsonlogger import jsonlogger
+from pythonjsonlogger import json
 
 
-class CustomJsonFormatter(jsonlogger.JsonFormatter):
+class CustomJsonFormatter(json.JsonFormatter):
     """Custom JSON formatter with additional fields."""
 
     def add_fields(
