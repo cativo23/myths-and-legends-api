@@ -17,8 +17,8 @@ def not_found(obj_name: str = None):
         content=ApiResponse(
             message="The %s with this id does not exist in the system." % obj_name,
             data=None,
-            status=status.HTTP_404_NOT_FOUND
-        ).dict()
+            status=status.HTTP_404_NOT_FOUND,
+        ).dict(),
     )
 
 
@@ -28,8 +28,8 @@ def found(obj_name: str = None, obj: ModelType = None):
         content=ApiResponse(
             message="The %s is returned correctly" % obj_name,
             data=jsonable_encoder(obj),
-            status=status.HTTP_200_OK
-        ).dict()
+            status=status.HTTP_200_OK,
+        ).dict(),
     )
 
 
@@ -39,8 +39,8 @@ def created(obj_name: str = None, obj: ModelType = None):
         content=ApiResponse(
             message="The %s is created correctly" % obj_name,
             data=jsonable_encoder(obj),
-            status=status.HTTP_201_CREATED
-        ).dict()
+            status=status.HTTP_201_CREATED,
+        ).dict(),
     )
 
 
@@ -50,8 +50,8 @@ def updated(obj_name: str = None, obj: ModelType = None):
         content=ApiResponse(
             message="The %s is updated correctly" % obj_name,
             data=jsonable_encoder(obj),
-            status=status.HTTP_200_OK
-        ).dict()
+            status=status.HTTP_200_OK,
+        ).dict(),
     )
 
 
@@ -61,6 +61,6 @@ def deleted(obj_name: str = None):
         content=ApiResponse(
             message="The %s is deleted correctly" % obj_name,
             data=None,
-            status=status.HTTP_200_OK
-        ).dict()
+            status=status.HTTP_200_OK,
+        ).dict(),
     )
