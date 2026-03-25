@@ -21,7 +21,17 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
     SERVER_HOST: str = "http://localhost"
     # BACKEND_CORS_ORIGINS is a JSON-formatted list of origins
-    BACKEND_CORS_ORIGINS: List[str] = []
+    BACKEND_CORS_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:8080",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+    ]
+
+    # Rate limiting
+    RATE_LIMIT_PER_MINUTE: int = 60
+    RATE_LIMIT_AUTH_PER_MINUTE: int = 10
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
@@ -51,7 +61,7 @@ class Settings(BaseSettings):
             username=values.get("POSTGRES_USER", "myths"),
             password=values.get("POSTGRES_PASSWORD", "myths"),
             host=values.get("POSTGRES_HOST", "localhost"),
-            path=f"/{values.get('POSTGRES_DB') or 'myths'}",
+            path=f"{values.get('POSTGRES_DB') or 'myths'}",
         )
 
     SMTP_TLS: bool = True

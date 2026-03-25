@@ -283,6 +283,18 @@ elif [ "$1" == "redis" ] ; then
         myths_is_not_running
     fi
 
+# Seed the database...
+elif [ "$1" == "seed" ]; then
+    shift 1
+
+    if [ "$EXEC" == "yes" ]; then
+        ARGS+=(exec -u myths)
+        [ ! -t 0 ] && ARGS+=(-T)
+        ARGS+=("$APP_SERVICE" python -c "from app.api.v1.entities.seed import init_seed_data; from app.db.session import SessionLocal; db = SessionLocal(); init_seed_data(db); db.close()")
+    else
+        myths_is_not_running
+    fi
+
 # Share the site...
 elif [ "$1" == "share" ]; then
     shift 1

@@ -10,6 +10,18 @@ app = FastAPI(
     title=settings.PROJECT_NAME, openapi_url=f"/api/v{settings.API_VERSION}/openapi.json"
 )
 
+# Set all CORS enabled
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        str(origin).replace("/", "")
+        for origin in settings.BACKEND_CORS_ORIGINS
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(api_router, prefix=f"/api/v{settings.API_VERSION}")
 
 add_pagination(app)
