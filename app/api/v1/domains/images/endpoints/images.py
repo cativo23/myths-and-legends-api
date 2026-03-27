@@ -3,7 +3,7 @@ from os import getcwd
 from fastapi.responses import FileResponse
 from pathlib import Path
 
-router = APIRouter(prefix="/images", tags=["images"])
+router = APIRouter(tags=["images"])
 
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"}
 
