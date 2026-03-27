@@ -3,6 +3,7 @@ from typing import Any
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.api.v1.domains.users.services.user import user as user_crud
@@ -22,6 +23,12 @@ from app.utils import (
 router = APIRouter()
 
 
+class LoginRequest(BaseModel):
+    """Login request schema for OpenAPI documentation."""
+    username: str = Field(..., description="User email address", examples=["user@example.com"])
+    password: str = Field(..., description="User password", examples=["SecureP@ss123"])
+
+
 @router.post(
     "/login",
     response_model=Token,
@@ -30,6 +37,34 @@ router = APIRouter()
     responses={
         200: {"description": "Successful login, token returned"},
         400: {"description": "Incorrect email/password or inactive user"},
+    },
+    openapi_extra={
+        "requestBody": {
+            "required": True,
+            "content": {
+                "application/x-www-form-urlencoded": {
+                    "schema": {
+                        "type": "object",
+                        "required": ["username", "password"],
+                        "properties": {
+                            "username": {
+                                "type": "string",
+                                "title": "Username",
+                                "description": "User email address",
+                                "example": "user@example.com"
+                            },
+                            "password": {
+                                "type": "string",
+                                "title": "Password",
+                                "description": "User password",
+                                "format": "password",
+                                "example": "SecureP@ss123"
+                            },
+                        },
+                    }
+                }
+            }
+        }
     },
 )
 async def login_access_token(
