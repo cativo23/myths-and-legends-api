@@ -21,7 +21,50 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
+    description="""
+## Overview
+
+The Myths and Legends API is a comprehensive REST API for managing mythological characters, creatures, places, and objects from various cultures and mythologies around the world.
+
+## Features
+
+- **Entities Management**: CRUD operations for mythological entities (characters, creatures, places, objects)
+- **Countries**: Manage countries and their associated myths
+- **Categories & Types**: Classify entities by category (Deity, Creature, Place) and mythological origin (Egyptian, Greek, Norse, etc.)
+- **Relations**: Define relationships between entities (parent-child, siblings, enemies)
+- **Characteristics**: Store powers, weaknesses, and physical features
+- **Locations**: Geographic places associated with myths
+- **Sources**: Reference original materials (books, manuscripts, oral traditions)
+- **Authentication**: JWT-based authentication with OAuth2
+- **User Management**: Role-based access control with superuser privileges
+- **Rate Limiting**: Protection against brute force attacks
+- **Security Headers**: Enhanced HTTP security headers
+
+## Authentication
+
+Use the `/api/v1/auth/login` endpoint to obtain an access token. Include the token in the `Authorization` header:
+
+```
+Authorization: Bearer <your_token>
+```
+
+## Rate Limiting
+
+- General endpoints: 60 requests per minute
+- Authentication endpoints: 10 requests per minute
+    """,
+    version="1.0.0",
     openapi_url=f"/api/v{settings.API_VERSION}/openapi.json",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    contact={
+        "name": "Carlos Cativo",
+        "email": "cativo23.kt@gmail.com",
+    },
+    license_info={
+        "name": "MIT License",
+        "url": "https://opensource.org/licenses/MIT",
+    },
 )
 
 # Request ID (must be first to capture all requests)

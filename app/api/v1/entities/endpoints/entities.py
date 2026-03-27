@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from fastapi_pagination import Page, Params, paginate
@@ -16,24 +16,35 @@ from app.api.v1.entities.enums import EntityTypeName, CategoryName
 router = APIRouter(prefix="/entities", tags=["entities"])
 
 
-@router.get("/", response_model=Page[Entity])
+@router.get(
+    "/",
+    response_model=Page[Entity],
+    summary="List Entities",
+    description="Retrieve a paginated list of mythological entities with optional filters.",
+    responses={
+        200: {"description": "Successful retrieval of entities"},
+    },
+)
 async def list_entities(
     db: Annotated[Session, Depends(get_db)],
     entity_type: Annotated[
-        EntityTypeName | None, Query(description="Filter by entity type")
+        EntityTypeName | None,
+        Query(description="Filter by entity type (e.g., Egyptian, Greek, Norse)", examples=["Egyptian", "Greek"])
     ] = None,
     category: Annotated[
-        CategoryName | None, Query(description="Filter by category")
+        CategoryName | None,
+        Query(description="Filter by category (e.g., Deity, Creature, Place)", examples=["Deity", "Creature"])
     ] = None,
     is_active: Annotated[
-        bool | None, Query(description="Filter by active status")
+        bool | None,
+        Query(description="Filter by active status")
     ] = True,
-    page: Annotated[int, Query(ge=1)] = 1,
-    size: Annotated[int, Query(ge=1, le=100)] = 20,
+    page: Annotated[int, Query(ge=1, description="Page number")] = 1,
+    size: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 20,
     sort: Annotated[str | None, Query(description="Sort field")] = "name",
-    order: Annotated[str, Query(description="Sort order")] = "asc",
+    order: Annotated[str, Query(description="Sort order (asc, desc)")] = "asc",
 ):
-    """List all entities with optional filters"""
+    """List all entities with optional filters and pagination."""
     entities = entity.get_multi(
         db,
         entity_type=entity_type,
@@ -45,21 +56,38 @@ async def list_entities(
     return paginate(entities, Params(page=page, size=size))
 
 
-@router.get("/search", response_model=list[Entity])
+@router.get(
+    "/search",
+    response_model=List[Entity],
+    summary="Search Entities",
+    description="Search entities by name, description, or origin using a free-text query.",
+    responses={
+        200: {"description": "Successful search results"},
+    },
+)
 async def search_entities(
     db: Annotated[Session, Depends(get_db)],
-    q: Annotated[str, Query(min_length=1, description="Search term")],
+    q: Annotated[str, Query(min_length=1, description="Search term (searches name, description, and origin)", examples=["Zeus", "underworld", "god of thunder"])],
 ):
-    """Search entities by name, description, or origin"""
+    """Search entities by name, description, or origin."""
     return entity.search(db, term=q)
 
 
-@router.get("/{id}", response_model=EntityWithRelations)
+@router.get(
+    "/{id}",
+    response_model=EntityWithRelations,
+    summary="Get Entity",
+    description="Retrieve a specific entity by ID with all its nested relations (category, type, characteristics, locations, sources, and entity relations).",
+    responses={
+        200: {"description": "Successful retrieval of entity with relations"},
+        404: {"description": "Entity not found"},
+    },
+)
 async def get_entity(
     db: Annotated[Session, Depends(get_db)],
-    id: Annotated[int, Path(gt=0)],
+    id: Annotated[int, Path(gt=0, description="Entity ID", examples=[1])],
 ):
-    """Get entity by ID with all nested relations"""
+    """Get entity by ID with all nested relations."""
     db_entity = entity.get(db, id=id)
     if not db_entity:
         raise HTTPException(status_code=404, detail="Entity not found")
@@ -113,46 +141,83 @@ async def get_entity(
     )
 
 
-@router.post("/", response_model=Entity, status_code=201)
+@router.post(
+    "/",
+    response_model=Entity,
+    status_code=201,
+    summary="Create Entity",
+    description="Create a new mythological entity.",
+    responses={
+        201: {"description": "Entity successfully created"},
+        400: {"description": "Invalid input data"},
+    },
+)
 async def create_entity(
     db: Annotated[Session, Depends(get_db)],
     entity_in: EntityCreate,
 ):
-    """Create a new entity"""
+    """Create a new entity."""
     return entity.create(db, obj_in=entity_in)
 
 
-@router.put("/{id}", response_model=Entity)
+@router.put(
+    "/{id}",
+    response_model=Entity,
+    summary="Update Entity",
+    description="Update an existing entity by ID.",
+    responses={
+        200: {"description": "Entity successfully updated"},
+        404: {"description": "Entity not found"},
+    },
+)
 async def update_entity(
     db: Annotated[Session, Depends(get_db)],
-    id: Annotated[int, Path(gt=0)],
+    id: Annotated[int, Path(gt=0, description="Entity ID", examples=[1])],
     entity_in: EntityUpdate,
 ):
-    """Update an entity"""
+    """Update an entity."""
     db_entity = entity.get(db, id=id)
     if not db_entity:
         raise HTTPException(status_code=404, detail="Entity not found")
     return entity.update(db, db_obj=db_entity, obj_in=entity_in)
 
 
-@router.delete("/{id}", status_code=204)
+@router.delete(
+    "/{id}",
+    status_code=204,
+    summary="Delete Entity",
+    description="Delete an entity by ID.",
+    responses={
+        204: {"description": "Entity successfully deleted"},
+        404: {"description": "Entity not found"},
+    },
+)
 async def delete_entity(
     db: Annotated[Session, Depends(get_db)],
-    id: Annotated[int, Path(gt=0)],
+    id: Annotated[int, Path(gt=0, description="Entity ID", examples=[1])],
 ):
-    """Delete an entity"""
+    """Delete an entity."""
     db_entity = entity.get(db, id=id)
     if not db_entity:
         raise HTTPException(status_code=404, detail="Entity not found")
     entity.remove(db, id=id)
 
 
-@router.get("/{id}/relations", response_model=list[EntityRelationSummary])
+@router.get(
+    "/{id}/relations",
+    response_model=List[EntityRelationSummary],
+    summary="Get Entity Relations",
+    description="Retrieve all relations for a specific entity (e.g., parent-child, siblings, enemies).",
+    responses={
+        200: {"description": "Successful retrieval of relations"},
+        404: {"description": "Entity not found"},
+    },
+)
 async def get_entity_relations(
     db: Annotated[Session, Depends(get_db)],
-    id: Annotated[int, Path(gt=0)],
+    id: Annotated[int, Path(gt=0, description="Entity ID", examples=[1])],
 ):
-    """Get all relations for an entity"""
+    """Get all relations for an entity."""
     db_entity = entity.get(db, id=id)
     if not db_entity:
         raise HTTPException(status_code=404, detail="Entity not found")
