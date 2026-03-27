@@ -121,5 +121,6 @@ def get_public_openapi(schema: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def get_admin_openapi(schema: Dict[str, Any]) -> Dict[str, Any]:
-    """Get OpenAPI schema with only admin endpoints."""
-    return filter_openapi_schema(schema, admin_only=True)
+    """Get OpenAPI schema with ALL endpoints (public + admin)."""
+    # Admin docs show everything - no filtering needed
+    return schema
