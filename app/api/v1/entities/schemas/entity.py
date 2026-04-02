@@ -52,7 +52,9 @@ class EntityBase(BaseModel):
         None,
         title="Behavior",
         description="Typical behavior or characteristics",
-        examples=["Guides souls to the underworld, weighs hearts against Ma'at feather"],
+        examples=[
+            "Guides souls to the underworld, weighs hearts against Ma'at feather"
+        ],
     )
     image_url: str | None = Field(
         None,

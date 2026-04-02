@@ -25,7 +25,10 @@ router = APIRouter()
 
 class LoginRequest(BaseModel):
     """Login request schema for OpenAPI documentation."""
-    username: str = Field(..., description="User email address", examples=["user@example.com"])
+
+    username: str = Field(
+        ..., description="User email address", examples=["user@example.com"]
+    )
     password: str = Field(..., description="User password", examples=["SecureP@ss123"])
 
 
@@ -51,19 +54,19 @@ class LoginRequest(BaseModel):
                                 "type": "string",
                                 "title": "Username",
                                 "description": "User email address",
-                                "example": "user@example.com"
+                                "example": "user@example.com",
                             },
                             "password": {
                                 "type": "string",
                                 "title": "Password",
                                 "description": "User password",
                                 "format": "password",
-                                "example": "SecureP@ss123"
+                                "example": "SecureP@ss123",
                             },
                         },
                     }
                 }
-            }
+            },
         }
     },
 )
@@ -125,7 +128,9 @@ async def get_current_user_info(
     },
 )
 async def recover_password(
-    email: str = Path(..., description="User email address", examples=["user@example.com"]),
+    email: str = Path(
+        ..., description="User email address", examples=["user@example.com"]
+    ),
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
     """
@@ -158,8 +163,16 @@ async def recover_password(
     },
 )
 async def reset_password(
-    token: str = Body(..., description="Password recovery token", examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."]),
-    new_password: str = Body(..., description="New password (min 8 characters)", examples=["NewSecureP@ss123"]),
+    token: str = Body(
+        ...,
+        description="Password recovery token",
+        examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."],
+    ),
+    new_password: str = Body(
+        ...,
+        description="New password (min 8 characters)",
+        examples=["NewSecureP@ss123"],
+    ),
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
     """

@@ -159,6 +159,7 @@ async def admin_swagger_ui():
 async def public_redoc():
     """Public ReDoc documentation."""
     from fastapi.openapi.docs import get_redoc_html
+
     return get_redoc_html(
         openapi_url=f"/api/v{settings.API_VERSION}/openapi.json",
         title=f"{settings.PROJECT_NAME} - Public Docs",
@@ -170,6 +171,7 @@ async def public_redoc():
 async def admin_redoc():
     """Admin ReDoc documentation."""
     from fastapi.openapi.docs import get_redoc_html
+
     return get_redoc_html(
         openapi_url=f"/api/v{settings.API_VERSION}/openapi-admin.json",
         title=f"{settings.PROJECT_NAME} - Admin Docs",
@@ -186,7 +188,9 @@ def index():
             "author": "Carlos Cativo <cativo23.kt@gmail.com>",
             "important-urls": [
                 {"public_docs": f"{settings.SERVER_HOST}:{settings.APP_PORT}/docs"},
-                {"admin_docs": f"{settings.SERVER_HOST}:{settings.APP_PORT}/admin/docs"},
+                {
+                    "admin_docs": f"{settings.SERVER_HOST}:{settings.APP_PORT}/admin/docs"
+                },
                 {
                     "versions": {
                         "v1": f"{settings.SERVER_HOST}:{settings.APP_PORT}/api/v1"

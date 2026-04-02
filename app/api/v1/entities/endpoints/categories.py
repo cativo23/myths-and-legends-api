@@ -22,8 +22,12 @@ router = APIRouter(prefix="/categories", tags=["categories"])
 )
 async def list_categories(
     db: Annotated[Session, Depends(get_db)],
-    sort: Annotated[str | None, Query(description="Sort field", examples=["name", "id"])] = "name",
-    order: Annotated[str, Query(description="Sort order (asc, desc)", examples=["asc", "desc"])] = "asc",
+    sort: Annotated[
+        str | None, Query(description="Sort field", examples=["name", "id"])
+    ] = "name",
+    order: Annotated[
+        str, Query(description="Sort order (asc, desc)", examples=["asc", "desc"])
+    ] = "asc",
 ):
     """List all categories."""
     categories = db.query(Category).all()

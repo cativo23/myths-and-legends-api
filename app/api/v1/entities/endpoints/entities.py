@@ -29,15 +29,20 @@ async def list_entities(
     db: Annotated[Session, Depends(get_db)],
     entity_type: Annotated[
         EntityTypeName | None,
-        Query(description="Filter by entity type (e.g., Egyptian, Greek, Norse)", examples=["Egyptian", "Greek"])
+        Query(
+            description="Filter by entity type (e.g., Egyptian, Greek, Norse)",
+            examples=["Egyptian", "Greek"],
+        ),
     ] = None,
     category: Annotated[
         CategoryName | None,
-        Query(description="Filter by category (e.g., Deity, Creature, Place)", examples=["Deity", "Creature"])
+        Query(
+            description="Filter by category (e.g., Deity, Creature, Place)",
+            examples=["Deity", "Creature"],
+        ),
     ] = None,
     is_active: Annotated[
-        bool | None,
-        Query(description="Filter by active status")
+        bool | None, Query(description="Filter by active status")
     ] = True,
     page: Annotated[int, Query(ge=1, description="Page number")] = 1,
     size: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 20,
@@ -67,7 +72,14 @@ async def list_entities(
 )
 async def search_entities(
     db: Annotated[Session, Depends(get_db)],
-    q: Annotated[str, Query(min_length=1, description="Search term (searches name, description, and origin)", examples=["Zeus", "underworld", "god of thunder"])],
+    q: Annotated[
+        str,
+        Query(
+            min_length=1,
+            description="Search term (searches name, description, and origin)",
+            examples=["Zeus", "underworld", "god of thunder"],
+        ),
+    ],
 ):
     """Search entities by name, description, or origin."""
     return entity.search(db, term=q)

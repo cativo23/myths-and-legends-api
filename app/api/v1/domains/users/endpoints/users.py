@@ -32,7 +32,11 @@ async def get_users(
     db: Session = Depends(get_db),
     page: int = Query(1, description="Page number", ge=1),
     size: int = Query(20, description="Items per page", ge=1, le=100),
-    sort: str = Query("email", description="Field to sort by", examples=["email", "full_name", "id", "created_at"]),
+    sort: str = Query(
+        "email",
+        description="Field to sort by",
+        examples=["email", "full_name", "id", "created_at"],
+    ),
     order: str = Query("asc", description="Sort order", examples=["asc", "desc"]),
     current_user: UserModel = Depends(get_current_active_superuser),
 ) -> Any:

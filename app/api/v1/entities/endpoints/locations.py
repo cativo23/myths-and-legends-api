@@ -22,7 +22,10 @@ router = APIRouter(prefix="/locations", tags=["locations"])
 )
 async def list_locations(
     db: Annotated[Session, Depends(get_db)],
-    department: Annotated[str | None, Query(description="Filter by department", examples=["Cundinamarca", "Oaxaca"])] = None,
+    department: Annotated[
+        str | None,
+        Query(description="Filter by department", examples=["Cundinamarca", "Oaxaca"]),
+    ] = None,
 ):
     """List all locations, optionally filtered by department."""
     if department:
@@ -41,7 +44,9 @@ async def list_locations(
 )
 async def get_location_by_department(
     db: Annotated[Session, Depends(get_db)],
-    department: Annotated[str, Path(description="Department name", examples=["Cundinamarca"])],
+    department: Annotated[
+        str, Path(description="Department name", examples=["Cundinamarca"])
+    ],
 ):
     """Get all locations in a specific department."""
     return location.get_by_department(db, department=department)

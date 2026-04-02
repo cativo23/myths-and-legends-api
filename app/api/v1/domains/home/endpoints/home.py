@@ -19,7 +19,9 @@ def index():
         "data": {
             "current_version": "v1.0.0",
             "urls": [
-                {"openapi": f"{settings.SERVER_HOST}:{settings.APP_PORT}/api/v1/openapi.json"},
+                {
+                    "openapi": f"{settings.SERVER_HOST}:{settings.APP_PORT}/api/v1/openapi.json"
+                },
                 {"docs": f"{settings.SERVER_HOST}:{settings.APP_PORT}/docs"},
                 {"redoc": f"{settings.SERVER_HOST}:{settings.APP_PORT}/redoc"},
             ],

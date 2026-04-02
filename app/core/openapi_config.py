@@ -7,7 +7,6 @@ public endpoints (GET/list) from admin endpoints (POST/PUT/DELETE).
 
 from typing import Any, Dict, List, Optional
 
-
 # Tags that are considered "admin" operations
 ADMIN_TAGS = {"users"}
 
@@ -55,6 +54,7 @@ def filter_openapi_schema(
         Filtered OpenAPI schema
     """
     import copy
+
     filtered = copy.deepcopy(schema)
 
     paths = filtered.get("paths", {})
@@ -62,17 +62,11 @@ def filter_openapi_schema(
 
     for path, methods in paths.items():
         # Check if path is explicitly public or admin
-        is_explicitly_public = any(
-            path.startswith(pp) for pp in PUBLIC_PATHS
-        )
-        is_explicitly_admin = any(
-            path.startswith(ap) for ap in ADMIN_PATHS
-        )
+        is_explicitly_public = any(path.startswith(pp) for pp in PUBLIC_PATHS)
+        is_explicitly_admin = any(path.startswith(ap) for ap in ADMIN_PATHS)
 
         # Check if path is a resource path (GET=public, POST/PUT/DELETE=admin)
-        is_resource_path = any(
-            path.startswith(rp) for rp in RESOURCE_PATHS
-        )
+        is_resource_path = any(path.startswith(rp) for rp in RESOURCE_PATHS)
 
         filtered_methods = {}
 

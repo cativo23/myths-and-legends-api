@@ -32,7 +32,9 @@ async def list_countries(
         description="Comma-separated list of relations to include (e.g., 'entities,locations')",
         examples=["entities,locations"],
     ),
-    sort: str = Query("name", description="Field to sort by", examples=["name", "id", "created_at"]),
+    sort: str = Query(
+        "name", description="Field to sort by", examples=["name", "id", "created_at"]
+    ),
     order: str = Query("asc", description="Sort order", examples=["asc", "desc"]),
 ) -> List[CountrySchema]:
     """List all countries with optional sorting and relations."""

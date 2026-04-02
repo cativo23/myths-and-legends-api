@@ -25,10 +25,17 @@ async def list_sources(
     db: Annotated[Session, Depends(get_db)],
     source_type: Annotated[
         SourceType | None,
-        Query(description="Filter by source type", examples=["Book", "Website", "Manuscript", "Oral Tradition"])
+        Query(
+            description="Filter by source type",
+            examples=["Book", "Website", "Manuscript", "Oral Tradition"],
+        ),
     ] = None,
-    sort: Annotated[str | None, Query(description="Sort field", examples=["title", "author", "id"])] = "name",
-    order: Annotated[str, Query(description="Sort order (asc, desc)", examples=["asc", "desc"])] = "asc",
+    sort: Annotated[
+        str | None, Query(description="Sort field", examples=["title", "author", "id"])
+    ] = "name",
+    order: Annotated[
+        str, Query(description="Sort order (asc, desc)", examples=["asc", "desc"])
+    ] = "asc",
 ):
     """List all sources, optionally filtered by type and sorted."""
     query = db.query(Source)
