@@ -1,6 +1,6 @@
-from typing import Any
+from typing import Any, List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.params import Path, Body
 from sqlalchemy.orm import Session
 
@@ -15,22 +15,29 @@ from app.api.v1.shared.deps import get_db
 router = APIRouter()
 
 
-@router.get("/", response_model=list[CountrySchema])
+@router.get(
+    "/",
+    response_model=List[CountrySchema],
+    summary="List Countries",
+    description="Retrieve a list of all countries in the system.",
+    responses={
+        200: {"description": "Successful retrieval of countries"},
+    },
+)
 async def list_countries(
     *,
     db: Session = Depends(get_db),
-    relations: str | None = None,
-    sort: str = "name",
-    order: str = "asc",
-) -> list[CountrySchema]:
-    """
-    Lists all countries.
-
-    **Query Parameters:**
-    - `relations`: Comma-separated list of relations to include
-    - `sort`: Field to sort by (name, id, created_at)
-    - `order`: Sort order (asc, desc)
-    """
+    relations: str | None = Query(
+        None,
+        description="Comma-separated list of relations to include (e.g., 'entities,locations')",
+        examples=["entities,locations"],
+    ),
+    sort: str = Query(
+        "name", description="Field to sort by", examples=["name", "id", "created_at"]
+    ),
+    order: str = Query("asc", description="Sort order", examples=["asc", "desc"]),
+) -> List[CountrySchema]:
+    """List all countries with optional sorting and relations."""
     relations = (
         [r.strip() for r in relations.split(",") if r.strip()] if relations else []
     )
@@ -42,25 +49,51 @@ async def list_countries(
     return sorted(all_countries, key=lambda x: getattr(x, sort, x.id))
 
 
-@router.post("/", response_model=CountrySchema, status_code=201)
+@router.post(
+    "/",
+    response_model=CountrySchema,
+    status_code=201,
+    summary="Create Country",
+    description="Create a new country in the system.",
+    responses={
+        201: {"description": "Country successfully created"},
+        400: {"description": "Invalid input data"},
+    },
+)
 async def add_country(
     db: Session = Depends(get_db),
-    country: CountryCreate = Body(...),
+    country: CountryCreate = Body(
+        ...,
+        description="Country data to create",
+        examples=[{"name": "Nigeria", "status": True}],
+    ),
 ) -> CountrySchema:
-    """
-    Add a Country.
-    """
+    """Create a new country."""
     country_created = country_service.create(db, obj_in=country)
     return country_created
 
 
-@router.get("/{country_id}", response_model=CountrySchema)
+@router.get(
+    "/{country_id}",
+    response_model=CountrySchema,
+    summary="Get Country",
+    description="Retrieve a specific country by its ID.",
+    responses={
+        200: {"description": "Successful retrieval of country"},
+        404: {"description": "Country not found"},
+    },
+)
 async def get_country(
     *,
     db: Session = Depends(get_db),
-    country_id: int,
-    relations: str | None = None,
+    country_id: int = Path(..., description="Country ID", examples=[1], gt=0),
+    relations: str | None = Query(
+        None,
+        description="Comma-separated list of relations to include",
+        examples=["entities,locations"],
+    ),
 ) -> CountrySchema:
+    """Get a country by ID with optional relations."""
     relations = (
         [r.strip() for r in relations.split(",") if r.strip()] if relations else []
     )
@@ -71,16 +104,23 @@ async def get_country(
     return country
 
 
-@router.put("/{country_id}", response_model=CountrySchema)
+@router.put(
+    "/{country_id}",
+    response_model=CountrySchema,
+    summary="Update Country",
+    description="Update an existing country by its ID.",
+    responses={
+        200: {"description": "Country successfully updated"},
+        404: {"description": "Country not found"},
+    },
+)
 async def update_country(
     *,
     db: Session = Depends(get_db),
-    country_id: int,
-    country_in: CountryUpdate,
+    country_id: int = Path(..., description="Country ID", examples=[1], gt=0),
+    country_in: CountryUpdate = Body(..., description="Updated country data"),
 ) -> CountrySchema:
-    """
-    Update a country.
-    """
+    """Update a country."""
     country = country_service.get(db, item_id=country_id)
 
     if not country:
@@ -90,15 +130,22 @@ async def update_country(
     return country
 
 
-@router.delete("/{country_id}", status_code=204)
+@router.delete(
+    "/{country_id}",
+    status_code=204,
+    summary="Delete Country",
+    description="Delete a country by its ID.",
+    responses={
+        204: {"description": "Country successfully deleted"},
+        404: {"description": "Country not found"},
+    },
+)
 async def delete_country(
     *,
     db: Session = Depends(get_db),
-    country_id: int,
+    country_id: int = Path(..., description="Country ID", examples=[1], gt=0),
 ) -> None:
-    """
-    Delete a country.
-    """
+    """Delete a country."""
     country = country_service.get(db, item_id=country_id)
 
     if not country:

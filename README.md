@@ -210,6 +210,42 @@ pytest
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
+### Release Process
+
+This project uses automatic releases via GitHub Actions. To create a new release:
+
+1. **Create a release branch** from `main`:
+   ```bash
+   git checkout main
+   git pull
+   git checkout -b release/v0.1.0
+   ```
+
+2. **Update CHANGELOG.md** with your release notes under the version heading:
+   ```markdown
+   ## [0.1.0] - 2026-04-02
+
+   ### Added
+   - New feature description
+
+   ### Fixed
+   - Bug fix description
+   ```
+
+3. **Push and create PR**:
+   ```bash
+   git push origin release/v0.1.0
+   ```
+   Then open a PR from `release/v0.1.0` to `main`.
+
+4. **Merge the PR** — GitHub Actions will automatically:
+   - Extract version from branch name
+   - Parse release notes from CHANGELOG.md
+   - Create a GitHub Release with the notes
+   - Mark as prerelease if version is `v0.x.y`
+
+**Branch naming:** `release/v0.1.0` or `release/0.1.0` (both supported)
+
 ## License
 
 This project is licensed under the MIT License.
@@ -247,3 +283,39 @@ This project is licensed under the MIT License.
 
 - [Documentación en inglés](#overview)
 - [Documentación de la API](http://localhost:8080/docs)
+
+### Proceso de Release
+
+Este proyecto usa releases automáticos vía GitHub Actions. Para crear un nuevo release:
+
+1. **Crear rama de release** desde `main`:
+   ```bash
+   git checkout main
+   git pull
+   git checkout -b release/v0.1.0
+   ```
+
+2. **Actualizar CHANGELOG.md** con las notas del release:
+   ```markdown
+   ## [0.1.0] - 2026-04-02
+
+   ### Added
+   - Descripción de nueva funcionalidad
+
+   ### Fixed
+   - Descripción de corrección
+   ```
+
+3. **Push y crear PR**:
+   ```bash
+   git push origin release/v0.1.0
+   ```
+   Luego abrí un PR de `release/v0.1.0` a `main`.
+
+4. **Merge del PR** — GitHub Actions automáticamente:
+   - Extrae la versión del nombre de la rama
+   - Parsea las notas desde CHANGELOG.md
+   - Crea un GitHub Release con las notas
+   - Lo marca como prerelease si la versión es `v0.x.y`
+
+**Nombre de rama:** `release/v0.1.0` o `release/0.1.0` (ambos soportados)
