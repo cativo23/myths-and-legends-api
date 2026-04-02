@@ -10,7 +10,7 @@ Provides three levels of health checks:
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -19,8 +19,22 @@ from app.api.v1.shared.deps import get_db
 router = APIRouter(prefix="/health", tags=["health"])
 
 
-@router.get("")
-@router.get("/")
+@router.get(
+    "",
+    summary="Health Check",
+    description="Basic health check endpoint. Returns service status and timestamp.",
+    responses={
+        200: {"description": "Service is healthy"},
+    },
+)
+@router.get(
+    "/",
+    summary="Health Check",
+    description="Basic health check endpoint. Returns service status and timestamp.",
+    responses={
+        200: {"description": "Service is healthy"},
+    },
+)
 async def health_check() -> dict[str, Any]:
     """
     Basic health check endpoint.
@@ -34,7 +48,14 @@ async def health_check() -> dict[str, Any]:
     }
 
 
-@router.get("/live")
+@router.get(
+    "/live",
+    summary="Liveness Probe",
+    description="Kubernetes liveness probe. Returns healthy as long as the service is running.",
+    responses={
+        200: {"description": "Service is alive"},
+    },
+)
 async def liveness_probe() -> dict[str, Any]:
     """
     Liveness probe endpoint.
@@ -49,7 +70,16 @@ async def liveness_probe() -> dict[str, Any]:
     }
 
 
-@router.get("/ready", status_code=status.HTTP_200_OK)
+@router.get(
+    "/ready",
+    summary="Readiness Probe",
+    description="Kubernetes readiness probe. Checks database connectivity and other dependencies.",
+    responses={
+        200: {"description": "Service is ready (all dependencies healthy)"},
+        503: {"description": "Service not ready (dependency unavailable)"},
+    },
+    status_code=status.HTTP_200_OK,
+)
 async def readiness_probe(
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
@@ -86,8 +116,6 @@ async def readiness_probe(
 
     # Return 503 if any check failed
     if health_data["status"] != "ready":
-        from fastapi import HTTPException
-
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=health_data,

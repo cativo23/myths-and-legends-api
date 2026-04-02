@@ -1,6 +1,6 @@
-from typing import Any
+from typing import Any, List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from fastapi_pagination import Page, Params, paginate
 from sqlalchemy.orm import Session
 
@@ -17,38 +17,54 @@ from app.api.common.pagination.json_api_page import JsonApiPage
 router = APIRouter()
 
 
-@router.get("/", response_model=Page[UserSchema])
+@router.get(
+    "/",
+    response_model=Page[UserSchema],
+    summary="List Users",
+    description="Retrieve a paginated list of users. Requires superuser privileges.",
+    responses={
+        200: {"description": "Successful retrieval of users"},
+        401: {"description": "Unauthorized - No valid token provided"},
+        403: {"description": "Forbidden - User is not a superuser"},
+    },
+)
 async def get_users(
     db: Session = Depends(get_db),
-    page: int = 1,
-    size: int = 20,
-    sort: str = "email",
-    order: str = "asc",
+    page: int = Query(1, description="Page number", ge=1),
+    size: int = Query(20, description="Items per page", ge=1, le=100),
+    sort: str = Query(
+        "email",
+        description="Field to sort by",
+        examples=["email", "full_name", "id", "created_at"],
+    ),
+    order: str = Query("asc", description="Sort order", examples=["asc", "desc"]),
     current_user: UserModel = Depends(get_current_active_superuser),
 ) -> Any:
-    """
-    Retrieve users.
-
-    **Query Parameters:**
-    - `page`: Page number (default: 1)
-    - `size`: Items per page (default: 20, max: 100)
-    - `sort`: Field to sort by (email, full_name, id, created_at)
-    - `order`: Sort order (asc, desc)
-    """
+    """List all users with pagination and sorting."""
     users = user_service.get_multi(db, skip=(page - 1) * size, limit=size)
     return paginate(users, Params(page=page, size=size))
 
 
-@router.post("/", response_model=UserSchema, status_code=201)
+@router.post(
+    "/",
+    response_model=UserSchema,
+    status_code=201,
+    summary="Create User",
+    description="Create a new user. Requires superuser privileges.",
+    responses={
+        201: {"description": "User successfully created"},
+        400: {"description": "Email already exists"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden - User is not a superuser"},
+    },
+)
 async def create_user(
     *,
     db: Session = Depends(get_db),
     user_in: UserCreate,
     current_user: UserModel = Depends(get_current_active_superuser),
 ) -> Any:
-    """
-    Create new user.
-    """
+    """Create a new user."""
     user = user_service.get_by_email(db, email=user_in.email)
     if user:
         raise HTTPException(
@@ -59,17 +75,26 @@ async def create_user(
     return user
 
 
-@router.put("/{user_id}", response_model=UserSchema)
+@router.put(
+    "/{user_id}",
+    response_model=UserSchema,
+    summary="Update User",
+    description="Update an existing user by ID. Requires superuser privileges.",
+    responses={
+        200: {"description": "User successfully updated"},
+        404: {"description": "User not found"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden - User is not a superuser"},
+    },
+)
 async def update_user(
     *,
     db: Session = Depends(get_db),
-    user_id: int,
+    user_id: int = Path(..., description="User ID", examples=[1], gt=0),
     user_in: UserUpdate,
     current_user: UserModel = Depends(get_current_active_superuser),
 ) -> Any:
-    """
-    Update a user.
-    """
+    """Update a user."""
     user = user_service.get(db, id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -77,32 +102,50 @@ async def update_user(
     return user
 
 
-@router.get("/{user_id}", response_model=UserSchema)
+@router.get(
+    "/{user_id}",
+    response_model=UserSchema,
+    summary="Get User",
+    description="Retrieve a specific user by ID. Requires superuser privileges.",
+    responses={
+        200: {"description": "Successful retrieval of user"},
+        404: {"description": "User not found"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden - User is not a superuser"},
+    },
+)
 async def get_user(
     *,
     db: Session = Depends(get_db),
-    user_id: int,
+    user_id: int = Path(..., description="User ID", examples=[1], gt=0),
     current_user: UserModel = Depends(get_current_active_superuser),
 ) -> Any:
-    """
-    Get user by ID.
-    """
+    """Get a user by ID."""
     user = user_service.get(db, id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
 
-@router.delete("/{user_id}", status_code=204)
+@router.delete(
+    "/{user_id}",
+    status_code=204,
+    summary="Delete User",
+    description="Delete a user by ID. Requires superuser privileges.",
+    responses={
+        204: {"description": "User successfully deleted"},
+        404: {"description": "User not found"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden - User is not a superuser"},
+    },
+)
 async def delete_user(
     *,
     db: Session = Depends(get_db),
-    user_id: int,
+    user_id: int = Path(..., description="User ID", examples=[1], gt=0),
     current_user: UserModel = Depends(get_current_active_superuser),
 ) -> None:
-    """
-    Delete user by ID.
-    """
+    """Delete a user."""
     user = user_service.get(db, id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
