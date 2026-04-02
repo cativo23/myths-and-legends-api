@@ -3,12 +3,21 @@ from os import getcwd
 from fastapi.responses import FileResponse
 from pathlib import Path
 
-router = APIRouter()
+router = APIRouter(tags=["images"])
 
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"}
 
 
-@router.get("/{name_file}")
+@router.get(
+    "/{name_file}",
+    summary="Get Image",
+    description="Retrieve an image file from the server.",
+    responses={
+        200: {"description": "Image file returned", "content": {"image/*": {}}},
+        400: {"description": "Invalid filename or extension"},
+        404: {"description": "Image not found"},
+    },
+)
 async def get_file(name_file: str):
     """
     Serve image files from the /app/images/ directory.
