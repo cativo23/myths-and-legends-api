@@ -53,7 +53,7 @@ async def get_category(
     id: Annotated[int, Path(gt=0, description="Category ID", examples=[1])],
 ):
     """Get category by ID."""
-    db_category = category.get(db, id=id)
+    db_category = category.get(db, item_id=id)
     if not db_category:
         raise HTTPException(status_code=404, detail="Category not found")
     return db_category

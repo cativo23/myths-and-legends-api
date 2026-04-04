@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime
 from typing import Any
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Path
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -73,6 +73,7 @@ class LoginRequest(BaseModel):
 )
 @limiter.limit(f"{settings.RATE_LIMIT_AUTH_PER_MINUTE}/minute")
 async def login_access_token(
+    request: Request,
     db: Session = Depends(get_db),
     form_data: OAuth2PasswordRequestForm = Depends(),
 ) -> dict[str, Any]:
@@ -131,6 +132,7 @@ async def get_current_user_info(
 )
 @limiter.limit(f"{settings.RATE_LIMIT_AUTH_PER_MINUTE}/minute")
 async def recover_password(
+    request: Request,
     email: str = Path(
         ..., description="User email address", examples=["user@example.com"]
     ),

@@ -7,6 +7,25 @@ import os
 import tempfile
 from typing import Generator
 
+# Patch bcrypt compatibility issue with passlib (bcrypt >= 4.1).
+# Must run before passlib is imported anywhere.
+import bcrypt as _bcrypt_lib
+
+class _BcryptAbout:
+    __version__ = _bcrypt_lib.__version__
+
+_bcrypt_lib.__about__ = _BcryptAbout()
+_original_bcrypt_hashpw = _bcrypt_lib.hashpw
+
+
+def _safe_bcrypt_hashpw(password, salt):
+    if isinstance(password, bytes) and len(password) > 72:
+        password = password[:72]
+    return _original_bcrypt_hashpw(password, salt)
+
+
+_bcrypt_lib.hashpw = _safe_bcrypt_hashpw
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event
