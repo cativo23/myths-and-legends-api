@@ -6,6 +6,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from app.api.common.middleware.rate_limiter import limiter
 from app.api.v1.domains.users.services.user import user as user_crud
 from app.api.v1.domains.users.models.user import User as UserModel
 from app.api.v1.domains.users.schemas.user import User as UserSchema
@@ -70,6 +71,7 @@ class LoginRequest(BaseModel):
         }
     },
 )
+@limiter.limit(f"{settings.RATE_LIMIT_AUTH_PER_MINUTE}/minute")
 async def login_access_token(
     db: Session = Depends(get_db),
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -127,6 +129,7 @@ async def get_current_user_info(
         404: {"description": "User not found"},
     },
 )
+@limiter.limit(f"{settings.RATE_LIMIT_AUTH_PER_MINUTE}/minute")
 async def recover_password(
     email: str = Path(
         ..., description="User email address", examples=["user@example.com"]

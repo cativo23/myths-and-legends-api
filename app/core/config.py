@@ -1,7 +1,6 @@
-import secrets
 from typing import Any, List, Optional, Union
 
-from pydantic import EmailStr, PostgresDsn, field_validator
+from pydantic import EmailStr, PostgresDsn, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -16,7 +15,7 @@ class Settings(BaseSettings):
 
     API_VERSION: str = "1"
     APP_PORT: int = 8080
-    SECRET_KEY: str = secrets.token_urlsafe(32)
+    SECRET_KEY: str
     # 60 minutes * 24 hours * 8 days = 8 days
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
     SERVER_HOST: str = "http://localhost"
@@ -33,6 +32,23 @@ class Settings(BaseSettings):
     RATE_LIMIT_PER_MINUTE: int = 60
     RATE_LIMIT_AUTH_PER_MINUTE: int = 10
 
+    @model_validator(mode="after")
+    def validate_required_secrets(self) -> "Settings":
+        if not self.SECRET_KEY:
+            raise ValueError(
+                "SECRET_KEY is required. Set it via env var or .env file. "
+                "Generate one with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+            )
+        if not self.POSTGRES_PASSWORD:
+            raise ValueError(
+                "POSTGRES_PASSWORD is required. Set it via env var or .env file."
+            )
+        if not self.FIRST_SUPERUSER_PASSWORD:
+            raise ValueError(
+                "FIRST_SUPERUSER_PASSWORD is required. Set it via env var or .env file."
+            )
+        return self
+
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
@@ -46,7 +62,7 @@ class Settings(BaseSettings):
 
     POSTGRES_HOST: str = "localhost"
     POSTGRES_USER: str = "myths"
-    POSTGRES_PASSWORD: str = "myths"
+    POSTGRES_PASSWORD: str
     POSTGRES_DB: str = "myths"
     SQLALCHEMY_DATABASE_URI: Optional[PostgresDsn] = None
 
@@ -58,9 +74,9 @@ class Settings(BaseSettings):
         values = info.data
         return PostgresDsn.build(
             scheme="postgresql",
-            username=values.get("POSTGRES_USER", "myths"),
-            password=values.get("POSTGRES_PASSWORD", "myths"),
-            host=values.get("POSTGRES_HOST", "localhost"),
+            username=values.get("POSTGRES_USER"),
+            password=values.get("POSTGRES_PASSWORD"),
+            host=values.get("POSTGRES_HOST"),
             path=f"{values.get('POSTGRES_DB') or 'myths'}",
         )
 
@@ -88,7 +104,7 @@ class Settings(BaseSettings):
 
     EMAIL_TEST_USER: EmailStr = "test@example.com"  # type: ignore
     FIRST_SUPERUSER: EmailStr = "admin@example.com"  # type: ignore
-    FIRST_SUPERUSER_PASSWORD: str = "admin123"
+    FIRST_SUPERUSER_PASSWORD: str
     USERS_OPEN_REGISTRATION: bool = False
 
 

@@ -76,6 +76,7 @@ async def search_entities(
         str,
         Query(
             min_length=1,
+            max_length=200,
             description="Search term (searches name, description, and origin)",
             examples=["Zeus", "underworld", "god of thunder"],
         ),
