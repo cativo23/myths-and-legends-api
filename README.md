@@ -102,40 +102,65 @@ Copy `.env.example` to `.env` and configure the following variables:
 
 ## API Endpoints
 
-### Characters
+### Entities (Mythological Characters, Creatures, Places, Objects)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/v1/characters/` | List all characters (paginated) |
-| POST | `/api/v1/characters/` | Create a new character |
-| GET | `/api/v1/characters/{id}` | Get character by ID |
-| PUT | `/api/v1/characters/{id}` | Update character |
-| DELETE | `/api/v1/characters/{id}` | Delete character |
-| GET | `/api/v1/characters/search/` | Search characters by name |
+| GET | `/api/v1/entities/` | List entities (paginated, filterable) |
+| GET | `/api/v1/entities/search?q=term` | Search entities by name/description |
+| GET | `/api/v1/entities/{id}` | Get entity with full relations |
+| GET | `/api/v1/entities/{id}/relations` | Get entity relations |
+| POST | `/api/v1/entities/` | Create entity (admin) |
+| PUT | `/api/v1/entities/{id}` | Update entity (admin) |
+| DELETE | `/api/v1/entities/{id}` | Delete entity (admin) |
 
 ### Countries
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/v1/countries/` | List all countries |
-| POST | `/api/v1/countries/` | Create a new country |
 | GET | `/api/v1/countries/{id}` | Get country by ID |
-| PUT | `/api/v1/countries/{id}` | Update country |
-| DELETE | `/api/v1/countries/{id}` | Delete country |
+| POST | `/api/v1/countries/` | Create country (admin) |
+| PUT | `/api/v1/countries/{id}` | Update country (admin) |
+| DELETE | `/api/v1/countries/{id}` | Delete country (admin) |
 
-### Authentication
+### Categories, Entity Types, Locations, Sources
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/categories/` | List categories |
+| GET | `/api/v1/entity-types/` | List entity types |
+| GET | `/api/v1/locations/` | List locations (filterable by department) |
+| GET | `/api/v1/sources/` | List sources (filterable by type) |
+
+### Authentication & Users
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/v1/auth/login` | Authenticate user |
+| GET | `/api/v1/auth/me` | Get current user |
+| POST | `/api/v1/auth/password-recovery/{email}` | Request password reset |
+| POST | `/api/v1/auth/reset-password/` | Reset password with token |
+| GET/POST/PUT/DELETE | `/api/v1/users/` | User management (admin only) |
+
+### Health & Images
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/health` | Basic health check |
+| GET | `/api/v1/health/live` | Liveness probe |
+| GET | `/api/v1/health/ready` | Readiness probe (checks DB) |
+| GET | `/api/v1/images/{filename}` | Serve image file |
 
 ## Default Credentials
 
 | Service | Username | Password |
 |---------|----------|----------|
-| Admin User | admin@example.com | admin123 |
-| Database | myths | myths |
+| Admin User | admin@example.com | (set via `FIRST_SUPERUSER_PASSWORD`) |
+| Database | myths | (set via `POSTGRES_PASSWORD`) |
 | pgAdmin | admin@example.com | admin123 |
+
+> **Note**: `SECRET_KEY`, `POSTGRES_PASSWORD`, and `FIRST_SUPERUSER_PASSWORD` are required environment variables with no default values. See `.env.example`.
 
 ## Development Commands
 
@@ -159,25 +184,37 @@ The `./myths` script provides convenient commands:
 ├── app/
 │   ├── api/
 │   │   ├── v1/
-│   │   │   ├── endpoints/      # API route handlers
-│   │   │   ├── services/       # Business logic layer
-│   │   │   ├── models/         # SQLAlchemy models
-│   │   │   ├── schemas/        # Pydantic schemas
-│   │   │   └── enums/          # Enum definitions
+│   │   │   ├── domains/            # Domain-driven modules
+│   │   │   │   ├── auth/           # Authentication (login, password reset)
+│   │   │   │   ├── countries/      # Country CRUD
+│   │   │   │   ├── health/         # Health check endpoints
+│   │   │   │   ├── home/           # API root endpoint
+│   │   │   │   ├── images/         # Image serving
+│   │   │   │   └── users/          # User management
+│   │   │   ├── entities/           # Entity domain (mythological items)
+│   │   │   │   ├── endpoints/      # Entity-related routes
+│   │   │   │   ├── models/         # Entity DB models
+│   │   │   │   ├── schemas/        # Pydantic schemas
+│   │   │   │   └── services/       # Business logic
+│   │   │   └── shared/             # Shared deps (auth, db)
 │   │   └── common/
-│   │       ├── services/       # Base services
-│   │       ├── schemas/        # Common schemas
-│   │       └── responses/      # Response helpers
+│   │       ├── middleware/         # Rate limiting, security headers, request ID
+│   │       ├── services/           # Base CRUD service
+│   │       ├── responses/          # Response helpers
+│   │       └── exceptions/         # Custom exceptions
 │   ├── core/
-│   │   └── config.py           # Application settings
+│   │   ├── config.py               # Application settings
+│   │   ├── security.py             # JWT, password hashing
+│   │   ├── logging_config.py       # Structured JSON logging
+│   │   └── openapi_config.py       # Public/admin OpenAPI separation
 │   └── db/
-│       ├── session.py          # Database session
-│       └── base_class.py       # SQLAlchemy base
-├── alembic/                    # Database migrations
-├── tests/                      # Test suite
+│       ├── session.py              # Database session
+│       └── base_class.py           # SQLAlchemy base
+├── alembic/                        # Database migrations
+├── tests/                          # Test suite
 ├── docker-compose.yml
 ├── requirements.txt
-└── ./myths                     # Development script
+└── ./myths                         # Development script
 ```
 
 ## Technology Stack
