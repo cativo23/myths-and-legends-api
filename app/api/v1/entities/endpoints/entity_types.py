@@ -23,7 +23,7 @@ router = APIRouter(prefix="/entity-types", tags=["entity-types"])
         200: {"description": "Successful retrieval of entity types"},
     },
 )
-async def list_entity_types(
+def list_entity_types(
     db: Annotated[Session, Depends(get_db)],
     page: Annotated[int, Query(ge=1, description="Page number")] = 1,
     size: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 20,
@@ -53,7 +53,7 @@ async def list_entity_types(
         404: {"description": "Entity type not found"},
     },
 )
-async def get_entity_type(
+def get_entity_type(
     db: Annotated[Session, Depends(get_db)],
     id: Annotated[int, Path(gt=0, description="Entity Type ID", examples=[1])],
 ):

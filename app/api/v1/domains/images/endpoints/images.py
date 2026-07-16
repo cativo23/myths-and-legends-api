@@ -18,7 +18,7 @@ ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"}
         404: {"description": "Image not found"},
     },
 )
-async def get_file(name_file: str):
+def get_file(name_file: str):
     """
     Serve image files from the /app/images/ directory.
 

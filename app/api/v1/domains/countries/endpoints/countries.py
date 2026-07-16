@@ -25,7 +25,7 @@ router = APIRouter()
         200: {"description": "Successful retrieval of countries"},
     },
 )
-async def list_countries(
+def list_countries(
     *,
     db: Session = Depends(get_db),
     relations: str | None = Query(
@@ -63,7 +63,7 @@ async def list_countries(
         403: {"description": "Forbidden - User is not a superuser"},
     },
 )
-async def add_country(
+def add_country(
     db: Session = Depends(get_db),
     country: CountryCreate = Body(
         ...,
@@ -87,7 +87,7 @@ async def add_country(
         404: {"description": "Country not found"},
     },
 )
-async def get_country(
+def get_country(
     *,
     db: Session = Depends(get_db),
     country_id: int = Path(..., description="Country ID", examples=[1], gt=0),
@@ -120,7 +120,7 @@ async def get_country(
         403: {"description": "Forbidden - User is not a superuser"},
     },
 )
-async def update_country(
+def update_country(
     *,
     db: Session = Depends(get_db),
     country_id: int = Path(..., description="Country ID", examples=[1], gt=0),
@@ -149,7 +149,7 @@ async def update_country(
         403: {"description": "Forbidden - User is not a superuser"},
     },
 )
-async def delete_country(
+def delete_country(
     *,
     db: Session = Depends(get_db),
     country_id: int = Path(..., description="Country ID", examples=[1], gt=0),

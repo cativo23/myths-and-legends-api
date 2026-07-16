@@ -23,7 +23,7 @@ router = APIRouter(prefix="/locations", tags=["locations"])
         200: {"description": "Successful retrieval of locations"},
     },
 )
-async def list_locations(
+def list_locations(
     db: Annotated[Session, Depends(get_db)],
     department: Annotated[
         str | None,
@@ -54,7 +54,7 @@ async def list_locations(
         404: {"description": "Location not found"},
     },
 )
-async def get_location(
+def get_location(
     db: Annotated[Session, Depends(get_db)],
     id: Annotated[int, Path(gt=0, description="Location ID", examples=[1])],
 ):
@@ -74,7 +74,7 @@ async def get_location(
         200: {"description": "Successful retrieval of locations"},
     },
 )
-async def get_location_by_department(
+def get_location_by_department(
     db: Annotated[Session, Depends(get_db)],
     department: Annotated[
         str,

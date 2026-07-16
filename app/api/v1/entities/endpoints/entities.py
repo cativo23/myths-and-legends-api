@@ -26,7 +26,7 @@ router = APIRouter(prefix="/entities", tags=["entities"])
         200: {"description": "Successful retrieval of entities"},
     },
 )
-async def list_entities(
+def list_entities(
     db: Annotated[Session, Depends(get_db)],
     entity_type: Annotated[
         EntityTypeName | None,
@@ -69,7 +69,7 @@ async def list_entities(
         200: {"description": "Successful search results"},
     },
 )
-async def search_entities(
+def search_entities(
     db: Annotated[Session, Depends(get_db)],
     q: Annotated[
         str,
@@ -95,7 +95,7 @@ async def search_entities(
         404: {"description": "Entity not found"},
     },
 )
-async def get_entity(
+def get_entity(
     db: Annotated[Session, Depends(get_db)],
     id: Annotated[int, Path(gt=0, description="Entity ID", examples=[1])],
 ):
@@ -166,7 +166,7 @@ async def get_entity(
         403: {"description": "Forbidden - User is not a superuser"},
     },
 )
-async def create_entity(
+def create_entity(
     db: Annotated[Session, Depends(get_db)],
     entity_in: EntityCreate,
     current_user: UserModel = Depends(get_current_active_superuser),
@@ -187,7 +187,7 @@ async def create_entity(
         403: {"description": "Forbidden - User is not a superuser"},
     },
 )
-async def update_entity(
+def update_entity(
     db: Annotated[Session, Depends(get_db)],
     id: Annotated[int, Path(gt=0, description="Entity ID", examples=[1])],
     entity_in: EntityUpdate,
@@ -212,7 +212,7 @@ async def update_entity(
         403: {"description": "Forbidden - User is not a superuser"},
     },
 )
-async def delete_entity(
+def delete_entity(
     db: Annotated[Session, Depends(get_db)],
     id: Annotated[int, Path(gt=0, description="Entity ID", examples=[1])],
     current_user: UserModel = Depends(get_current_active_superuser),
@@ -234,7 +234,7 @@ async def delete_entity(
         404: {"description": "Entity not found"},
     },
 )
-async def get_entity_relations(
+def get_entity_relations(
     db: Annotated[Session, Depends(get_db)],
     id: Annotated[int, Path(gt=0, description="Entity ID", examples=[1])],
 ):
