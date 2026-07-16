@@ -1,5 +1,5 @@
 from sqlalchemy import select, or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.api.common.services.base_service import CRUDBaseService
 from app.api.v1.entities.models.entity_relation import EntityRelation, RelationType
@@ -15,11 +15,21 @@ class EntityRelationService(
     """Service for EntityRelation CRUD operations."""
 
     def get_by_entity(self, db: Session, *, entity_id: int) -> list[EntityRelation]:
-        """Get all relations for an entity (both directions)"""
-        stmt = select(EntityRelation).where(
-            or_(
-                EntityRelation.entity_origin_id == entity_id,
-                EntityRelation.entity_destination_id == entity_id,
+        """Get all relations for an entity (both directions), eager-loading
+        entity_origin/entity_destination to avoid an N+1 when callers access
+        the related entity for every relation (see EntityService.get_relations_graph
+        for the same eager-loading shape)."""
+        stmt = (
+            select(EntityRelation)
+            .where(
+                or_(
+                    EntityRelation.entity_origin_id == entity_id,
+                    EntityRelation.entity_destination_id == entity_id,
+                )
+            )
+            .options(
+                selectinload(EntityRelation.entity_origin),
+                selectinload(EntityRelation.entity_destination),
             )
         )
         return db.execute(stmt).scalars().all()
