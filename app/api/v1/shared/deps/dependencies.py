@@ -58,6 +58,7 @@ def get_current_active_superuser(
 ) -> UserModel:
     if not user_crud.is_superuser(current_user):
         raise HTTPException(
-            status_code=400, detail="The user doesn't have enough privileges"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The user doesn't have enough privileges",
         )
     return current_user
