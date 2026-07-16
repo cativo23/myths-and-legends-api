@@ -207,12 +207,14 @@ class TestUsersEndpoints:
     """Integration tests for Users endpoints."""
 
     def test_get_all_users_empty(self, client: TestClient, superuser_headers: dict):
-        """Test listing users when database is empty."""
+        """Test listing users when only the superuser (from the auth fixture) exists."""
         response = client.get("/api/v1/users/", headers=superuser_headers)
         assert response.status_code == 200
         data = response.json()
-        assert data["items"] == []
-        assert data["total"] == 0
+        # `superuser_headers` creates the admin user as a side effect of
+        # authenticating, so "empty" means "just the superuser," not zero.
+        assert len(data["items"]) == 1
+        assert data["total"] == 1
 
     def test_get_all_users(
         self, client: TestClient, db: Session, superuser_headers: dict
@@ -236,8 +238,9 @@ class TestUsersEndpoints:
         response = client.get("/api/v1/users/", headers=superuser_headers)
         assert response.status_code == 200
         data = response.json()
-        assert data["total"] == 2
-        assert len(data["items"]) == 2
+        # +1 for the superuser created by the `superuser_headers` fixture.
+        assert data["total"] == 3
+        assert len(data["items"]) == 3
 
     def test_create_user(self, client: TestClient, superuser_headers: dict):
         """Test creating a user as superuser."""
