@@ -24,7 +24,11 @@ async def list_locations(
     db: Annotated[Session, Depends(get_db)],
     department: Annotated[
         str | None,
-        Query(description="Filter by department", examples=["Cundinamarca", "Oaxaca"]),
+        Query(
+            max_length=200,
+            description="Filter by department",
+            examples=["Cundinamarca", "Oaxaca"],
+        ),
     ] = None,
 ):
     """List all locations, optionally filtered by department."""
@@ -45,7 +49,8 @@ async def list_locations(
 async def get_location_by_department(
     db: Annotated[Session, Depends(get_db)],
     department: Annotated[
-        str, Path(description="Department name", examples=["Cundinamarca"])
+        str,
+        Path(max_length=200, description="Department name", examples=["Cundinamarca"]),
     ],
 ):
     """Get all locations in a specific department."""
