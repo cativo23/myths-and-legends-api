@@ -64,16 +64,26 @@ Admin endpoints (create, update, delete) are documented at `/admin/docs` (requir
     },
 )
 
-# Request ID (must be first to capture all requests)
-app.add_middleware(RequestIDMiddleware)
+# Starlette's add_middleware() inserts each new middleware at the FRONT of the
+# user_middleware list, and build_middleware_stack() wraps that list in
+# reversed order — so the LAST middleware registered ends up OUTERMOST and
+# runs FIRST on the way in (closest to the client), while the FIRST middleware
+# registered ends up INNERMOST and runs LAST on the way in (closest to the
+# route). Actual execution order on a request, given the registrations below,
+# is: CORS -> SecurityHeaders -> RequestID -> Logging -> route.
 
-# Structured logging (after RequestID to capture request_id)
+# Structured logging (innermost of this group; registered first so it runs
+# last on the way in, after RequestID has set request.state.request_id)
 app.add_middleware(LoggingMiddleware)
+
+# Request ID (registered after Logging so it runs before Logging on the way
+# in, ensuring request.state.request_id is set before Logging reads it)
+app.add_middleware(RequestIDMiddleware)
 
 # Security headers
 app.add_middleware(SecurityHeadersMiddleware)
 
-# Set all CORS enabled
+# Set all CORS enabled (registered last so it runs first / outermost)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
