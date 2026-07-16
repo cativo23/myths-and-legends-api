@@ -29,7 +29,7 @@ class Entity(Base):
     entity_type_id: Mapped[int] = mapped_column(
         ForeignKey("entity_type.id"), nullable=False, index=True
     )
-    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, index=True)
     origin: Mapped[str | None] = mapped_column(Text, nullable=True)
     behavior: Mapped[str | None] = mapped_column(Text, nullable=True)
     image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
