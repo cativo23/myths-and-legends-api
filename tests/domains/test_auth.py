@@ -114,17 +114,22 @@ class TestAuthEndpoints:
             )
             assert response.status_code == 200
             data = response.json()
-            assert "Password recovery email sent" in data["msg"]
+            assert "password recovery email has been sent" in data["msg"]
             mock_send.assert_called_once()
 
     def test_password_recovery_user_not_found(self, client: TestClient):
-        """Test password recovery for non-existent user returns 404."""
-        response = client.post(
-            "/api/v1/auth/password-recovery/nonexistent@example.com"
-        )
-        assert response.status_code == 404
-        data = response.json()
-        assert "detail" in data
+        """Test password recovery for non-existent user returns a generic 200
+        response (no user enumeration) instead of leaking a 404."""
+        with patch(
+            "app.api.v1.domains.auth.endpoints.auth.send_reset_password_email"
+        ) as mock_send:
+            response = client.post(
+                "/api/v1/auth/password-recovery/nonexistent@example.com"
+            )
+            assert response.status_code == 200
+            data = response.json()
+            assert "msg" in data
+            mock_send.assert_not_called()
 
     def test_reset_password_success(self, client: TestClient, test_user: dict, db: Session):
         """Test resetting password with valid token."""

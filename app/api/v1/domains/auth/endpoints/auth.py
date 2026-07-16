@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime
 from typing import Any
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Path, Request
+from fastapi import APIRouter, Depends, HTTPException, Path, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -31,6 +31,23 @@ class LoginRequest(BaseModel):
         ..., description="User email address", examples=["user@example.com"]
     )
     password: str = Field(..., description="User password", examples=["SecureP@ss123"])
+
+
+class PasswordReset(BaseModel):
+    """Password reset request schema."""
+
+    token: str = Field(
+        ...,
+        description="Password recovery token",
+        examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."],
+    )
+    new_password: str = Field(
+        ...,
+        min_length=8,
+        max_length=100,
+        description="New password (min 8 characters)",
+        examples=["NewSecureP@ss123"],
+    )
 
 
 @router.post(
@@ -126,8 +143,7 @@ async def get_current_user_info(
     summary="Password Recovery",
     description="Initiate password recovery by sending a reset email to the user.",
     responses={
-        200: {"description": "Password recovery email sent"},
-        404: {"description": "User not found"},
+        200: {"description": "Password recovery email sent, if the account exists"},
     },
 )
 @limiter.limit(f"{settings.RATE_LIMIT_AUTH_PER_MINUTE}/minute")
@@ -141,20 +157,21 @@ async def recover_password(
     """
     Password Recovery.
 
-    Rate limited to prevent abuse.
+    Rate limited to prevent abuse. Always returns a generic 200 response
+    regardless of whether the email is registered, to avoid leaking which
+    accounts exist (user enumeration).
     """
     user = user_crud.get_by_email(db, email=email)
 
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="The user with this username does not exist in the system.",
+    if user:
+        password_reset_token = generate_password_reset_token(email=email)
+        send_reset_password_email(
+            email_to=user.email, email=email, token=password_reset_token
         )
-    password_reset_token = generate_password_reset_token(email=email)
-    send_reset_password_email(
-        email_to=user.email, email=email, token=password_reset_token
-    )
-    return {"msg": "Password recovery email sent"}
+
+    return {
+        "msg": "If an account with that email exists, a password recovery email has been sent"
+    }
 
 
 @router.post(
@@ -167,22 +184,19 @@ async def recover_password(
         404: {"description": "User not found"},
     },
 )
+@limiter.limit(f"{settings.RATE_LIMIT_AUTH_PER_MINUTE}/minute")
 async def reset_password(
-    token: str = Body(
-        ...,
-        description="Password recovery token",
-        examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."],
-    ),
-    new_password: str = Body(
-        ...,
-        description="New password (min 8 characters)",
-        examples=["NewSecureP@ss123"],
-    ),
+    request: Request,
+    password_reset: PasswordReset,
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
     """
     Reset password using a valid recovery token.
+
+    Rate limited to prevent abuse.
     """
+    token = password_reset.token
+    new_password = password_reset.new_password
     email = verify_password_reset_token(token)
     if not email:
         raise HTTPException(status_code=400, detail="Invalid token")
