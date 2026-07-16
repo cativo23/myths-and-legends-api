@@ -382,6 +382,127 @@ def init_seed_data(db: Session):
         ],
     )
 
+    # === La Carreta Chillona ===
+    carreta_chillona = Entity(
+        name="La Carreta Chillona",
+        alternative_names=["La Carreta Bruja"],
+        category=legend,
+        entity_type=object_type,
+        description="A phantom ox-cart with wooden wheels that rolls down rural roads at night, announced by a horrific screeching sound",
+        origin="Salvadoran rural oral tradition; thematically similar phantom-cart legends exist in Nicaragua (La Carretanagua) but the Salvadoran version is independently documented as its own tradition",
+        behavior="Heard before it is seen — the screeching of its wooden wheels announces its approach; believed to collect the souls of those who wander lonely roads at night",
+        image_url=None,
+        is_active=True,
+        characteristics=[
+            Characteristic(
+                type=CharacteristicType.APPEARANCE,
+                description="Wooden-wheeled ox-cart, heard as a screeching/creaking sound before it appears",
+            ),
+            Characteristic(
+                type=CharacteristicType.ABILITY,
+                description="Said to collect the souls of late-night travelers who encounter it",
+            ),
+        ],
+        sources=[
+            Source(
+                source_type=SourceType.BOOK,
+                title="Mitos y leyendas de El Salvador",
+                author="Omar Nipolan",
+            ),
+            Source(
+                source_type=SourceType.WEB,
+                title="Las 30 Mejores Leyendas de El Salvador",
+                url="https://elsalvadorviajar.com/en/traditions/legends/",
+            ),
+        ],
+    )
+
+    # === El Justo Juez de la Noche ===
+    justo_juez = Entity(
+        name="El Justo Juez de la Noche",
+        alternative_names=["El Justo Juez"],
+        category=legend,
+        entity_type=character,
+        description="A headless specter who rides a black horse (or walks with giant strides) along rural roads at night, questioning travelers and punishing wrongdoers",
+        origin="Salvadoran rural oral tradition, colonial-era folk figure",
+        behavior="Patrols rural roads at night, stops travelers to question them, and whips bandits, drunkards, and curfew-breakers",
+        image_url=None,
+        is_active=True,
+        characteristics=[
+            Characteristic(
+                type=CharacteristicType.APPEARANCE,
+                description="Headless figure dressed in black, with smoke rising where the head should be",
+            ),
+            Characteristic(
+                type=CharacteristicType.APPEARANCE,
+                description="Rides a black horse, or is described taking giant strides",
+            ),
+            Characteristic(
+                type=CharacteristicType.ABILITY,
+                description="Enforces order at night, whipping wrongdoers encountered on the road",
+            ),
+        ],
+        sources=[
+            Source(
+                source_type=SourceType.WEB,
+                title="Justo Juez de la noche",
+                url="https://es.wikipedia.org/wiki/Justo_Juez_de_la_noche",
+            ),
+            Source(
+                source_type=SourceType.BOOK,
+                title="Mitos y leyendas de El Salvador",
+                author="Omar Nipolan",
+            ),
+        ],
+    )
+
+    # === Laguna de Olomega ===
+    laguna_olomega = Entity(
+        name="Laguna de Olomega",
+        alternative_names=[],
+        category=legend,
+        entity_type=place,
+        description="A lake in eastern El Salvador associated with a siren/mermaid at Isla Olomegón whose songs lure and madden nighttime fishermen, and with 'Piedras del Diablo' petroglyphs linked to a historical site where supernatural sounds are reported",
+        origin="San Miguel / La Unión border region",
+        behavior="The siren's singing is said to lure and disorient fishermen who are out on the lake at night; unexplained sounds are reported near the Piedras del Diablo petroglyphs",
+        image_url=None,
+        is_active=True,
+        characteristics=[
+            Characteristic(
+                type=CharacteristicType.PHYSICAL,
+                description="Freshwater lake spanning San Miguel and La Unión departments",
+            ),
+            Characteristic(
+                type=CharacteristicType.ABILITY,
+                description="Siren's song lures and disorients nighttime fishermen",
+            ),
+        ],
+        locations=[
+            Location(
+                department="San Miguel",
+                municipality="Chirilagua",
+                place_description="Isla Olomegón, where the siren legend is set",
+            ),
+            Location(
+                department="La Unión",
+                municipality="El Carmen",
+                place_description="Shore of the lake",
+            ),
+        ],
+        sources=[
+            Source(
+                source_type=SourceType.WEB,
+                title="Laguna de Olomega",
+                url="https://es.wikipedia.org/wiki/Laguna_de_Olomega",
+            ),
+            Source(
+                source_type=SourceType.WEB,
+                title="Las 5 lagunas más misteriosas de El Salvador",
+                url="https://www.elsalvador.com/turismo/rutas-y-aventuras/leyendas-lagunas-el-salvador/1249040/2025/",
+            ),
+        ],
+    )
+
     # Add all entities with their nested relations
     db.add_all(
         [
@@ -393,6 +514,9 @@ def init_seed_data(db: Session):
             la_llorona,
             el_duende,
             familia_girola,
+            carreta_chillona,
+            justo_juez,
+            laguna_olomega,
         ]
     )
     db.flush()  # Get IDs for all entities
