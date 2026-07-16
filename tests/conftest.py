@@ -35,9 +35,25 @@ from sqlalchemy.dialects.sqlite import base as sqlite_base
 from app.main import app
 from app.db.base_class import Base
 from app.core.config import settings
+from app.api.common.middleware.rate_limiter import limiter
 from app.api.v1.domains.users.services.user import user as user_service
 from app.api.v1.domains.users.schemas.user import UserCreate
 from app.core.security import verify_password
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter():
+    """
+    Reset slowapi's in-memory limiter before each test.
+
+    The limiter is a module-level singleton keyed by client IP, and
+    TestClient always presents as "testclient" — without this, login
+    calls made by the auth_headers/superuser_headers fixtures across
+    the whole test run share one rate-limit budget, so later tests
+    get spuriously 429'd once enough earlier tests have logged in.
+    """
+    limiter.reset()
+    yield
 
 
 # Monkey-patch SQLite to support ARRAY type as JSON
