@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Path, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -149,6 +149,7 @@ async def get_current_user_info(
 @limiter.limit(f"{settings.RATE_LIMIT_AUTH_PER_MINUTE}/minute")
 async def recover_password(
     request: Request,
+    background_tasks: BackgroundTasks,
     email: str = Path(
         ..., description="User email address", examples=["user@example.com"]
     ),
@@ -165,8 +166,11 @@ async def recover_password(
 
     if user:
         password_reset_token = generate_password_reset_token(email=email)
-        send_reset_password_email(
-            email_to=user.email, email=email, token=password_reset_token
+        background_tasks.add_task(
+            send_reset_password_email,
+            email_to=user.email,
+            email=email,
+            token=password_reset_token,
         )
 
     return {
