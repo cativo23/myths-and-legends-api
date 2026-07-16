@@ -17,11 +17,18 @@ from app.core.config import settings
 def rate_limit_key_func(request: Request) -> str:
     """
     Get the rate limit key based on client IP.
-    Falls back to 'unknown' if IP cannot be determined.
+
+    Only honors X-Forwarded-For when the directly connecting peer is a
+    trusted proxy (settings.TRUSTED_PROXY_IPS); otherwise any client could
+    set an arbitrary value and get a fresh rate-limit bucket per request,
+    bypassing brute-force protection entirely. Falls back to the real
+    connecting IP address (via slowapi's get_remote_address) by default.
     """
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
+    client_host = request.client.host if request.client else None
+    if client_host and client_host in settings.TRUSTED_PROXY_IPS:
+        forwarded = request.headers.get("X-Forwarded-For")
+        if forwarded:
+            return forwarded.split(",")[0].strip()
     return get_remote_address(request)
 
 

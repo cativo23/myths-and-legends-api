@@ -32,6 +32,12 @@ class Settings(BaseSettings):
     RATE_LIMIT_PER_MINUTE: int = 60
     RATE_LIMIT_AUTH_PER_MINUTE: int = 10
 
+    # Trusted proxy IPs allowed to set X-Forwarded-For for rate limiting.
+    # Empty by default - nothing is trusted, so the real connecting IP is
+    # always used unless the connecting peer is explicitly listed here
+    # (e.g. the Traefik reverse proxy IP once deployed).
+    TRUSTED_PROXY_IPS: List[str] = []
+
     @model_validator(mode="after")
     def validate_required_secrets(self) -> "Settings":
         if not self.SECRET_KEY:

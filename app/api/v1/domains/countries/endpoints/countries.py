@@ -10,7 +10,8 @@ from app.api.v1.domains.countries.schemas.country import (
     Country as CountrySchema,
 )
 from app.api.v1.domains.countries.services.country import country as country_service
-from app.api.v1.shared.deps import get_db
+from app.api.v1.shared.deps import get_db, get_current_active_superuser
+from app.api.v1.domains.users.models.user import User as UserModel
 
 router = APIRouter()
 
@@ -54,10 +55,12 @@ async def list_countries(
     response_model=CountrySchema,
     status_code=201,
     summary="Create Country",
-    description="Create a new country in the system.",
+    description="Create a new country in the system. Requires superuser privileges.",
     responses={
         201: {"description": "Country successfully created"},
         400: {"description": "Invalid input data"},
+        401: {"description": "Unauthorized - No valid token provided"},
+        403: {"description": "Forbidden - User is not a superuser"},
     },
 )
 async def add_country(
@@ -67,8 +70,9 @@ async def add_country(
         description="Country data to create",
         examples=[{"name": "Nigeria", "status": True}],
     ),
+    current_user: UserModel = Depends(get_current_active_superuser),
 ) -> CountrySchema:
-    """Create a new country."""
+    """Create a new country. Requires superuser privileges."""
     country_created = country_service.create(db, obj_in=country)
     return country_created
 
@@ -108,10 +112,12 @@ async def get_country(
     "/{country_id}",
     response_model=CountrySchema,
     summary="Update Country",
-    description="Update an existing country by its ID.",
+    description="Update an existing country by its ID. Requires superuser privileges.",
     responses={
         200: {"description": "Country successfully updated"},
         404: {"description": "Country not found"},
+        401: {"description": "Unauthorized - No valid token provided"},
+        403: {"description": "Forbidden - User is not a superuser"},
     },
 )
 async def update_country(
@@ -119,8 +125,9 @@ async def update_country(
     db: Session = Depends(get_db),
     country_id: int = Path(..., description="Country ID", examples=[1], gt=0),
     country_in: CountryUpdate = Body(..., description="Updated country data"),
+    current_user: UserModel = Depends(get_current_active_superuser),
 ) -> CountrySchema:
-    """Update a country."""
+    """Update a country. Requires superuser privileges."""
     country = country_service.get(db, item_id=country_id)
 
     if not country:
@@ -134,18 +141,21 @@ async def update_country(
     "/{country_id}",
     status_code=204,
     summary="Delete Country",
-    description="Delete a country by its ID.",
+    description="Delete a country by its ID. Requires superuser privileges.",
     responses={
         204: {"description": "Country successfully deleted"},
         404: {"description": "Country not found"},
+        401: {"description": "Unauthorized - No valid token provided"},
+        403: {"description": "Forbidden - User is not a superuser"},
     },
 )
 async def delete_country(
     *,
     db: Session = Depends(get_db),
     country_id: int = Path(..., description="Country ID", examples=[1], gt=0),
+    current_user: UserModel = Depends(get_current_active_superuser),
 ) -> None:
-    """Delete a country."""
+    """Delete a country. Requires superuser privileges."""
     country = country_service.get(db, item_id=country_id)
 
     if not country:
