@@ -8,9 +8,6 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from app.api.common.exceptions.api_exception import add_exception_handler
 from app.api.common.middleware import SecurityHeadersMiddleware, RequestIDMiddleware
 from app.api.common.middleware.rate_limiter import setup_rate_limiter
-from app.api.common.middleware.request_id import (
-    RequestIDMiddleware as LoggingMiddleware,
-)
 from app.api.v1.router import api_router
 from app.core.config import settings
 from app.core.logging_config import setup_logging, LoggingMiddleware
