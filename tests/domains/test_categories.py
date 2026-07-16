@@ -67,6 +67,12 @@ class TestCategoriesEndpoints:
         names = [c["name"] for c in data["items"]]
         assert names == sorted(names, reverse=True)
 
+    def test_list_categories_invalid_sort_field_rejected(self, client: TestClient):
+        """Test that an invalid sort field is rejected with a 422, rather than
+        silently falling back to id like the old, unvalidated implementation."""
+        response = client.get("/api/v1/categories/?sort=not_a_real_field")
+        assert response.status_code == 422
+
     def test_get_category_by_id(self, client: TestClient, db: Session):
         """Test getting a category by ID."""
         category = Category(
