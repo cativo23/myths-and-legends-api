@@ -214,13 +214,43 @@ class TestEntitiesEndpoints:
             ))
         db.commit()
 
-        # Endpoint limits results before paginating, so total reflects the limited set
+        # Pagination is real DB-level pagination now: `total` must reflect
+        # the full row count, not just the current page's size.
         response = client.get("/api/v1/entities/?page=1&size=2")
         assert response.status_code == 200
         data = response.json()
         assert len(data["items"]) == 2
-        assert data["total"] == 2
+        assert data["total"] == 5
         assert data["page"] == 1
+
+    def test_list_entities_pagination_second_page_returns_remaining_rows(
+        self, client: TestClient, db: Session
+    ):
+        """Regression test for the double-pagination bug: requesting page 2
+        of a multi-page result set used to return an empty `items` list and
+        a `total` equal to the page size (not the real row count), because
+        the endpoint re-paginated a list that the DB query had already
+        sliced to a single page. Page 2 of 45 rows at size=20 must return
+        the 20 remaining rows (21-40) and `total` must be the real count."""
+        deps = self._seed_dependencies(db)
+
+        total_rows = 45
+        for i in range(total_rows):
+            db.add(Entity(
+                name=f"Entity {i:03d}",
+                category_id=deps["category_id"],
+                entity_type_id=deps["entity_type_id"],
+                is_active=True,
+            ))
+        db.commit()
+
+        response = client.get("/api/v1/entities/?page=2&size=20")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == total_rows
+        assert len(data["items"]) > 0
+        assert len(data["items"]) == 20
+        assert data["page"] == 2
 
     def test_list_entities_filter_by_entity_type(self, client: TestClient, db: Session):
         """Test filtering entities by entity_type."""

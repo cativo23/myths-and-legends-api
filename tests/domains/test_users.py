@@ -242,6 +242,37 @@ class TestUsersEndpoints:
         assert data["total"] == 3
         assert len(data["items"]) == 3
 
+    def test_get_all_users_second_page_returns_remaining_rows(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Regression test for the double-pagination bug: page 2 of a
+        multi-page user list used to come back empty with `total` equal to
+        the page size, because `get_multi(skip, limit)` had already sliced
+        the DB rows down to one page before `paginate()` re-sliced them a
+        second time using the same page number."""
+        # 24 extra users + 1 superuser (created by the `superuser_headers`
+        # fixture) = 25 total rows, spanning 2 pages at size=20.
+        users = [
+            User(
+                email=f"user{i}@example.com",
+                hashed_password="hashed",
+                full_name=f"User {i}",
+            )
+            for i in range(24)
+        ]
+        db.add_all(users)
+        db.commit()
+
+        response = client.get(
+            "/api/v1/users/?page=2&size=20", headers=superuser_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 25
+        assert len(data["items"]) > 0
+        assert len(data["items"]) == 5
+        assert data["page"] == 2
+
     def test_create_user(self, client: TestClient, superuser_headers: dict):
         """Test creating a user as superuser."""
         response = client.post(

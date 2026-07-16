@@ -1,7 +1,7 @@
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 
 from fastapi.encoders import jsonable_encoder
-from fastapi_pagination.bases import AbstractPage
+from fastapi_pagination.bases import AbstractPage, AbstractParams
 from fastapi_pagination.ext.sqlalchemy import paginate
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -29,8 +29,10 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self.model = model
 
     def _build_query(self, relations: List[str] | None = None):
-        """Build a select query with optional eager loading."""
-        stmt = select(self.model)
+        """Build a select query with optional eager loading, ordered by id for
+        stable pagination (without an explicit ORDER BY, offset/limit results
+        are not guaranteed to be stable across concurrent writes)."""
+        stmt = select(self.model).order_by(self.model.id)
         if relations:
             stmt = stmt.options(
                 *[selectinload(getattr(self.model, r)) for r in relations]
@@ -70,11 +72,20 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self,
         db: Session,
         relations: List[str] | None = None,
+        *,
+        params: AbstractParams | None = None,
     ) -> AbstractPage:
-        """Get all items with pagination (fastapi-pagination)."""
+        """Get all items with pagination (fastapi-pagination).
+
+        `params` is optional: when omitted, fastapi-pagination resolves it
+        from the request's own page/size query params via its ContextVar
+        (wired up by `add_pagination(app)`). Pass it explicitly when the
+        caller already parsed its own page/size (e.g. because it also has
+        other query params to validate) so the two don't drift out of sync.
+        """
         try:
             stmt = self._build_query(relations)
-            return paginate(db, stmt)
+            return paginate(db, stmt, params)
         except ArgumentError as error:
             raise RelationshipNotFoundException(
                 name=error.args[0].split('"')[1],

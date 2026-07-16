@@ -1,7 +1,7 @@
 from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Path
-from fastapi_pagination import Page, Params, paginate
+from fastapi_pagination import Page, Params
 from sqlalchemy.orm import Session
 
 from app.api.v1.domains.users.models.user import User as UserModel
@@ -12,7 +12,6 @@ from app.api.v1.domains.users.schemas.user import (
 )
 from app.api.v1.domains.users.services.user import user as user_service
 from app.api.v1.shared.deps import get_db, get_current_active_superuser
-from app.api.common.pagination.json_api_page import JsonApiPage
 
 router = APIRouter()
 
@@ -41,8 +40,7 @@ async def get_users(
     current_user: UserModel = Depends(get_current_active_superuser),
 ) -> Any:
     """List all users with pagination and sorting."""
-    users = user_service.get_multi(db, skip=(page - 1) * size, limit=size)
-    return paginate(users, Params(page=page, size=size))
+    return user_service.get_all(db, params=Params(page=page, size=size))
 
 
 @router.post(
