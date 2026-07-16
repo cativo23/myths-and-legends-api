@@ -101,7 +101,7 @@ async def get_entity(
     id: Annotated[int, Path(gt=0, description="Entity ID", examples=[1])],
 ):
     """Get entity by ID with all nested relations."""
-    db_entity = entity.get(db, id=id)
+    db_entity = entity.get(db, item_id=id)
     if not db_entity:
         raise HTTPException(status_code=404, detail="Entity not found")
 
@@ -189,7 +189,7 @@ async def update_entity(
     entity_in: EntityUpdate,
 ):
     """Update an entity."""
-    db_entity = entity.get(db, id=id)
+    db_entity = entity.get(db, item_id=id)
     if not db_entity:
         raise HTTPException(status_code=404, detail="Entity not found")
     return entity.update(db, db_obj=db_entity, obj_in=entity_in)
@@ -210,10 +210,10 @@ async def delete_entity(
     id: Annotated[int, Path(gt=0, description="Entity ID", examples=[1])],
 ):
     """Delete an entity."""
-    db_entity = entity.get(db, id=id)
+    db_entity = entity.get(db, item_id=id)
     if not db_entity:
         raise HTTPException(status_code=404, detail="Entity not found")
-    entity.remove(db, id=id)
+    entity.remove(db, item_id=id)
 
 
 @router.get(
@@ -231,7 +231,7 @@ async def get_entity_relations(
     id: Annotated[int, Path(gt=0, description="Entity ID", examples=[1])],
 ):
     """Get all relations for an entity."""
-    db_entity = entity.get(db, id=id)
+    db_entity = entity.get(db, item_id=id)
     if not db_entity:
         raise HTTPException(status_code=404, detail="Entity not found")
 

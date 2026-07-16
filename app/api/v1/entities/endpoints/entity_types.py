@@ -53,7 +53,7 @@ async def get_entity_type(
     id: Annotated[int, Path(gt=0, description="Entity Type ID", examples=[1])],
 ):
     """Get entity type by ID."""
-    db_entity_type = entity_type.get(db, id=id)
+    db_entity_type = entity_type.get(db, item_id=id)
     if not db_entity_type:
         raise HTTPException(status_code=404, detail="Entity type not found")
     return db_entity_type

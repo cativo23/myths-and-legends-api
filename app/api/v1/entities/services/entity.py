@@ -22,9 +22,9 @@ class EntityService(CRUDBaseService[Entity, EntityCreate, EntityUpdate]):
             selectinload(Entity.sources),
         )
 
-    def get(self, db: Session, *, id: int) -> Entity | None:
+    def get(self, db: Session, *, item_id: int) -> Entity | None:
         """Get entity by ID with all nested relations"""
-        stmt = self._get_base_query().where(Entity.id == id)
+        stmt = self._get_base_query().where(Entity.id == item_id)
         return db.execute(stmt).scalar_one_or_none()
 
     def get_multi(

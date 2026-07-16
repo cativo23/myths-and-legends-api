@@ -7,6 +7,25 @@ import os
 import tempfile
 from typing import Generator
 
+# Patch bcrypt compatibility issue with passlib (bcrypt >= 4.1).
+# Must run before passlib is imported anywhere.
+import bcrypt as _bcrypt_lib
+
+class _BcryptAbout:
+    __version__ = _bcrypt_lib.__version__
+
+_bcrypt_lib.__about__ = _BcryptAbout()
+_original_bcrypt_hashpw = _bcrypt_lib.hashpw
+
+
+def _safe_bcrypt_hashpw(password, salt):
+    if isinstance(password, bytes) and len(password) > 72:
+        password = password[:72]
+    return _original_bcrypt_hashpw(password, salt)
+
+
+_bcrypt_lib.hashpw = _safe_bcrypt_hashpw
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event
@@ -16,9 +35,25 @@ from sqlalchemy.dialects.sqlite import base as sqlite_base
 from app.main import app
 from app.db.base_class import Base
 from app.core.config import settings
+from app.api.common.middleware.rate_limiter import limiter
 from app.api.v1.domains.users.services.user import user as user_service
 from app.api.v1.domains.users.schemas.user import UserCreate
 from app.core.security import verify_password
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter():
+    """
+    Reset slowapi's in-memory limiter before each test.
+
+    The limiter is a module-level singleton keyed by client IP, and
+    TestClient always presents as "testclient" — without this, login
+    calls made by the auth_headers/superuser_headers fixtures across
+    the whole test run share one rate-limit budget, so later tests
+    get spuriously 429'd once enough earlier tests have logged in.
+    """
+    limiter.reset()
+    yield
 
 
 # Monkey-patch SQLite to support ARRAY type as JSON
