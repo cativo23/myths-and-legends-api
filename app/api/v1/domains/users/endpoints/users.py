@@ -27,7 +27,7 @@ router = APIRouter()
         403: {"description": "Forbidden - User is not a superuser"},
     },
 )
-async def get_users(
+def get_users(
     db: Session = Depends(get_db),
     page: int = Query(1, description="Page number", ge=1),
     size: int = Query(20, description="Items per page", ge=1, le=100),
@@ -56,7 +56,7 @@ async def get_users(
         403: {"description": "Forbidden - User is not a superuser"},
     },
 )
-async def create_user(
+def create_user(
     *,
     db: Session = Depends(get_db),
     user_in: UserCreate,
@@ -85,7 +85,7 @@ async def create_user(
         403: {"description": "Forbidden - User is not a superuser"},
     },
 )
-async def update_user(
+def update_user(
     *,
     db: Session = Depends(get_db),
     user_id: int = Path(..., description="User ID", examples=[1], gt=0),
@@ -112,7 +112,7 @@ async def update_user(
         403: {"description": "Forbidden - User is not a superuser"},
     },
 )
-async def get_user(
+def get_user(
     *,
     db: Session = Depends(get_db),
     user_id: int = Path(..., description="User ID", examples=[1], gt=0),
@@ -137,7 +137,7 @@ async def get_user(
         403: {"description": "Forbidden - User is not a superuser"},
     },
 )
-async def delete_user(
+def delete_user(
     *,
     db: Session = Depends(get_db),
     user_id: int = Path(..., description="User ID", examples=[1], gt=0),

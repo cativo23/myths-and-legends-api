@@ -23,7 +23,7 @@ router = APIRouter(prefix="/sources", tags=["sources"])
         200: {"description": "Successful retrieval of sources"},
     },
 )
-async def list_sources(
+def list_sources(
     db: Annotated[Session, Depends(get_db)],
     source_type: Annotated[
         SourceType | None,

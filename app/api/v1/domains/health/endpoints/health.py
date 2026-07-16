@@ -35,7 +35,7 @@ router = APIRouter(prefix="/health", tags=["health"])
         200: {"description": "Service is healthy"},
     },
 )
-async def health_check() -> dict[str, Any]:
+def health_check() -> dict[str, Any]:
     """
     Basic health check endpoint.
 
@@ -56,7 +56,7 @@ async def health_check() -> dict[str, Any]:
         200: {"description": "Service is alive"},
     },
 )
-async def liveness_probe() -> dict[str, Any]:
+def liveness_probe() -> dict[str, Any]:
     """
     Liveness probe endpoint.
 
@@ -80,7 +80,7 @@ async def liveness_probe() -> dict[str, Any]:
     },
     status_code=status.HTTP_200_OK,
 )
-async def readiness_probe(
+def readiness_probe(
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     """

@@ -89,7 +89,7 @@ class PasswordReset(BaseModel):
     },
 )
 @limiter.limit(f"{settings.RATE_LIMIT_AUTH_PER_MINUTE}/minute")
-async def login_access_token(
+def login_access_token(
     request: Request,
     db: Session = Depends(get_db),
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -131,7 +131,7 @@ async def login_access_token(
         401: {"description": "Unauthorized - No valid token provided"},
     },
 )
-async def get_current_user_info(
+def get_current_user_info(
     current_user: UserModel = Depends(get_current_user),
 ) -> UserModel:
     """Get current user information."""
@@ -147,7 +147,7 @@ async def get_current_user_info(
     },
 )
 @limiter.limit(f"{settings.RATE_LIMIT_AUTH_PER_MINUTE}/minute")
-async def recover_password(
+def recover_password(
     request: Request,
     background_tasks: BackgroundTasks,
     email: str = Path(
@@ -189,7 +189,7 @@ async def recover_password(
     },
 )
 @limiter.limit(f"{settings.RATE_LIMIT_AUTH_PER_MINUTE}/minute")
-async def reset_password(
+def reset_password(
     request: Request,
     password_reset: PasswordReset,
     db: Session = Depends(get_db),
