@@ -15,7 +15,7 @@ def not_found(obj_name: str = None):
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
         content=ApiResponse(
-            message="The %s with this id does not exist in the system." % obj_name,
+            message=f"{obj_name} with this ID does not exist",
             data=None,
             status=status.HTTP_404_NOT_FOUND,
         ).dict(),
@@ -26,7 +26,7 @@ def found(obj_name: str = None, obj: ModelType = None):
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content=ApiResponse(
-            message="The %s is returned correctly" % obj_name,
+            message=f"Successfully retrieved {obj_name}",
             data=jsonable_encoder(obj),
             status=status.HTTP_200_OK,
         ).dict(),
@@ -37,7 +37,7 @@ def created(obj_name: str = None, obj: ModelType = None):
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
         content=ApiResponse(
-            message="The %s is created correctly" % obj_name,
+            message=f"{obj_name} created successfully",
             data=jsonable_encoder(obj),
             status=status.HTTP_201_CREATED,
         ).dict(),
@@ -48,7 +48,7 @@ def updated(obj_name: str = None, obj: ModelType = None):
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content=ApiResponse(
-            message="The %s is updated correctly" % obj_name,
+            message=f"{obj_name} updated successfully",
             data=jsonable_encoder(obj),
             status=status.HTTP_200_OK,
         ).dict(),
@@ -59,7 +59,7 @@ def deleted(obj_name: str = None):
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content=ApiResponse(
-            message="The %s is deleted correctly" % obj_name,
+            message=f"{obj_name} deleted successfully",
             data=None,
             status=status.HTTP_200_OK,
         ).dict(),
