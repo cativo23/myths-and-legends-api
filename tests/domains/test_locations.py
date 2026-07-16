@@ -16,7 +16,8 @@ class TestLocationsEndpoints:
         response = client.get("/api/v1/locations/")
         assert response.status_code == 200
         data = response.json()
-        assert data == []
+        assert data["items"] == []
+        assert data["total"] == 0
 
     def test_list_locations(self, client: TestClient, db: Session):
         """Test listing all locations."""
@@ -40,7 +41,8 @@ class TestLocationsEndpoints:
         response = client.get("/api/v1/locations/")
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 2
+        assert len(data["items"]) == 2
+        assert data["total"] == 2
 
     def test_filter_locations_by_department(self, client: TestClient, db: Session):
         """Test filtering locations by department query parameter."""
@@ -62,8 +64,8 @@ class TestLocationsEndpoints:
         response = client.get("/api/v1/locations/?department=Cundinamarca")
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 1
-        assert data[0]["department"] == "Cundinamarca"
+        assert len(data["items"]) == 1
+        assert data["items"][0]["department"] == "Cundinamarca"
 
     def test_filter_locations_by_department_partial_match(
         self, client: TestClient, db: Session
@@ -92,7 +94,58 @@ class TestLocationsEndpoints:
         response = client.get("/api/v1/locations/?department=San")
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 2
+        assert len(data["items"]) == 2
+        assert data["total"] == 2
+
+    def test_get_location_by_id(self, client: TestClient, db: Session):
+        """Test getting a single location by its numeric ID."""
+        location = Location(
+            entity_id=1,
+            department="Cundinamarca",
+            municipality="Bogota",
+            place_description="Capital city",
+        )
+        db.add(location)
+        db.commit()
+
+        response = client.get(f"/api/v1/locations/{location.id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == location.id
+        assert data["department"] == "Cundinamarca"
+
+    def test_get_location_by_id_not_found(self, client: TestClient):
+        """Test getting a non-existent location by ID returns 404."""
+        response = client.get("/api/v1/locations/999")
+        assert response.status_code == 404
+        data = response.json()
+        assert "detail" in data
+        assert "not found" in data["detail"].lower()
+
+    def test_get_location_by_id_does_not_collide_with_department_route(
+        self, client: TestClient, db: Session
+    ):
+        """A numeric ID path segment must resolve via the /{id} route, not be
+        swallowed by the string-typed /{department} route."""
+        department_only = Location(
+            entity_id=1,
+            department="42",
+            municipality="Numeric Department",
+        )
+        real_location = Location(
+            entity_id=1,
+            department="Cundinamarca",
+        )
+        db.add_all([department_only, real_location])
+        db.commit()
+
+        # Request by the real location's numeric ID should return a single
+        # object (LocationSchema), not a list from the department route.
+        response = client.get(f"/api/v1/locations/{real_location.id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, dict)
+        assert data["id"] == real_location.id
 
     def test_get_locations_by_department_path(self, client: TestClient, db: Session):
         """Test getting locations by department via path parameter."""
@@ -145,7 +198,7 @@ class TestLocationsEndpoints:
         response = client.get("/api/v1/locations/")
         assert response.status_code == 200
         data = response.json()
-        loc = data[0]
+        loc = data["items"][0]
         assert "id" in loc
         assert "entity_id" in loc
         assert "department" in loc
