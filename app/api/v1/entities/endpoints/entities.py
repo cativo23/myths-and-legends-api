@@ -1,7 +1,7 @@
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
-from fastapi_pagination import Page, Params, paginate
+from fastapi_pagination import Page, Params
 from sqlalchemy.orm import Session
 
 from app.api.v1.shared.deps import get_db, get_current_active_superuser
@@ -51,15 +51,13 @@ async def list_entities(
     order: Annotated[str, Query(description="Sort order (asc, desc)")] = "asc",
 ):
     """List all entities with optional filters and pagination."""
-    entities = entity.get_multi(
+    return entity.get_paginated(
         db,
         entity_type=entity_type,
         category=category,
         is_active=is_active,
-        skip=(page - 1) * size,
-        limit=size,
+        params=Params(page=page, size=size),
     )
-    return paginate(entities, Params(page=page, size=size))
 
 
 @router.get(
