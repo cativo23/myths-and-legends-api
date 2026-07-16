@@ -17,7 +17,8 @@ class TestEntityTypesEndpoints:
         response = client.get("/api/v1/entity-types/")
         assert response.status_code == 200
         data = response.json()
-        assert data == []
+        assert data["items"] == []
+        assert data["total"] == 0
 
     def test_list_entity_types(self, client: TestClient, db: Session):
         """Test listing all entity types."""
@@ -38,7 +39,8 @@ class TestEntityTypesEndpoints:
         response = client.get("/api/v1/entity-types/")
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 3
+        assert len(data["items"]) == 3
+        assert data["total"] == 3
 
     def test_list_entity_types_sorted_by_name_asc(
         self, client: TestClient, db: Session
@@ -55,7 +57,7 @@ class TestEntityTypesEndpoints:
         response = client.get("/api/v1/entity-types/")
         assert response.status_code == 200
         data = response.json()
-        names = [e["name"] for e in data]
+        names = [e["name"] for e in data["items"]]
         assert names == sorted(names)
 
     def test_list_entity_types_sorted_desc(self, client: TestClient, db: Session):
@@ -70,7 +72,7 @@ class TestEntityTypesEndpoints:
         response = client.get("/api/v1/entity-types/?order=desc")
         assert response.status_code == 200
         data = response.json()
-        names = [e["name"] for e in data]
+        names = [e["name"] for e in data["items"]]
         assert names == sorted(names, reverse=True)
 
     def test_get_entity_type_by_id(self, client: TestClient, db: Session):

@@ -17,7 +17,8 @@ class TestSourcesEndpoints:
         response = client.get("/api/v1/sources/")
         assert response.status_code == 200
         data = response.json()
-        assert data == []
+        assert data["items"] == []
+        assert data["total"] == 0
 
     def test_list_sources(self, client: TestClient, db: Session):
         """Test listing all sources."""
@@ -43,7 +44,8 @@ class TestSourcesEndpoints:
         response = client.get("/api/v1/sources/")
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 2
+        assert len(data["items"]) == 2
+        assert data["total"] == 2
 
     def test_list_sources_sorted_by_title(self, client: TestClient, db: Session):
         """Test sorting sources by title field."""
@@ -54,13 +56,19 @@ class TestSourcesEndpoints:
         db.add_all(sources)
         db.commit()
 
-        # Source model has no 'name' field, so default sort falls back to 'id'
+        # Source model has no 'name' field, so default sort is 'id'.
         # Explicitly sort by 'title' to test title-based ordering
         response = client.get("/api/v1/sources/?sort=title")
         assert response.status_code == 200
         data = response.json()
-        titles = [s["title"] for s in data]
+        titles = [s["title"] for s in data["items"]]
         assert titles == sorted(titles)
+
+    def test_list_sources_invalid_sort_field_rejected(self, client: TestClient):
+        """Test that an invalid sort field is rejected with a 422, rather than
+        silently falling back to id like the old, unvalidated implementation."""
+        response = client.get("/api/v1/sources/?sort=not_a_real_field")
+        assert response.status_code == 422
 
     def test_list_sources_sorted_desc(self, client: TestClient, db: Session):
         """Test listing sources sorted descending."""
@@ -74,7 +82,7 @@ class TestSourcesEndpoints:
         response = client.get("/api/v1/sources/?order=desc")
         assert response.status_code == 200
         data = response.json()
-        titles = [s["title"] for s in data]
+        titles = [s["title"] for s in data["items"]]
         assert titles == sorted(titles, reverse=True)
 
     def test_filter_sources_by_type(self, client: TestClient, db: Session):
@@ -102,8 +110,8 @@ class TestSourcesEndpoints:
         response = client.get("/api/v1/sources/?source_type=BOOK")
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 1
-        assert data[0]["source_type"] == "BOOK"
+        assert len(data["items"]) == 1
+        assert data["items"][0]["source_type"] == "BOOK"
 
     def test_source_response_schema(self, client: TestClient, db: Session):
         """Test that source response matches expected schema."""
@@ -120,7 +128,7 @@ class TestSourcesEndpoints:
         response = client.get("/api/v1/sources/")
         assert response.status_code == 200
         data = response.json()
-        s = data[0]
+        s = data["items"][0]
         assert "id" in s
         assert "entity_id" in s
         assert "source_type" in s

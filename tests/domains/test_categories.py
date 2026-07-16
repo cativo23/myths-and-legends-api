@@ -17,7 +17,8 @@ class TestCategoriesEndpoints:
         response = client.get("/api/v1/categories/")
         assert response.status_code == 200
         data = response.json()
-        assert data == []
+        assert data["items"] == []
+        assert data["total"] == 0
 
     def test_list_categories(self, client: TestClient, db: Session):
         """Test listing all categories."""
@@ -32,7 +33,8 @@ class TestCategoriesEndpoints:
         response = client.get("/api/v1/categories/")
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 3
+        assert len(data["items"]) == 3
+        assert data["total"] == 3
 
     def test_list_categories_sorted_by_name_asc(self, client: TestClient, db: Session):
         """Test that categories are sorted by name ascending by default."""
@@ -47,7 +49,7 @@ class TestCategoriesEndpoints:
         response = client.get("/api/v1/categories/")
         assert response.status_code == 200
         data = response.json()
-        names = [c["name"] for c in data]
+        names = [c["name"] for c in data["items"]]
         assert names == sorted(names)
 
     def test_list_categories_sorted_desc(self, client: TestClient, db: Session):
@@ -62,7 +64,7 @@ class TestCategoriesEndpoints:
         response = client.get("/api/v1/categories/?order=desc")
         assert response.status_code == 200
         data = response.json()
-        names = [c["name"] for c in data]
+        names = [c["name"] for c in data["items"]]
         assert names == sorted(names, reverse=True)
 
     def test_get_category_by_id(self, client: TestClient, db: Session):
