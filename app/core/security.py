@@ -1,6 +1,29 @@
 from datetime import datetime, timedelta
 from typing import Any, Union
 
+# Patch bcrypt compatibility issue with passlib (bcrypt >= 4.1 dropped the
+# __about__.__version__ attribute passlib's backend probe relies on, and
+# changed truncation behavior for passwords > 72 bytes). Must run before
+# passlib is imported.
+import bcrypt as _bcrypt_lib
+
+
+class _BcryptAbout:
+    __version__ = _bcrypt_lib.__version__
+
+
+_bcrypt_lib.__about__ = _BcryptAbout()
+_original_bcrypt_hashpw = _bcrypt_lib.hashpw
+
+
+def _safe_bcrypt_hashpw(password, salt):
+    if isinstance(password, bytes) and len(password) > 72:
+        password = password[:72]
+    return _original_bcrypt_hashpw(password, salt)
+
+
+_bcrypt_lib.hashpw = _safe_bcrypt_hashpw
+
 from jose import jwt
 from passlib.context import CryptContext
 
