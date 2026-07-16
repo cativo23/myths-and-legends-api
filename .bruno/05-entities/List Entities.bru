@@ -1,0 +1,20 @@
+meta {
+  name: List Entities
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/api/{{api_version}}/entities?page=1&size=20&sort=name&order=asc&is_active=true
+}
+
+query {
+  entity_type: Greek
+  category: Deity
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+}

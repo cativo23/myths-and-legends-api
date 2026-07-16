@@ -1,0 +1,25 @@
+meta {
+  name: Update Entity
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{base_url}}/api/{{api_version}}/entities/:id
+}
+
+params:path {
+  id: 1
+}
+
+body {
+  {
+    "name": "Zeus Updated",
+    "description": "Updated description",
+    "is_active": true
+  }
+}
+
+headers {
+  Content-Type: application/json
+}

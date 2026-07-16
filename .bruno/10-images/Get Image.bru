@@ -1,0 +1,13 @@
+meta {
+  name: Get Image
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/api/{{api_version}}/images/:name_file
+}
+
+params:path {
+  name_file: example.jpg
+}

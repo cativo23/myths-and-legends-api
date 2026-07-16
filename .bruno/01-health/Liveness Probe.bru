@@ -1,0 +1,19 @@
+meta {
+  name: Liveness Probe
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/api/{{api_version}}/health/live
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Response status is alive", function() {
+    expect(res.body.status).to.equal("alive");
+  });
+}

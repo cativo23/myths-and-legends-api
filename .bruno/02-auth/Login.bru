@@ -1,0 +1,32 @@
+meta {
+  name: Login
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/api/{{api_version}}/auth/login
+}
+
+body:form-urlencoded {
+  username: admin@example.com
+  password: admin123
+}
+
+script:post-response {
+  bru.setEnvVar("token", res.body.access_token);
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Returns access token", function() {
+    expect(res.body.access_token).to.be.a('string');
+  });
+
+  test("Token type is Bearer", function() {
+    expect(res.body.token_type).to.equal("Bearer");
+  });
+}

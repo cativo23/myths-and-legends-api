@@ -1,0 +1,19 @@
+meta {
+  name: Readiness Probe
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/api/{{api_version}}/health/ready
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Database is healthy", function() {
+    expect(res.body.checks.database.status).to.equal("healthy");
+  });
+}

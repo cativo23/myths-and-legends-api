@@ -1,0 +1,17 @@
+meta {
+  name: Delete User
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{base_url}}/api/{{api_version}}/users/:user_id
+}
+
+params:path {
+  user_id: 1
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}

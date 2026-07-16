@@ -1,0 +1,13 @@
+meta {
+  name: Get Entity Type
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/api/{{api_version}}/entity-types/:id
+}
+
+params:path {
+  id: 1
+}

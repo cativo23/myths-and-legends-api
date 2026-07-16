@@ -1,0 +1,19 @@
+meta {
+  name: Search Entities
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/api/{{api_version}}/entities/search?q=Zeus
+}
+
+query {
+  q: Zeus
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+}

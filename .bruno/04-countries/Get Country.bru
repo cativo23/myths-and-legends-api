@@ -1,0 +1,17 @@
+meta {
+  name: Get Country
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/api/{{api_version}}/countries/:country_id
+}
+
+params:path {
+  country_id: 1
+}
+
+query {
+  relations: entities,locations
+}

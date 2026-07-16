@@ -1,0 +1,17 @@
+meta {
+  name: Get User
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/api/{{api_version}}/users/:user_id
+}
+
+params:path {
+  user_id: 1
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}

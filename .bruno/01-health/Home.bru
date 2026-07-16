@@ -1,0 +1,19 @@
+meta {
+  name: Home
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{base_url}}/api/{{api_version}}/
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Response has welcome message", function() {
+    expect(res.body.message).to.be.a('string');
+  });
+}

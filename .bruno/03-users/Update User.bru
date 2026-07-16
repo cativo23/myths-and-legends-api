@@ -1,0 +1,27 @@
+meta {
+  name: Update User
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{base_url}}/api/{{api_version}}/users/:user_id
+}
+
+params:path {
+  user_id: 1
+}
+
+body {
+  {
+    "email": "updated@example.com",
+    "full_name": "Updated Name",
+    "is_active": true,
+    "is_superuser": false
+  }
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}

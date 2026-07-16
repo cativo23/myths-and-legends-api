@@ -1,0 +1,26 @@
+meta {
+  name: Create Country
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/api/{{api_version}}/countries
+}
+
+body {
+  {
+    "name": "El Salvador",
+    "status": true
+  }
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  test("Status code is 201", function() {
+    expect(res.status).to.equal(201);
+  });
+}

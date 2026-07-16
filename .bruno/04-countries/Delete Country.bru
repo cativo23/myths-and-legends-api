@@ -1,0 +1,13 @@
+meta {
+  name: Delete Country
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{base_url}}/api/{{api_version}}/countries/:country_id
+}
+
+params:path {
+  country_id: 1
+}

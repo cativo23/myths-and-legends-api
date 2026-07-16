@@ -1,0 +1,13 @@
+meta {
+  name: Get Location By Department
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/api/{{api_version}}/locations/:department
+}
+
+params:path {
+  department: Cundinamarca
+}

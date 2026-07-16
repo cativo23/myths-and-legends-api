@@ -1,0 +1,13 @@
+meta {
+  name: Get Category
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/api/{{api_version}}/categories/:id
+}
+
+params:path {
+  id: 1
+}

@@ -1,0 +1,19 @@
+meta {
+  name: List Locations
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/api/{{api_version}}/locations
+}
+
+query {
+  department: Cundinamarca
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+}

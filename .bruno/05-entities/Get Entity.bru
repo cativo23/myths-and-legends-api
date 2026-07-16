@@ -1,0 +1,19 @@
+meta {
+  name: Get Entity
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/api/{{api_version}}/entities/:id
+}
+
+params:path {
+  id: 1
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+}

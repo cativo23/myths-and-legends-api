@@ -1,0 +1,30 @@
+meta {
+  name: Create User
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/api/{{api_version}}/users
+}
+
+body {
+  {
+    "email": "newuser@example.com",
+    "password": "SecureP@ss123",
+    "full_name": "New User",
+    "is_active": true,
+    "is_superuser": false
+  }
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+tests {
+  test("Status code is 201", function() {
+    expect(res.status).to.equal(201);
+  });
+}

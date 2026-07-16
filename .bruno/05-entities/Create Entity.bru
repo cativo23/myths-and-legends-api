@@ -1,0 +1,30 @@
+meta {
+  name: Create Entity
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/api/{{api_version}}/entities
+}
+
+body {
+  {
+    "name": "Zeus",
+    "description": "King of the gods in Greek mythology",
+    "origin": "Ancient Greece",
+    "category_id": 1,
+    "entity_type_id": 1,
+    "is_active": true
+  }
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  test("Status code is 201", function() {
+    expect(res.status).to.equal(201);
+  });
+}
