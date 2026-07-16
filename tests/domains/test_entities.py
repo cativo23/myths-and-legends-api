@@ -379,12 +379,13 @@ class TestEntitiesEndpoints:
         data = response.json()
         assert data["detail"] == "Entity not found"
 
-    def test_create_entity(self, client: TestClient, db: Session):
+    def test_create_entity(self, client: TestClient, db: Session, superuser_headers: dict):
         """Test creating an entity."""
         deps = self._seed_dependencies(db)
 
         response = client.post(
             "/api/v1/entities/",
+            headers=superuser_headers,
             json={
                 "name": "Poseidon",
                 "category_id": deps["category_id"],
@@ -399,12 +400,13 @@ class TestEntitiesEndpoints:
         assert data["description"] == "God of the sea"
         assert data["is_active"] is True
 
-    def test_create_entity_minimal(self, client: TestClient, db: Session):
+    def test_create_entity_minimal(self, client: TestClient, db: Session, superuser_headers: dict):
         """Test creating an entity with only required fields."""
         deps = self._seed_dependencies(db)
 
         response = client.post(
             "/api/v1/entities/",
+            headers=superuser_headers,
             json={
                 "name": "Minimal Entity",
                 "category_id": deps["category_id"],
@@ -416,7 +418,7 @@ class TestEntitiesEndpoints:
         assert data["name"] == "Minimal Entity"
         assert data["is_active"] is True
 
-    def test_update_entity(self, client: TestClient, db: Session):
+    def test_update_entity(self, client: TestClient, db: Session, superuser_headers: dict):
         """Test updating an entity."""
         deps = self._seed_dependencies(db)
 
@@ -430,6 +432,7 @@ class TestEntitiesEndpoints:
 
         response = client.put(
             f"/api/v1/entities/{entity.id}",
+            headers=superuser_headers,
             json={"name": "Updated Name", "description": "New description"},
         )
         assert response.status_code == 200
@@ -437,17 +440,18 @@ class TestEntitiesEndpoints:
         assert data["name"] == "Updated Name"
         assert data["description"] == "New description"
 
-    def test_update_entity_not_found(self, client: TestClient):
+    def test_update_entity_not_found(self, client: TestClient, superuser_headers: dict):
         """Test updating a non-existent entity."""
         response = client.put(
             "/api/v1/entities/999",
+            headers=superuser_headers,
             json={"name": "Does Not Exist"},
         )
         assert response.status_code == 404
         data = response.json()
         assert data["detail"] == "Entity not found"
 
-    def test_update_entity_partial(self, client: TestClient, db: Session):
+    def test_update_entity_partial(self, client: TestClient, db: Session, superuser_headers: dict):
         """Test partial update of an entity."""
         deps = self._seed_dependencies(db)
 
@@ -462,6 +466,7 @@ class TestEntitiesEndpoints:
 
         response = client.put(
             f"/api/v1/entities/{entity.id}",
+            headers=superuser_headers,
             json={"is_active": False},
         )
         assert response.status_code == 200
@@ -470,7 +475,7 @@ class TestEntitiesEndpoints:
         assert data["description"] == "Original description"
         assert data["is_active"] is False
 
-    def test_delete_entity(self, client: TestClient, db: Session):
+    def test_delete_entity(self, client: TestClient, db: Session, superuser_headers: dict):
         """Test deleting an entity."""
         deps = self._seed_dependencies(db)
 
@@ -482,18 +487,116 @@ class TestEntitiesEndpoints:
         db.add(entity)
         db.commit()
 
-        response = client.delete(f"/api/v1/entities/{entity.id}")
+        response = client.delete(f"/api/v1/entities/{entity.id}", headers=superuser_headers)
         assert response.status_code == 204
 
         response = client.get(f"/api/v1/entities/{entity.id}")
         assert response.status_code == 404
 
-    def test_delete_entity_not_found(self, client: TestClient):
+    def test_delete_entity_not_found(self, client: TestClient, superuser_headers: dict):
         """Test deleting a non-existent entity."""
-        response = client.delete("/api/v1/entities/999")
+        response = client.delete("/api/v1/entities/999", headers=superuser_headers)
         assert response.status_code == 404
         data = response.json()
         assert data["detail"] == "Entity not found"
+
+    def test_create_entity_without_auth(self, client: TestClient, db: Session):
+        """Test creating an entity without authentication returns 401."""
+        deps = self._seed_dependencies(db)
+
+        response = client.post(
+            "/api/v1/entities/",
+            json={
+                "name": "Unauthorized Entity",
+                "category_id": deps["category_id"],
+                "entity_type_id": deps["entity_type_id"],
+            },
+        )
+        assert response.status_code == 401
+
+    def test_create_entity_as_regular_user(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        """Test creating an entity as non-superuser returns 403."""
+        deps = self._seed_dependencies(db)
+
+        response = client.post(
+            "/api/v1/entities/",
+            headers=auth_headers,
+            json={
+                "name": "Forbidden Entity",
+                "category_id": deps["category_id"],
+                "entity_type_id": deps["entity_type_id"],
+            },
+        )
+        assert response.status_code == 403
+
+    def test_update_entity_without_auth(self, client: TestClient, db: Session):
+        """Test updating an entity without authentication returns 401."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Original",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+
+        response = client.put(
+            f"/api/v1/entities/{entity.id}",
+            json={"name": "Hacked"},
+        )
+        assert response.status_code == 401
+
+    def test_update_entity_as_regular_user(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        """Test updating an entity as non-superuser returns 403."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Original",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+
+        response = client.put(
+            f"/api/v1/entities/{entity.id}",
+            headers=auth_headers,
+            json={"name": "Hacked"},
+        )
+        assert response.status_code == 403
+
+    def test_delete_entity_without_auth(self, client: TestClient, db: Session):
+        """Test deleting an entity without authentication returns 401."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="To Delete",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+
+        response = client.delete(f"/api/v1/entities/{entity.id}")
+        assert response.status_code == 401
+
+    def test_delete_entity_as_regular_user(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        """Test deleting an entity as non-superuser returns 403."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="To Delete",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+
+        response = client.delete(f"/api/v1/entities/{entity.id}", headers=auth_headers)
+        assert response.status_code == 403
 
     def test_get_entity_relations(self, client: TestClient, db: Session):
         """Test getting entity relations."""

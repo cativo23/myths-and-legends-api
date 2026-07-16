@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from fastapi_pagination import Page, Params, paginate
 from sqlalchemy.orm import Session
 
-from app.api.v1.shared.deps import get_db
+from app.api.v1.shared.deps import get_db, get_current_active_superuser
 from app.api.v1.entities.services import entity, relation
 from app.api.v1.entities.schemas.entity import Entity, EntityCreate, EntityUpdate
 from app.api.v1.entities.schemas.entity_with_relations import (
@@ -12,6 +12,7 @@ from app.api.v1.entities.schemas.entity_with_relations import (
     EntityRelationSummary,
 )
 from app.api.v1.entities.enums import EntityTypeName, CategoryName
+from app.api.v1.domains.users.models.user import User as UserModel
 
 router = APIRouter(prefix="/entities", tags=["entities"])
 
@@ -159,17 +160,20 @@ async def get_entity(
     response_model=Entity,
     status_code=201,
     summary="Create Entity",
-    description="Create a new mythological entity.",
+    description="Create a new mythological entity. Requires superuser privileges.",
     responses={
         201: {"description": "Entity successfully created"},
         400: {"description": "Invalid input data"},
+        401: {"description": "Unauthorized - No valid token provided"},
+        403: {"description": "Forbidden - User is not a superuser"},
     },
 )
 async def create_entity(
     db: Annotated[Session, Depends(get_db)],
     entity_in: EntityCreate,
+    current_user: UserModel = Depends(get_current_active_superuser),
 ):
-    """Create a new entity."""
+    """Create a new entity. Requires superuser privileges."""
     return entity.create(db, obj_in=entity_in)
 
 
@@ -177,18 +181,21 @@ async def create_entity(
     "/{id}",
     response_model=Entity,
     summary="Update Entity",
-    description="Update an existing entity by ID.",
+    description="Update an existing entity by ID. Requires superuser privileges.",
     responses={
         200: {"description": "Entity successfully updated"},
         404: {"description": "Entity not found"},
+        401: {"description": "Unauthorized - No valid token provided"},
+        403: {"description": "Forbidden - User is not a superuser"},
     },
 )
 async def update_entity(
     db: Annotated[Session, Depends(get_db)],
     id: Annotated[int, Path(gt=0, description="Entity ID", examples=[1])],
     entity_in: EntityUpdate,
+    current_user: UserModel = Depends(get_current_active_superuser),
 ):
-    """Update an entity."""
+    """Update an entity. Requires superuser privileges."""
     db_entity = entity.get(db, item_id=id)
     if not db_entity:
         raise HTTPException(status_code=404, detail="Entity not found")
@@ -199,17 +206,20 @@ async def update_entity(
     "/{id}",
     status_code=204,
     summary="Delete Entity",
-    description="Delete an entity by ID.",
+    description="Delete an entity by ID. Requires superuser privileges.",
     responses={
         204: {"description": "Entity successfully deleted"},
         404: {"description": "Entity not found"},
+        401: {"description": "Unauthorized - No valid token provided"},
+        403: {"description": "Forbidden - User is not a superuser"},
     },
 )
 async def delete_entity(
     db: Annotated[Session, Depends(get_db)],
     id: Annotated[int, Path(gt=0, description="Entity ID", examples=[1])],
+    current_user: UserModel = Depends(get_current_active_superuser),
 ):
-    """Delete an entity."""
+    """Delete an entity. Requires superuser privileges."""
     db_entity = entity.get(db, item_id=id)
     if not db_entity:
         raise HTTPException(status_code=404, detail="Entity not found")

@@ -105,10 +105,11 @@ class TestCountriesEndpoints:
         data = response.json()
         assert len(data) == 2
 
-    def test_create_country(self, client: TestClient):
+    def test_create_country(self, client: TestClient, superuser_headers: dict):
         """Test creating a country."""
         response = client.post(
             "/api/v1/countries/",
+            headers=superuser_headers,
             json={"name": "El Salvador", "status": True},
         )
         assert response.status_code == 201
@@ -134,7 +135,7 @@ class TestCountriesEndpoints:
         data = response.json()
         assert "detail" in data
 
-    def test_update_country(self, client: TestClient, db: Session):
+    def test_update_country(self, client: TestClient, db: Session, superuser_headers: dict):
         """Test updating a country."""
         country = Country(name="Nicaragua", status=True)
         db.add(country)
@@ -142,21 +143,86 @@ class TestCountriesEndpoints:
 
         response = client.put(
             f"/api/v1/countries/{country.id}",
+            headers=superuser_headers,
             json={"name": "Republic of Nicaragua"},
         )
         assert response.status_code == 200
         data = response.json()
         assert data["name"] == "Republic of Nicaragua"
 
-    def test_delete_country(self, client: TestClient, db: Session):
+    def test_delete_country(self, client: TestClient, db: Session, superuser_headers: dict):
         """Test deleting a country."""
         country = Country(name="Costa Rica", status=True)
         db.add(country)
         db.commit()
 
-        response = client.delete(f"/api/v1/countries/{country.id}")
+        response = client.delete(f"/api/v1/countries/{country.id}", headers=superuser_headers)
         assert response.status_code == 204
 
         # Verify deletion
         response = client.get(f"/api/v1/countries/{country.id}")
         assert response.status_code == 404
+
+    def test_create_country_without_auth(self, client: TestClient):
+        """Test creating a country without authentication returns 401."""
+        response = client.post(
+            "/api/v1/countries/",
+            json={"name": "Belize", "status": True},
+        )
+        assert response.status_code == 401
+
+    def test_create_country_as_regular_user(self, client: TestClient, auth_headers: dict):
+        """Test creating a country as non-superuser returns 403."""
+        response = client.post(
+            "/api/v1/countries/",
+            headers=auth_headers,
+            json={"name": "Belize", "status": True},
+        )
+        assert response.status_code == 403
+
+    def test_update_country_without_auth(self, client: TestClient, db: Session):
+        """Test updating a country without authentication returns 401."""
+        country = Country(name="Panama", status=True)
+        db.add(country)
+        db.commit()
+
+        response = client.put(
+            f"/api/v1/countries/{country.id}",
+            json={"name": "Hacked"},
+        )
+        assert response.status_code == 401
+
+    def test_update_country_as_regular_user(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        """Test updating a country as non-superuser returns 403."""
+        country = Country(name="Panama", status=True)
+        db.add(country)
+        db.commit()
+
+        response = client.put(
+            f"/api/v1/countries/{country.id}",
+            headers=auth_headers,
+            json={"name": "Hacked"},
+        )
+        assert response.status_code == 403
+
+    def test_delete_country_without_auth(self, client: TestClient, db: Session):
+        """Test deleting a country without authentication returns 401."""
+        country = Country(name="Belize", status=True)
+        db.add(country)
+        db.commit()
+
+        response = client.delete(f"/api/v1/countries/{country.id}")
+        assert response.status_code == 401
+
+    def test_delete_country_as_regular_user(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        """Test deleting a country as non-superuser returns 403."""
+        country = Country(name="Belize", status=True)
+        db.add(country)
+        db.commit()
+
+        response = client.delete(f"/api/v1/countries/{country.id}", headers=auth_headers)
+        assert response.status_code == 403
