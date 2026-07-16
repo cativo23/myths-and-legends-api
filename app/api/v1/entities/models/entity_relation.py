@@ -15,10 +15,10 @@ class EntityRelation(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     entity_origin_id: Mapped[int] = mapped_column(
-        ForeignKey("entity.id", ondelete="CASCADE"), nullable=False, index=True
+        ForeignKey("entity.id", ondelete="CASCADE"), nullable=False
     )
     entity_destination_id: Mapped[int] = mapped_column(
-        ForeignKey("entity.id", ondelete="CASCADE"), nullable=False, index=True
+        ForeignKey("entity.id", ondelete="CASCADE"), nullable=False
     )
     relation_type: Mapped[RelationType] = mapped_column(String(50), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)

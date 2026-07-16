@@ -239,8 +239,7 @@ def get_entity_relations(
     id: Annotated[int, Path(gt=0, description="Entity ID", examples=[1])],
 ):
     """Get all relations for an entity."""
-    db_entity = entity.get(db, item_id=id)
-    if not db_entity:
+    if not entity.exists(db, item_id=id):
         raise HTTPException(status_code=404, detail="Entity not found")
 
     relations = relation.get_by_entity(db, entity_id=id)

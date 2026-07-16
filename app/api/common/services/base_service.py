@@ -132,3 +132,8 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def validate_existence(self, db: Session, *, item_id: int) -> Optional[ModelType]:
         """Validate that an item exists by ID."""
         return self.get(db, item_id=item_id)
+
+    def exists(self, db: Session, *, item_id: int) -> bool:
+        """Check whether a row with this ID exists, without fetching or eager-loading it."""
+        stmt = select(self.model.id).where(self.model.id == item_id)
+        return db.execute(stmt).scalar_one_or_none() is not None
