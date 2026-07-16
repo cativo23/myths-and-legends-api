@@ -61,7 +61,7 @@ class TestEntityService:
         db.add(entity)
         db.commit()
 
-        retrieved = entity_service.get(db, id=entity.id)
+        retrieved = entity_service.get(db, item_id=entity.id)
 
         assert retrieved is not None
         assert retrieved.name == "Mount Olympus"
@@ -70,7 +70,7 @@ class TestEntityService:
         """Test getting a non-existent entity."""
         from app.api.v1.entities.services import entity as entity_service
 
-        retrieved = entity_service.get(db, id=999)
+        retrieved = entity_service.get(db, item_id=999)
         assert retrieved is None
 
     def test_update_entity(self, db: Session):
@@ -107,7 +107,7 @@ class TestEntityService:
 
         entity_service.remove(db, item_id=entity_id)
 
-        deleted = entity_service.get(db, id=entity_id)
+        deleted = entity_service.get(db, item_id=entity_id)
         assert deleted is None
 
     def test_search_entities(self, db: Session):

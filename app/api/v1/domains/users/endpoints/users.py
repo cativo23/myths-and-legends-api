@@ -146,7 +146,7 @@ async def delete_user(
     current_user: UserModel = Depends(get_current_active_superuser),
 ) -> None:
     """Delete a user."""
-    user = user_service.get(db, id=user_id)
+    user = user_service.get(db, item_id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     user_service.remove(db, item_id=user_id)
