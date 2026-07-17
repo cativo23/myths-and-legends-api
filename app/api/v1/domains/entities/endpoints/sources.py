@@ -1,15 +1,21 @@
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.v1.shared.deps import get_db
+from app.api.v1.shared.deps import get_db, get_current_active_superuser
+from app.api.v1.domains.entities.services import source
 from app.api.v1.domains.entities.models.source import Source
-from app.api.v1.domains.entities.schemas.source import Source as SourceSchema
+from app.api.v1.domains.entities.schemas.source import (
+    Source as SourceSchema,
+    SourceCreate,
+    SourceUpdate,
+)
 from app.api.v1.domains.entities.enums import SourceType
+from app.api.v1.domains.users.models.user import User as UserModel
 
 router = APIRouter(prefix="/sources", tags=["sources"])
 
@@ -52,3 +58,73 @@ def list_sources(
         sort_column.desc() if order.lower() == "desc" else sort_column.asc()
     )
     return paginate(db, stmt, Params(page=page, size=size))
+
+
+@router.post(
+    "/",
+    response_model=SourceSchema,
+    status_code=201,
+    summary="Create Source",
+    description="Create a new source. Requires superuser privileges.",
+    responses={
+        201: {"description": "Source successfully created"},
+        401: {"description": "Unauthorized - No valid token provided"},
+        403: {"description": "Forbidden - User is not a superuser"},
+    },
+)
+def create_source(
+    db: Annotated[Session, Depends(get_db)],
+    source_in: SourceCreate,
+    current_user: UserModel = Depends(get_current_active_superuser),
+):
+    """Create a new source. Requires superuser privileges."""
+    return source.create(db, obj_in=source_in)
+
+
+@router.put(
+    "/{id}",
+    response_model=SourceSchema,
+    summary="Update Source",
+    description="Update an existing source by ID. Requires superuser privileges.",
+    responses={
+        200: {"description": "Source successfully updated"},
+        404: {"description": "Source not found"},
+        401: {"description": "Unauthorized - No valid token provided"},
+        403: {"description": "Forbidden - User is not a superuser"},
+    },
+)
+def update_source(
+    db: Annotated[Session, Depends(get_db)],
+    id: Annotated[int, Path(gt=0, description="Source ID", examples=[1])],
+    source_in: SourceUpdate,
+    current_user: UserModel = Depends(get_current_active_superuser),
+):
+    """Update a source. Requires superuser privileges."""
+    db_source = source.get(db, item_id=id)
+    if not db_source:
+        raise HTTPException(status_code=404, detail="Source not found")
+    return source.update(db, db_obj=db_source, obj_in=source_in)
+
+
+@router.delete(
+    "/{id}",
+    status_code=204,
+    summary="Delete Source",
+    description="Delete a source by ID. Requires superuser privileges.",
+    responses={
+        204: {"description": "Source successfully deleted"},
+        404: {"description": "Source not found"},
+        401: {"description": "Unauthorized - No valid token provided"},
+        403: {"description": "Forbidden - User is not a superuser"},
+    },
+)
+def delete_source(
+    db: Annotated[Session, Depends(get_db)],
+    id: Annotated[int, Path(gt=0, description="Source ID", examples=[1])],
+    current_user: UserModel = Depends(get_current_active_superuser),
+):
+    """Delete a source. Requires superuser privileges."""
+    db_source = source.get(db, item_id=id)
+    if not db_source:
+        raise HTTPException(status_code=404, detail="Source not found")
+    source.remove(db, item_id=id)
