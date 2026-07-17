@@ -108,6 +108,21 @@ class TestAuthEndpoints:
         )
         assert response.status_code == 403
 
+    def test_protected_endpoint_rejects_refresh_token(
+        self, client: TestClient, test_user: dict
+    ):
+        """Test that a refresh token can't be used as a Bearer access token
+        against a protected endpoint (type-confusion guard)."""
+        from app.core import security
+
+        refresh_token = security.create_refresh_token(test_user["id"])
+
+        response = client.get(
+            "/api/v1/auth/me",
+            headers={"Authorization": f"Bearer {refresh_token}"},
+        )
+        assert response.status_code == 403
+
     def test_password_recovery_existing_user(self, client: TestClient, test_user: dict):
         """Test password recovery for existing user sends email."""
         with patch("app.api.v1.domains.auth.endpoints.auth.send_reset_password_email") as mock_send:
