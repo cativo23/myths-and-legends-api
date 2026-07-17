@@ -4,15 +4,21 @@ from pydantic import BaseModel, Field
 
 
 class Token(BaseModel):
-    """JWT token response for authentication endpoints.
+    """JWT token pair response for authentication endpoints.
 
-    Returned when a user successfully logs in.
+    Returned by both POST /auth/login and POST /auth/refresh.
     """
 
     access_token: str = Field(
         ...,
         title="Access Token",
         description="JWT access token for authenticated requests",
+        examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."],
+    )
+    refresh_token: str = Field(
+        ...,
+        title="Refresh Token",
+        description="Long-lived JWT used to obtain a new access token via /auth/refresh",
         examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."],
     )
     expires_at: Any = Field(

@@ -108,6 +108,21 @@ class TestAuthEndpoints:
         )
         assert response.status_code == 403
 
+    def test_protected_endpoint_rejects_refresh_token(
+        self, client: TestClient, test_user: dict
+    ):
+        """Test that a refresh token can't be used as a Bearer access token
+        against a protected endpoint (type-confusion guard)."""
+        from app.core import security
+
+        refresh_token = security.create_refresh_token(test_user["id"])
+
+        response = client.get(
+            "/api/v1/auth/me",
+            headers={"Authorization": f"Bearer {refresh_token}"},
+        )
+        assert response.status_code == 403
+
     def test_password_recovery_existing_user(self, client: TestClient, test_user: dict):
         """Test password recovery for existing user sends email."""
         with patch("app.api.v1.domains.auth.endpoints.auth.send_reset_password_email") as mock_send:
@@ -215,6 +230,29 @@ class TestAuthEndpoints:
         )
         assert login_response.status_code == 200
 
+    def test_reset_password_revokes_refresh_token(
+        self, client: TestClient, test_user: dict, db: Session
+    ):
+        """Test that resetting a password also invalidates any outstanding
+        refresh token, so a stale session can't survive a password change."""
+        login = client.post(
+            "/api/v1/auth/login",
+            data={"username": test_user["email"], "password": test_user["password"]},
+        )
+        refresh_token = login.json()["refresh_token"]
+
+        reset_token = generate_password_reset_token(test_user["email"])
+        reset_response = client.post(
+            "/api/v1/auth/reset-password/",
+            json={"token": reset_token, "new_password": "BrandNewP@ss123"},
+        )
+        assert reset_response.status_code == 200
+
+        refresh_response = client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": refresh_token}
+        )
+        assert refresh_response.status_code == 401
+
     def test_login_rate_limit_returns_429_with_valid_json_body(
         self, client: TestClient, test_user: dict
     ):
@@ -246,3 +284,183 @@ class TestAuthEndpoints:
         # because the handler returned a dict instead of a Response.
         body = last_response.json()
         assert body is not None
+
+    def test_login_returns_refresh_token(self, client: TestClient, test_user: dict):
+        """Test that login returns both an access token and a refresh token."""
+        response = client.post(
+            "/api/v1/auth/login",
+            data={"username": test_user["email"], "password": test_user["password"]},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "access_token" in data
+        assert "refresh_token" in data
+        assert data["refresh_token"]
+
+    def test_login_stores_hashed_refresh_token(
+        self, client: TestClient, test_user: dict, db: Session
+    ):
+        """Test that login stores a SHA-256 hash of the refresh token, not
+        the raw token, on the user row."""
+        import hashlib
+
+        from app.api.v1.domains.users.models.user import User
+
+        response = client.post(
+            "/api/v1/auth/login",
+            data={"username": test_user["email"], "password": test_user["password"]},
+        )
+        refresh_token = response.json()["refresh_token"]
+
+        db.expire_all()
+        user = db.get(User, test_user["id"])
+        assert user.hashed_refresh_token == hashlib.sha256(
+            refresh_token.encode()
+        ).hexdigest()
+
+    def test_refresh_returns_new_token_pair(self, client: TestClient, test_user: dict):
+        """Test that /auth/refresh exchanges a valid refresh token for a new pair."""
+        login = client.post(
+            "/api/v1/auth/login",
+            data={"username": test_user["email"], "password": test_user["password"]},
+        )
+        original_refresh_token = login.json()["refresh_token"]
+
+        response = client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": original_refresh_token}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "access_token" in data
+        assert "refresh_token" in data
+        assert data["refresh_token"] != original_refresh_token
+
+        me_response = client.get(
+            "/api/v1/auth/me",
+            headers={"Authorization": f"Bearer {data['access_token']}"},
+        )
+        assert me_response.status_code == 200
+
+    def test_refresh_rejects_reused_token_after_rotation(
+        self, client: TestClient, test_user: dict
+    ):
+        """Test that a refresh token can't be reused once rotated (single-use)."""
+        login = client.post(
+            "/api/v1/auth/login",
+            data={"username": test_user["email"], "password": test_user["password"]},
+        )
+        original_refresh_token = login.json()["refresh_token"]
+
+        first = client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": original_refresh_token}
+        )
+        assert first.status_code == 200
+
+        second = client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": original_refresh_token}
+        )
+        assert second.status_code == 401
+
+    def test_refresh_rejects_access_token(self, client: TestClient, test_user: dict):
+        """Test that an access token presented to /auth/refresh is rejected
+        (type-confusion guard)."""
+        login = client.post(
+            "/api/v1/auth/login",
+            data={"username": test_user["email"], "password": test_user["password"]},
+        )
+        access_token = login.json()["access_token"]
+
+        response = client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": access_token}
+        )
+        assert response.status_code == 401
+
+    def test_refresh_rejects_malformed_token(self, client: TestClient):
+        """Test that a garbage refresh token is rejected, not a 500."""
+        response = client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": "not-a-real-jwt"}
+        )
+        assert response.status_code == 401
+
+    def test_refresh_rejects_token_with_non_numeric_subject(self, client: TestClient):
+        """Test that a well-formed but tampered token with a non-numeric
+        'sub' claim is rejected with 401, not an unhandled 500 from int()."""
+        from app.core import security
+
+        token = security.create_refresh_token(subject="not-an-id")
+
+        response = client.post("/api/v1/auth/refresh", json={"refresh_token": token})
+        assert response.status_code == 401
+
+    def test_refresh_rejects_expired_token(
+        self, client: TestClient, test_user: dict, db: Session
+    ):
+        """Test that an expired refresh token is rejected with 401, not a
+        500 from an uncaught ExpiredSignatureError."""
+        from datetime import timedelta
+
+        from app.core import security
+        from app.api.v1.domains.users.models.user import User
+
+        expired_token = security.create_refresh_token(
+            test_user["id"], expires_delta=timedelta(days=-1)
+        )
+        user = db.get(User, test_user["id"])
+        user.hashed_refresh_token = security.hash_refresh_token(expired_token)
+        db.add(user)
+        db.commit()
+
+        response = client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": expired_token}
+        )
+        assert response.status_code == 401
+
+    def test_refresh_rejects_deactivated_user(
+        self, client: TestClient, test_user: dict, db: Session
+    ):
+        """Test that a deactivated user's still-valid, still-stored refresh
+        token is rejected — deactivation must invalidate outstanding sessions
+        the same way logout/password-reset do."""
+        from app.api.v1.domains.users.models.user import User
+
+        login = client.post(
+            "/api/v1/auth/login",
+            data={"username": test_user["email"], "password": test_user["password"]},
+        )
+        refresh_token = login.json()["refresh_token"]
+
+        user = db.get(User, test_user["id"])
+        user.is_active = False
+        db.add(user)
+        db.commit()
+
+        response = client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": refresh_token}
+        )
+        assert response.status_code == 401
+
+    def test_logout_revokes_refresh_token(self, client: TestClient, test_user: dict):
+        """Test that /auth/logout clears the stored refresh token, so a
+        subsequent /auth/refresh with the pre-logout token is rejected."""
+        login = client.post(
+            "/api/v1/auth/login",
+            data={"username": test_user["email"], "password": test_user["password"]},
+        )
+        access_token = login.json()["access_token"]
+        refresh_token = login.json()["refresh_token"]
+
+        logout_response = client.post(
+            "/api/v1/auth/logout",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        assert logout_response.status_code == 200
+
+        refresh_response = client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": refresh_token}
+        )
+        assert refresh_response.status_code == 401
+
+    def test_logout_without_auth_returns_401(self, client: TestClient):
+        """Test that /auth/logout requires authentication."""
+        response = client.post("/api/v1/auth/logout")
+        assert response.status_code == 401

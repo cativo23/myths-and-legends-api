@@ -13,3 +13,4 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean(), default=True)
     is_superuser: Mapped[bool] = mapped_column(Boolean(), default=False)
+    hashed_refresh_token: Mapped[Optional[str]] = mapped_column(String, nullable=True)

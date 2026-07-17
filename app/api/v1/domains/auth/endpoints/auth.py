@@ -3,14 +3,16 @@ from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Path, Request
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import BaseModel, Field
+from jose import jwt, JWTError
+from pydantic import BaseModel, Field, ValidationError
+from sqlalchemy import update
 from sqlalchemy.orm import Session
 
 from app.api.common.middleware.rate_limiter import limiter
 from app.api.v1.domains.users.services.user import user as user_crud
 from app.api.v1.domains.users.models.user import User as UserModel
 from app.api.v1.domains.users.schemas.user import User as UserSchema
-from app.api.v1.domains.users.schemas.token import Token
+from app.api.v1.domains.users.schemas.token import Token, TokenPayload
 from app.api.v1.shared.deps import get_db, get_current_user
 from app.core import security
 from app.core.config import settings
@@ -31,6 +33,16 @@ class LoginRequest(BaseModel):
         ..., description="User email address", examples=["user@example.com"]
     )
     password: str = Field(..., description="User password", examples=["SecureP@ss123"])
+
+
+class RefreshRequest(BaseModel):
+    """Request body for POST /auth/refresh."""
+
+    refresh_token: str = Field(
+        ...,
+        description="A valid, non-expired, non-rotated refresh token",
+        examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."],
+    )
 
 
 class PasswordReset(BaseModel):
@@ -112,11 +124,87 @@ def login_access_token(
     elif not user_crud.is_active(user):
         raise HTTPException(status_code=400, detail="Inactive user")
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    refresh_token = security.create_refresh_token(user.id)
+    user.hashed_refresh_token = security.hash_refresh_token(refresh_token)
+    db.add(user)
+    db.commit()
+    access_token = security.create_access_token(
+        user.id, expires_delta=access_token_expires
+    )
     return {
-        "access_token": security.create_access_token(
-            user.id, expires_delta=access_token_expires
-        ),
-        "expires_at": datetime.utcnow() + access_token_expires,
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "expires_at": security.get_token_expiry(access_token),
+        "token_type": "Bearer",
+    }
+
+
+@router.post(
+    "/refresh",
+    response_model=Token,
+    summary="Refresh Access Token",
+    description="Exchange a valid refresh token for a new access token and a "
+    "new (rotated) refresh token. The presented refresh token is invalidated "
+    "on use — it cannot be reused.",
+    responses={
+        200: {"description": "New token pair issued"},
+        401: {"description": "Invalid, expired, wrong-type, or already-used refresh token"},
+    },
+)
+def refresh_access_token(
+    refresh_in: RefreshRequest,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Exchange a refresh token for a new access + refresh token pair."""
+    try:
+        payload = jwt.decode(
+            refresh_in.refresh_token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
+        )
+        token_data = TokenPayload(**payload)
+    except (JWTError, ValidationError):
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+
+    if payload.get("type") != "refresh":
+        raise HTTPException(status_code=401, detail="Not a refresh token")
+
+    user = user_crud.get(db, item_id=token_data.sub) if token_data.sub else None
+    if not user or not user_crud.is_active(user):
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+
+    presented_hash = user.hashed_refresh_token
+    if not security.verify_refresh_token_hash(refresh_in.refresh_token, presented_hash):
+        raise HTTPException(status_code=401, detail="Refresh token has already been used")
+
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    new_refresh_token = security.create_refresh_token(user.id)
+    new_refresh_token_hash = security.hash_refresh_token(new_refresh_token)
+
+    # Atomic compare-and-swap: only rotate if hashed_refresh_token is still
+    # exactly what we just verified. Without this, two concurrent /auth/refresh
+    # calls presenting the same token could both pass the check above before
+    # either commits, both minting a valid pair from what should be a single-use
+    # token. The WHERE clause makes the second writer's UPDATE match zero rows
+    # once the first writer's commit has changed the column underneath it.
+    result = db.execute(
+        update(UserModel)
+        .where(
+            UserModel.id == user.id,
+            UserModel.hashed_refresh_token == presented_hash,
+        )
+        .values(hashed_refresh_token=new_refresh_token_hash)
+    )
+    db.commit()
+
+    if result.rowcount != 1:
+        raise HTTPException(status_code=401, detail="Refresh token has already been used")
+
+    access_token = security.create_access_token(
+        user.id, expires_delta=access_token_expires
+    )
+    return {
+        "access_token": access_token,
+        "refresh_token": new_refresh_token,
+        "expires_at": security.get_token_expiry(access_token),
         "token_type": "Bearer",
     }
 
@@ -136,6 +224,31 @@ def get_current_user_info(
 ) -> UserModel:
     """Get current user information."""
     return current_user
+
+
+@router.post(
+    "/logout",
+    summary="Logout",
+    description="Revoke the current user's refresh token, so it can no "
+    "longer be exchanged via /auth/refresh. This does NOT invalidate the "
+    "caller's current access token — like any stateless JWT, it remains "
+    "valid until it expires (see ACCESS_TOKEN_EXPIRE_MINUTES). Use this to "
+    "end a session going forward, not to instantly revoke an "
+    "already-issued access token.",
+    responses={
+        200: {"description": "Successfully logged out"},
+        401: {"description": "Unauthorized - No valid token provided"},
+    },
+)
+def logout(
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    """Revoke the current user's refresh token."""
+    current_user.hashed_refresh_token = None
+    db.add(current_user)
+    db.commit()
+    return {"msg": "Successfully logged out"}
 
 
 @router.post(
@@ -214,6 +327,7 @@ def reset_password(
         raise HTTPException(status_code=400, detail="Inactive user")
     hashed_password = get_password_hash(new_password)
     user.hashed_password = hashed_password
+    user.hashed_refresh_token = None
     db.add(user)
     db.commit()
     return {"msg": "Password updated successfully"}
