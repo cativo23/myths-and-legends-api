@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 from datetime import datetime, timedelta
 from typing import Any, Union
 
@@ -59,6 +61,22 @@ def create_refresh_token(
     to_encode = {"exp": expire, "sub": str(subject), "type": "refresh"}
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+
+def hash_refresh_token(token: str) -> str:
+    """SHA-256 digest of a refresh token for storage. Not bcrypt: a refresh
+    token is already a high-entropy random JWT, not a guessable secret, so
+    bcrypt's deliberate slowness buys nothing here and would only add
+    latency to every refresh request."""
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+def verify_refresh_token_hash(token: str, hashed: str | None) -> bool:
+    """Constant-time comparison between a presented token's hash and the
+    stored hash, so timing doesn't leak how many hex characters matched."""
+    if not hashed:
+        return False
+    return hmac.compare_digest(hash_refresh_token(token), hashed)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

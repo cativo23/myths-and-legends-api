@@ -8,6 +8,8 @@ from jose import jwt, JWTError
 from app.core.security import (
     create_access_token,
     create_refresh_token,
+    hash_refresh_token,
+    verify_refresh_token_hash,
     verify_password,
     get_password_hash,
     ALGORITHM,
@@ -88,6 +90,29 @@ class TestVerifyPassword:
     def test_returns_false_for_wrong_password(self):
         hashed = get_password_hash("my-secret")
         assert verify_password("wrong-password", hashed) is False
+
+
+class TestHashRefreshToken:
+    def test_hash_is_deterministic_sha256(self):
+        import hashlib
+
+        token = "some-refresh-token-value"
+        assert hash_refresh_token(token) == hashlib.sha256(token.encode()).hexdigest()
+
+    def test_different_tokens_hash_differently(self):
+        assert hash_refresh_token("token-a") != hash_refresh_token("token-b")
+
+
+class TestVerifyRefreshTokenHash:
+    def test_matching_token_verifies(self):
+        token = "some-refresh-token-value"
+        assert verify_refresh_token_hash(token, hash_refresh_token(token)) is True
+
+    def test_mismatched_token_does_not_verify(self):
+        assert verify_refresh_token_hash("wrong-token", hash_refresh_token("real-token")) is False
+
+    def test_none_stored_hash_does_not_verify(self):
+        assert verify_refresh_token_hash("any-token", None) is False
 
 
 class TestGetPasswordHash:

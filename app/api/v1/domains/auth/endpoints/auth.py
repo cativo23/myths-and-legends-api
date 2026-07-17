@@ -1,4 +1,3 @@
-import hashlib
 from datetime import timedelta, datetime
 from typing import Any
 
@@ -114,7 +113,7 @@ def login_access_token(
         raise HTTPException(status_code=400, detail="Inactive user")
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     refresh_token = security.create_refresh_token(user.id)
-    user.hashed_refresh_token = hashlib.sha256(refresh_token.encode()).hexdigest()
+    user.hashed_refresh_token = security.hash_refresh_token(refresh_token)
     db.add(user)
     db.commit()
     return {
