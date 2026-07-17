@@ -120,3 +120,91 @@ class TestEntityTypesEndpoints:
         assert "name" in data
         assert "description" in data
         assert "entity_count" in data
+
+    def test_create_entity_type(self, client: TestClient, superuser_headers: dict):
+        """Test creating an entity type as superuser."""
+        response = client.post(
+            "/api/v1/entity-types/",
+            json={"name": "EVENT", "description": "Norse mythology"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["name"] == "EVENT"
+        assert "id" in data
+
+    def test_create_entity_type_without_auth(self, client: TestClient):
+        """Test creating an entity type without auth returns 401."""
+        response = client.post(
+            "/api/v1/entity-types/",
+            json={"name": "EVENT", "description": "test"},
+        )
+        assert response.status_code == 401
+
+    def test_create_entity_type_as_regular_user(
+        self, client: TestClient, auth_headers: dict
+    ):
+        """Test creating an entity type as non-superuser returns 403."""
+        response = client.post(
+            "/api/v1/entity-types/",
+            json={"name": "EVENT", "description": "test"},
+            headers=auth_headers,
+        )
+        assert response.status_code == 403
+
+    def test_update_entity_type(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test updating an entity type as superuser."""
+        entity_type = EntityType(
+            name=EntityTypeName.CHARACTER, description="Original description"
+        )
+        db.add(entity_type)
+        db.commit()
+
+        response = client.put(
+            f"/api/v1/entity-types/{entity_type.id}",
+            json={"description": "Updated description"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["description"] == "Updated description"
+        assert data["name"] == "CHARACTER"
+
+    def test_update_entity_type_not_found(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        """Test updating a non-existent entity type returns 404."""
+        response = client.put(
+            "/api/v1/entity-types/99999",
+            json={"description": "test"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 404
+
+    def test_delete_entity_type(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test deleting an entity type as superuser."""
+        entity_type = EntityType(name=EntityTypeName.PLACE, description="test")
+        db.add(entity_type)
+        db.commit()
+        entity_type_id = entity_type.id
+
+        response = client.delete(
+            f"/api/v1/entity-types/{entity_type_id}", headers=superuser_headers
+        )
+        assert response.status_code == 204
+
+        get_response = client.get(f"/api/v1/entity-types/{entity_type_id}")
+        assert get_response.status_code == 404
+
+    def test_delete_entity_type_not_found(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        """Test deleting a non-existent entity type returns 404."""
+        response = client.delete(
+            "/api/v1/entity-types/99999", headers=superuser_headers
+        )
+        assert response.status_code == 404

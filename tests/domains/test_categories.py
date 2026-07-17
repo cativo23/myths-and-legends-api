@@ -110,3 +110,90 @@ class TestCategoriesEndpoints:
         assert "name" in data
         assert "description" in data
         assert "entity_count" in data
+
+    def test_create_category(self, client: TestClient, superuser_headers: dict):
+        """Test creating a category as superuser."""
+        response = client.post(
+            "/api/v1/categories/",
+            json={"name": "TRADITION", "description": "Objects with special significance"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["name"] == "TRADITION"
+        assert data["description"] == "Objects with special significance"
+        assert "id" in data
+
+    def test_create_category_without_auth(self, client: TestClient):
+        """Test creating a category without auth returns 401."""
+        response = client.post(
+            "/api/v1/categories/",
+            json={"name": "TRADITION", "description": "test"},
+        )
+        assert response.status_code == 401
+
+    def test_create_category_as_regular_user(
+        self, client: TestClient, auth_headers: dict
+    ):
+        """Test creating a category as non-superuser returns 403."""
+        response = client.post(
+            "/api/v1/categories/",
+            json={"name": "TRADITION", "description": "test"},
+            headers=auth_headers,
+        )
+        assert response.status_code == 403
+
+    def test_update_category(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test updating a category as superuser."""
+        category = Category(name=CategoryName.MYTH, description="Original description")
+        db.add(category)
+        db.commit()
+
+        response = client.put(
+            f"/api/v1/categories/{category.id}",
+            json={"description": "Updated description"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["description"] == "Updated description"
+        assert data["name"] == "MYTH"
+
+    def test_update_category_not_found(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        """Test updating a non-existent category returns 404."""
+        response = client.put(
+            "/api/v1/categories/99999",
+            json={"description": "test"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 404
+
+    def test_delete_category(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test deleting a category as superuser."""
+        category = Category(name=CategoryName.TRADITION, description="test")
+        db.add(category)
+        db.commit()
+        category_id = category.id
+
+        response = client.delete(
+            f"/api/v1/categories/{category_id}", headers=superuser_headers
+        )
+        assert response.status_code == 204
+
+        get_response = client.get(f"/api/v1/categories/{category_id}")
+        assert get_response.status_code == 404
+
+    def test_delete_category_not_found(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        """Test deleting a non-existent category returns 404."""
+        response = client.delete(
+            "/api/v1/categories/99999", headers=superuser_headers
+        )
+        assert response.status_code == 404
