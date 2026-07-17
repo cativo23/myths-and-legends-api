@@ -165,7 +165,10 @@ def refresh_access_token(
         raise HTTPException(status_code=401, detail="Not a refresh token")
 
     user_id = payload.get("sub")
-    user = user_crud.get(db, item_id=int(user_id)) if user_id else None
+    try:
+        user = user_crud.get(db, item_id=int(user_id)) if user_id else None
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
     if not user or not user_crud.is_active(user):
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 

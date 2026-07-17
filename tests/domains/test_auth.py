@@ -359,6 +359,16 @@ class TestAuthEndpoints:
         )
         assert response.status_code == 401
 
+    def test_refresh_rejects_token_with_non_numeric_subject(self, client: TestClient):
+        """Test that a well-formed but tampered token with a non-numeric
+        'sub' claim is rejected with 401, not an unhandled 500 from int()."""
+        from app.core import security
+
+        token = security.create_refresh_token(subject="not-an-id")
+
+        response = client.post("/api/v1/auth/refresh", json={"refresh_token": token})
+        assert response.status_code == 401
+
     def test_refresh_rejects_expired_token(
         self, client: TestClient, test_user: dict, db: Session
     ):
