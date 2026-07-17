@@ -5,8 +5,8 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.api.v1.entities.models.source import Source
-from app.api.v1.entities.enums import SourceType
+from app.api.v1.domains.entities.models.source import Source
+from app.api.v1.domains.entities.enums import SourceType
 
 
 class TestSourcesEndpoints:

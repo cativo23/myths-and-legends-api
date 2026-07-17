@@ -5,7 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.api.v1.entities.models.location import Location
+from app.api.v1.domains.entities.models.location import Location
 
 
 class TestLocationsEndpoints:

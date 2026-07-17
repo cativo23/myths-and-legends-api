@@ -2,8 +2,8 @@ from sqlalchemy.orm import Session
 
 from app.api.v1.domains.users.services.user import user as user_service
 from app.api.v1.domains.users.schemas.user import UserCreate
-from app.api.v1.entities.models.entity import Entity
-from app.api.v1.entities.seed import init_seed_data
+from app.api.v1.domains.entities.models.entity import Entity
+from app.api.v1.domains.entities.seed import init_seed_data
 from app.core.config import settings
 from app.db import base  # noqa: F401
 

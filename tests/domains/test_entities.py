@@ -5,11 +5,11 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.api.v1.entities.models.entity import Entity
-from app.api.v1.entities.models.category import Category
-from app.api.v1.entities.models.entity_type import EntityType
-from app.api.v1.entities.models.entity_relation import EntityRelation
-from app.api.v1.entities.enums import CategoryName, EntityTypeName, RelationType
+from app.api.v1.domains.entities.models.entity import Entity
+from app.api.v1.domains.entities.models.category import Category
+from app.api.v1.domains.entities.models.entity_type import EntityType
+from app.api.v1.domains.entities.models.entity_relation import EntityRelation
+from app.api.v1.domains.entities.enums import CategoryName, EntityTypeName, RelationType
 
 
 class TestEntityService:
@@ -17,8 +17,8 @@ class TestEntityService:
 
     def _seed_deps(self, db: Session) -> dict:
         """Create required Category and EntityType and return IDs."""
-        from app.api.v1.entities.services import entity as entity_service
-        from app.api.v1.entities.schemas.entity import EntityCreate
+        from app.api.v1.domains.entities.services import entity as entity_service
+        from app.api.v1.domains.entities.schemas.entity import EntityCreate
 
         category = Category(name=CategoryName.MYTH, description="A myth")
         entity_type = EntityType(name=EntityTypeName.CHARACTER, description="A character")
@@ -28,8 +28,8 @@ class TestEntityService:
 
     def test_create_entity(self, db: Session):
         """Test creating an entity."""
-        from app.api.v1.entities.services import entity as entity_service
-        from app.api.v1.entities.schemas.entity import EntityCreate
+        from app.api.v1.domains.entities.services import entity as entity_service
+        from app.api.v1.domains.entities.schemas.entity import EntityCreate
 
         deps = self._seed_deps(db)
         entity_in = EntityCreate(
@@ -48,7 +48,7 @@ class TestEntityService:
 
     def test_get_entity(self, db: Session):
         """Test getting an entity by ID."""
-        from app.api.v1.entities.services import entity as entity_service
+        from app.api.v1.domains.entities.services import entity as entity_service
 
         deps = self._seed_deps(db)
         entity = Entity(
@@ -68,15 +68,15 @@ class TestEntityService:
 
     def test_get_entity_not_found(self, db: Session):
         """Test getting a non-existent entity."""
-        from app.api.v1.entities.services import entity as entity_service
+        from app.api.v1.domains.entities.services import entity as entity_service
 
         retrieved = entity_service.get(db, item_id=999)
         assert retrieved is None
 
     def test_update_entity(self, db: Session):
         """Test updating an entity."""
-        from app.api.v1.entities.services import entity as entity_service
-        from app.api.v1.entities.schemas.entity import EntityCreate, EntityUpdate
+        from app.api.v1.domains.entities.services import entity as entity_service
+        from app.api.v1.domains.entities.schemas.entity import EntityCreate, EntityUpdate
 
         deps = self._seed_deps(db)
         entity_in = EntityCreate(
@@ -93,7 +93,7 @@ class TestEntityService:
 
     def test_delete_entity(self, db: Session):
         """Test deleting an entity."""
-        from app.api.v1.entities.services import entity as entity_service
+        from app.api.v1.domains.entities.services import entity as entity_service
 
         deps = self._seed_deps(db)
         entity = Entity(
@@ -112,7 +112,7 @@ class TestEntityService:
 
     def test_search_entities(self, db: Session):
         """Test searching entities by name, description, or origin."""
-        from app.api.v1.entities.services import entity as entity_service
+        from app.api.v1.domains.entities.services import entity as entity_service
 
         deps = self._seed_deps(db)
         entities = [
@@ -128,7 +128,7 @@ class TestEntityService:
 
     def test_search_entities_no_results(self, db: Session):
         """Test search returning no results."""
-        from app.api.v1.entities.services import entity as entity_service
+        from app.api.v1.domains.entities.services import entity as entity_service
 
         deps = self._seed_deps(db)
         entity = Entity(name="Zeus", category_id=deps["category_id"], entity_type_id=deps["entity_type_id"])
@@ -140,7 +140,7 @@ class TestEntityService:
 
     def test_get_multi_with_filters(self, db: Session):
         """Test getting multiple entities with filters."""
-        from app.api.v1.entities.services import entity as entity_service
+        from app.api.v1.domains.entities.services import entity as entity_service
 
         myth = Category(name=CategoryName.MYTH)
         legend = Category(name=CategoryName.LEGEND)
