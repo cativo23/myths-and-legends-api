@@ -61,8 +61,13 @@ def setup_rate_limiter(app):
     Configure rate limiting on the FastAPI app.
 
     - All endpoints: Default limit from settings (60/min)
-    - Login/password recovery/refresh: additionally decorated with a
-      stricter per-route limit from settings (10/min)
+    - Login/password recovery/reset: additionally decorated with a
+      stricter per-route limit from settings (10/min), since these accept
+      a guessable secret (password or recovery token) and are brute-force
+      targets
+    - /auth/refresh and /auth/logout are deliberately left at just the
+      default limit: both require already possessing a valid, unguessable
+      token, so the stricter brute-force limit doesn't apply the same way
 
     A route-level @limiter.limit(...) decorator does NOT replace the
     default limit above — slowapi enforces both, additively. A decorated

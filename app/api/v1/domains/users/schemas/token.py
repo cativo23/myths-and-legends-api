@@ -4,9 +4,9 @@ from pydantic import BaseModel, Field
 
 
 class Token(BaseModel):
-    """JWT token response for authentication endpoints.
+    """JWT token pair response for authentication endpoints.
 
-    Returned when a user successfully logs in.
+    Returned by both POST /auth/login and POST /auth/refresh.
     """
 
     access_token: str = Field(
