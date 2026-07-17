@@ -820,6 +820,34 @@ class TestEntitiesEndpoints:
         )
         assert response.status_code == 401
 
+    def test_create_relation_as_regular_user(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        """Test creating a relation as non-superuser returns 403."""
+        deps = self._seed_dependencies(db)
+        origin = Entity(
+            name="Origin Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        destination = Entity(
+            name="Destination Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add_all([origin, destination])
+        db.commit()
+
+        response = client.post(
+            f"/api/v1/entities/{origin.id}/relations",
+            json={
+                "entity_destination_id": destination.id,
+                "relation_type": "ENEMIES",
+            },
+            headers=auth_headers,
+        )
+        assert response.status_code == 403
+
     def test_create_relation_to_self_rejected(
         self, client: TestClient, db: Session, superuser_headers: dict
     ):
@@ -841,6 +869,19 @@ class TestEntitiesEndpoints:
             headers=superuser_headers,
         )
         assert response.status_code == 400
+
+    def test_create_relation_to_self_nonexistent_origin_returns_404(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        """Test that a self-relation against a nonexistent origin entity
+        reports 404 (entity not found), not 400 (self-relation) — existence
+        must be checked before the self-relation guard."""
+        response = client.post(
+            "/api/v1/entities/999999/relations",
+            json={"entity_destination_id": 999999, "relation_type": "SIBLINGS"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 404
 
     def test_create_duplicate_relation_returns_409(
         self, client: TestClient, db: Session, superuser_headers: dict

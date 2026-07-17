@@ -321,6 +321,30 @@ class TestLocationsEndpoints:
         )
         assert response.status_code == 401
 
+    def test_create_location_as_regular_user(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        """Test creating a location as non-superuser returns 403."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+
+        response = client.post(
+            "/api/v1/locations/",
+            json={
+                "department": "Sonsonate",
+                "municipality": "Izalco",
+                "entity_id": entity.id,
+            },
+            headers=auth_headers,
+        )
+        assert response.status_code == 403
+
     def test_create_location_nonexistent_entity_id_returns_404(
         self, client: TestClient, superuser_headers: dict
     ):
@@ -358,6 +382,49 @@ class TestLocationsEndpoints:
         assert response.status_code == 200
         assert response.json()["department"] == "New Dept"
 
+    def test_update_location_without_auth(self, client: TestClient, db: Session):
+        """Test updating a location without authentication returns 401."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity 2",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+        loc = Location(department="Old Dept", entity_id=entity.id)
+        db.add(loc)
+        db.commit()
+
+        response = client.put(
+            f"/api/v1/locations/{loc.id}",
+            json={"department": "New Dept"},
+        )
+        assert response.status_code == 401
+
+    def test_update_location_as_regular_user(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        """Test updating a location as non-superuser returns 403."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity 2",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+        loc = Location(department="Old Dept", entity_id=entity.id)
+        db.add(loc)
+        db.commit()
+
+        response = client.put(
+            f"/api/v1/locations/{loc.id}",
+            json={"department": "New Dept"},
+            headers=auth_headers,
+        )
+        assert response.status_code == 403
+
     def test_delete_location(
         self, client: TestClient, db: Session, superuser_headers: dict
     ):
@@ -379,3 +446,43 @@ class TestLocationsEndpoints:
             f"/api/v1/locations/{loc_id}", headers=superuser_headers
         )
         assert response.status_code == 204
+
+    def test_delete_location_without_auth(self, client: TestClient, db: Session):
+        """Test deleting a location without authentication returns 401."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity 3",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+        loc = Location(department="To Delete", entity_id=entity.id)
+        db.add(loc)
+        db.commit()
+        loc_id = loc.id
+
+        response = client.delete(f"/api/v1/locations/{loc_id}")
+        assert response.status_code == 401
+
+    def test_delete_location_as_regular_user(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        """Test deleting a location as non-superuser returns 403."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity 3",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+        loc = Location(department="To Delete", entity_id=entity.id)
+        db.add(loc)
+        db.commit()
+        loc_id = loc.id
+
+        response = client.delete(
+            f"/api/v1/locations/{loc_id}", headers=auth_headers
+        )
+        assert response.status_code == 403

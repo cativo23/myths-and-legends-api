@@ -81,6 +81,12 @@ class TestEntityTypesEndpoints:
         response = client.get("/api/v1/entity-types/?sort=not_a_real_field")
         assert response.status_code == 422
 
+    def test_list_entity_types_invalid_order_value_rejected(self, client: TestClient):
+        """Test that an invalid order value is rejected with a 422, rather
+        than silently falling back to ascending."""
+        response = client.get("/api/v1/entity-types/?order=sideways")
+        assert response.status_code == 422
+
     def test_get_entity_type_by_id(self, client: TestClient, db: Session):
         """Test getting an entity type by ID."""
         entity_type = EntityType(
@@ -172,6 +178,37 @@ class TestEntityTypesEndpoints:
         assert data["description"] == "Updated description"
         assert data["name"] == "CHARACTER"
 
+    def test_update_entity_type_without_auth(self, client: TestClient, db: Session):
+        """Test updating an entity type without authentication returns 401."""
+        entity_type = EntityType(
+            name=EntityTypeName.CHARACTER, description="Original description"
+        )
+        db.add(entity_type)
+        db.commit()
+
+        response = client.put(
+            f"/api/v1/entity-types/{entity_type.id}",
+            json={"description": "Updated description"},
+        )
+        assert response.status_code == 401
+
+    def test_update_entity_type_as_regular_user(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        """Test updating an entity type as non-superuser returns 403."""
+        entity_type = EntityType(
+            name=EntityTypeName.CHARACTER, description="Original description"
+        )
+        db.add(entity_type)
+        db.commit()
+
+        response = client.put(
+            f"/api/v1/entity-types/{entity_type.id}",
+            json={"description": "Updated description"},
+            headers=auth_headers,
+        )
+        assert response.status_code == 403
+
     def test_update_entity_type_not_found(
         self, client: TestClient, superuser_headers: dict
     ):
@@ -199,6 +236,28 @@ class TestEntityTypesEndpoints:
 
         get_response = client.get(f"/api/v1/entity-types/{entity_type_id}")
         assert get_response.status_code == 404
+
+    def test_delete_entity_type_without_auth(self, client: TestClient, db: Session):
+        """Test deleting an entity type without authentication returns 401."""
+        entity_type = EntityType(name=EntityTypeName.PLACE, description="test")
+        db.add(entity_type)
+        db.commit()
+
+        response = client.delete(f"/api/v1/entity-types/{entity_type.id}")
+        assert response.status_code == 401
+
+    def test_delete_entity_type_as_regular_user(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        """Test deleting an entity type as non-superuser returns 403."""
+        entity_type = EntityType(name=EntityTypeName.PLACE, description="test")
+        db.add(entity_type)
+        db.commit()
+
+        response = client.delete(
+            f"/api/v1/entity-types/{entity_type.id}", headers=auth_headers
+        )
+        assert response.status_code == 403
 
     def test_delete_entity_type_not_found(
         self, client: TestClient, superuser_headers: dict

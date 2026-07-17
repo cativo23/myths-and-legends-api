@@ -73,6 +73,12 @@ class TestCategoriesEndpoints:
         response = client.get("/api/v1/categories/?sort=not_a_real_field")
         assert response.status_code == 422
 
+    def test_list_categories_invalid_order_value_rejected(self, client: TestClient):
+        """Test that an invalid order value is rejected with a 422, rather
+        than silently falling back to ascending."""
+        response = client.get("/api/v1/categories/?order=sideways")
+        assert response.status_code == 422
+
     def test_get_category_by_id(self, client: TestClient, db: Session):
         """Test getting a category by ID."""
         category = Category(
@@ -161,6 +167,33 @@ class TestCategoriesEndpoints:
         assert data["description"] == "Updated description"
         assert data["name"] == "MYTH"
 
+    def test_update_category_without_auth(self, client: TestClient, db: Session):
+        """Test updating a category without authentication returns 401."""
+        category = Category(name=CategoryName.MYTH, description="Original description")
+        db.add(category)
+        db.commit()
+
+        response = client.put(
+            f"/api/v1/categories/{category.id}",
+            json={"description": "Updated description"},
+        )
+        assert response.status_code == 401
+
+    def test_update_category_as_regular_user(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        """Test updating a category as non-superuser returns 403."""
+        category = Category(name=CategoryName.MYTH, description="Original description")
+        db.add(category)
+        db.commit()
+
+        response = client.put(
+            f"/api/v1/categories/{category.id}",
+            json={"description": "Updated description"},
+            headers=auth_headers,
+        )
+        assert response.status_code == 403
+
     def test_update_category_not_found(
         self, client: TestClient, superuser_headers: dict
     ):
@@ -188,6 +221,28 @@ class TestCategoriesEndpoints:
 
         get_response = client.get(f"/api/v1/categories/{category_id}")
         assert get_response.status_code == 404
+
+    def test_delete_category_without_auth(self, client: TestClient, db: Session):
+        """Test deleting a category without authentication returns 401."""
+        category = Category(name=CategoryName.TRADITION, description="test")
+        db.add(category)
+        db.commit()
+
+        response = client.delete(f"/api/v1/categories/{category.id}")
+        assert response.status_code == 401
+
+    def test_delete_category_as_regular_user(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        """Test deleting a category as non-superuser returns 403."""
+        category = Category(name=CategoryName.TRADITION, description="test")
+        db.add(category)
+        db.commit()
+
+        response = client.delete(
+            f"/api/v1/categories/{category.id}", headers=auth_headers
+        )
+        assert response.status_code == 403
 
     def test_delete_category_not_found(
         self, client: TestClient, superuser_headers: dict

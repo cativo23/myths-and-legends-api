@@ -100,6 +100,12 @@ class TestSourcesEndpoints:
         response = client.get("/api/v1/sources/?sort=not_a_real_field")
         assert response.status_code == 422
 
+    def test_list_sources_invalid_order_value_rejected(self, client: TestClient):
+        """Test that an invalid order value is rejected with a 422, rather
+        than silently falling back to ascending."""
+        response = client.get("/api/v1/sources/?order=sideways")
+        assert response.status_code == 422
+
     def test_list_sources_sorted_desc(self, client: TestClient, db: Session):
         """Test listing sources sorted descending."""
         deps = self._seed_dependencies(db)
@@ -266,6 +272,31 @@ class TestSourcesEndpoints:
         )
         assert response.status_code == 401
 
+    def test_create_source_as_regular_user(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        """Test creating a source as non-superuser returns 403."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+
+        response = client.post(
+            "/api/v1/sources/",
+            json={
+                "source_type": "BOOK",
+                "title": "Test Source Title",
+                "author": "Test Author",
+                "entity_id": entity.id,
+            },
+            headers=auth_headers,
+        )
+        assert response.status_code == 403
+
     def test_create_source_nonexistent_entity_id_returns_404(
         self, client: TestClient, superuser_headers: dict
     ):
@@ -309,6 +340,53 @@ class TestSourcesEndpoints:
         assert response.status_code == 200
         assert response.json()["title"] == "New Title"
 
+    def test_update_source_without_auth(self, client: TestClient, db: Session):
+        """Test updating a source without authentication returns 401."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity 2",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+        source = Source(
+            source_type=SourceType.BOOK, title="Old Title", entity_id=entity.id
+        )
+        db.add(source)
+        db.commit()
+
+        response = client.put(
+            f"/api/v1/sources/{source.id}",
+            json={"title": "New Title"},
+        )
+        assert response.status_code == 401
+
+    def test_update_source_as_regular_user(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        """Test updating a source as non-superuser returns 403."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity 2",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+        source = Source(
+            source_type=SourceType.BOOK, title="Old Title", entity_id=entity.id
+        )
+        db.add(source)
+        db.commit()
+
+        response = client.put(
+            f"/api/v1/sources/{source.id}",
+            json={"title": "New Title"},
+            headers=auth_headers,
+        )
+        assert response.status_code == 403
+
     def test_delete_source(
         self, client: TestClient, db: Session, superuser_headers: dict
     ):
@@ -332,3 +410,47 @@ class TestSourcesEndpoints:
             f"/api/v1/sources/{source_id}", headers=superuser_headers
         )
         assert response.status_code == 204
+
+    def test_delete_source_without_auth(self, client: TestClient, db: Session):
+        """Test deleting a source without authentication returns 401."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity 3",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+        source = Source(
+            source_type=SourceType.WEB, title="To Delete", entity_id=entity.id
+        )
+        db.add(source)
+        db.commit()
+        source_id = source.id
+
+        response = client.delete(f"/api/v1/sources/{source_id}")
+        assert response.status_code == 401
+
+    def test_delete_source_as_regular_user(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        """Test deleting a source as non-superuser returns 403."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity 3",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+        source = Source(
+            source_type=SourceType.WEB, title="To Delete", entity_id=entity.id
+        )
+        db.add(source)
+        db.commit()
+        source_id = source.id
+
+        response = client.delete(
+            f"/api/v1/sources/{source_id}", headers=auth_headers
+        )
+        assert response.status_code == 403
