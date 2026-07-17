@@ -70,6 +70,16 @@ def db() -> Generator[Session, None, None]:
             connect_args={"check_same_thread": False},
         )
 
+        # SQLite has foreign key enforcement OFF by default, unlike the
+        # Postgres this app actually runs on — without this, a test could
+        # insert a row referencing a nonexistent FK and SQLite would allow
+        # it silently, masking bugs that only surface against real Postgres.
+        @event.listens_for(test_engine, "connect")
+        def _enable_sqlite_foreign_keys(dbapi_connection, connection_record):
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA foreign_keys=ON")
+            cursor.close()
+
         # Create all tables
         Base.metadata.create_all(bind=test_engine)
 

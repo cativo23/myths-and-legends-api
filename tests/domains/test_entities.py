@@ -5,11 +5,11 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.api.v1.entities.models.entity import Entity
-from app.api.v1.entities.models.category import Category
-from app.api.v1.entities.models.entity_type import EntityType
-from app.api.v1.entities.models.entity_relation import EntityRelation
-from app.api.v1.entities.enums import CategoryName, EntityTypeName, RelationType
+from app.api.v1.domains.entities.models.entity import Entity
+from app.api.v1.domains.entities.models.category import Category
+from app.api.v1.domains.entities.models.entity_type import EntityType
+from app.api.v1.domains.entities.models.entity_relation import EntityRelation
+from app.api.v1.domains.entities.enums import CategoryName, EntityTypeName, RelationType
 
 
 class TestEntityService:
@@ -17,8 +17,8 @@ class TestEntityService:
 
     def _seed_deps(self, db: Session) -> dict:
         """Create required Category and EntityType and return IDs."""
-        from app.api.v1.entities.services import entity as entity_service
-        from app.api.v1.entities.schemas.entity import EntityCreate
+        from app.api.v1.domains.entities.services import entity as entity_service
+        from app.api.v1.domains.entities.schemas.entity import EntityCreate
 
         category = Category(name=CategoryName.MYTH, description="A myth")
         entity_type = EntityType(name=EntityTypeName.CHARACTER, description="A character")
@@ -28,8 +28,8 @@ class TestEntityService:
 
     def test_create_entity(self, db: Session):
         """Test creating an entity."""
-        from app.api.v1.entities.services import entity as entity_service
-        from app.api.v1.entities.schemas.entity import EntityCreate
+        from app.api.v1.domains.entities.services import entity as entity_service
+        from app.api.v1.domains.entities.schemas.entity import EntityCreate
 
         deps = self._seed_deps(db)
         entity_in = EntityCreate(
@@ -48,7 +48,7 @@ class TestEntityService:
 
     def test_get_entity(self, db: Session):
         """Test getting an entity by ID."""
-        from app.api.v1.entities.services import entity as entity_service
+        from app.api.v1.domains.entities.services import entity as entity_service
 
         deps = self._seed_deps(db)
         entity = Entity(
@@ -68,15 +68,15 @@ class TestEntityService:
 
     def test_get_entity_not_found(self, db: Session):
         """Test getting a non-existent entity."""
-        from app.api.v1.entities.services import entity as entity_service
+        from app.api.v1.domains.entities.services import entity as entity_service
 
         retrieved = entity_service.get(db, item_id=999)
         assert retrieved is None
 
     def test_update_entity(self, db: Session):
         """Test updating an entity."""
-        from app.api.v1.entities.services import entity as entity_service
-        from app.api.v1.entities.schemas.entity import EntityCreate, EntityUpdate
+        from app.api.v1.domains.entities.services import entity as entity_service
+        from app.api.v1.domains.entities.schemas.entity import EntityCreate, EntityUpdate
 
         deps = self._seed_deps(db)
         entity_in = EntityCreate(
@@ -93,7 +93,7 @@ class TestEntityService:
 
     def test_delete_entity(self, db: Session):
         """Test deleting an entity."""
-        from app.api.v1.entities.services import entity as entity_service
+        from app.api.v1.domains.entities.services import entity as entity_service
 
         deps = self._seed_deps(db)
         entity = Entity(
@@ -112,7 +112,7 @@ class TestEntityService:
 
     def test_search_entities(self, db: Session):
         """Test searching entities by name, description, or origin."""
-        from app.api.v1.entities.services import entity as entity_service
+        from app.api.v1.domains.entities.services import entity as entity_service
 
         deps = self._seed_deps(db)
         entities = [
@@ -128,7 +128,7 @@ class TestEntityService:
 
     def test_search_entities_no_results(self, db: Session):
         """Test search returning no results."""
-        from app.api.v1.entities.services import entity as entity_service
+        from app.api.v1.domains.entities.services import entity as entity_service
 
         deps = self._seed_deps(db)
         entity = Entity(name="Zeus", category_id=deps["category_id"], entity_type_id=deps["entity_type_id"])
@@ -140,7 +140,7 @@ class TestEntityService:
 
     def test_get_multi_with_filters(self, db: Session):
         """Test getting multiple entities with filters."""
-        from app.api.v1.entities.services import entity as entity_service
+        from app.api.v1.domains.entities.services import entity as entity_service
 
         myth = Category(name=CategoryName.MYTH)
         legend = Category(name=CategoryName.LEGEND)
@@ -749,3 +749,176 @@ class TestEntitiesEndpoints:
         assert "relations" in data
         assert len(data["relations"]) == 1
         assert data["relations"][0]["relation_type"] == "FATHER_CHILD"
+
+    def test_create_relation(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test creating a relation between two entities as superuser."""
+        deps = self._seed_dependencies(db)
+        origin = Entity(
+            name="Origin Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        destination = Entity(
+            name="Destination Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add_all([origin, destination])
+        db.commit()
+
+        response = client.post(
+            f"/api/v1/entities/{origin.id}/relations",
+            json={
+                "entity_destination_id": destination.id,
+                "relation_type": "ENEMIES",
+                "description": "Test rivalry",
+            },
+            headers=superuser_headers,
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["relation_type"] == "ENEMIES"
+        assert data["description"] == "Test rivalry"
+        assert data["entity_origin_name"] == "Origin Entity"
+        assert data["entity_destination_name"] == "Destination Entity"
+
+        # ENEMIES is symmetric — verify the reverse relation was also created,
+        # and that the description was carried over to it too.
+        reverse_check = client.get(f"/api/v1/entities/{destination.id}/relations")
+        assert reverse_check.status_code == 200
+        reverse_data = reverse_check.json()
+        assert any(
+            r["relation_type"] == "ENEMIES" and r["description"] == "Test rivalry"
+            for r in reverse_data
+        )
+
+    def test_create_relation_entity_not_found(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        """Test creating a relation from a non-existent entity returns 404."""
+        response = client.post(
+            "/api/v1/entities/99999/relations",
+            json={"entity_destination_id": 1, "relation_type": "ALLIES"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 404
+
+    def test_create_relation_without_auth(self, client: TestClient, db: Session):
+        """Test creating a relation without auth returns 401."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Some Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+
+        response = client.post(
+            f"/api/v1/entities/{entity.id}/relations",
+            json={"entity_destination_id": entity.id, "relation_type": "ALLIES"},
+        )
+        assert response.status_code == 401
+
+    def test_create_relation_as_regular_user(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        """Test creating a relation as non-superuser returns 403."""
+        deps = self._seed_dependencies(db)
+        origin = Entity(
+            name="Origin Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        destination = Entity(
+            name="Destination Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add_all([origin, destination])
+        db.commit()
+
+        response = client.post(
+            f"/api/v1/entities/{origin.id}/relations",
+            json={
+                "entity_destination_id": destination.id,
+                "relation_type": "ENEMIES",
+            },
+            headers=auth_headers,
+        )
+        assert response.status_code == 403
+
+    def test_create_relation_to_self_rejected(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test creating a relation from an entity to itself returns 400,
+        rather than an unhandled 500 from the unique-constraint collision
+        between the forward and reverse rows of a symmetric relation."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Solo Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+
+        response = client.post(
+            f"/api/v1/entities/{entity.id}/relations",
+            json={"entity_destination_id": entity.id, "relation_type": "SIBLINGS"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 400
+
+    def test_create_relation_to_self_nonexistent_origin_returns_404(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        """Test that a self-relation against a nonexistent origin entity
+        reports 404 (entity not found), not 400 (self-relation) — existence
+        must be checked before the self-relation guard."""
+        response = client.post(
+            "/api/v1/entities/999999/relations",
+            json={"entity_destination_id": 999999, "relation_type": "SIBLINGS"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 404
+
+    def test_create_duplicate_relation_returns_409(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test that creating the same (origin, destination, relation_type)
+        relation twice returns 409, rather than an unhandled 500 from the
+        uq_entity_relation_unique constraint."""
+        deps = self._seed_dependencies(db)
+        origin = Entity(
+            name="Origin Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        destination = Entity(
+            name="Destination Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add_all([origin, destination])
+        db.commit()
+
+        payload = {
+            "entity_destination_id": destination.id,
+            "relation_type": "ALLIES",
+        }
+        first = client.post(
+            f"/api/v1/entities/{origin.id}/relations",
+            json=payload,
+            headers=superuser_headers,
+        )
+        assert first.status_code == 201
+
+        second = client.post(
+            f"/api/v1/entities/{origin.id}/relations",
+            json=payload,
+            headers=superuser_headers,
+        )
+        assert second.status_code == 409

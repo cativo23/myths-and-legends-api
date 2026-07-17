@@ -427,6 +427,27 @@ class TestUsersEndpoints:
         )
         assert response.status_code == 403
 
+    def test_deactivated_superuser_cannot_perform_superuser_actions(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test that get_current_active_superuser rejects a deactivated
+        superuser, instead of only checking is_superuser and letting a
+        deactivated account keep write access. Deactivating the superuser
+        AFTER acquiring superuser_headers (which already holds a valid
+        access token) reproduces a still-valid token for an account that
+        is deactivated mid-session."""
+        superuser = db.query(User).filter(User.email == "admin@example.com").one()
+        superuser.is_active = False
+        db.add(superuser)
+        db.commit()
+
+        response = client.put(
+            "/api/v1/users/1",
+            headers=superuser_headers,
+            json={"full_name": "Should not be allowed"},
+        )
+        assert response.status_code == 400
+
     def test_delete_user(self, client: TestClient, db: Session, superuser_headers: dict):
         """Test deleting a user."""
         user = User(

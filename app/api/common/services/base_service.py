@@ -1,11 +1,12 @@
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 
+from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi_pagination.bases import AbstractPage, AbstractParams
 from fastapi_pagination.ext.sqlalchemy import paginate
 from pydantic import BaseModel
 from sqlalchemy import select
-from sqlalchemy.exc import ArgumentError
+from sqlalchemy.exc import ArgumentError, IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.common.exceptions.api_exception import RelationshipNotFoundException
@@ -14,6 +15,41 @@ from app.db.base_class import Base
 ModelType = TypeVar("ModelType", bound=Base)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
+
+
+def raise_for_integrity_error(model: Type[Any], error: IntegrityError) -> None:
+    """Translate a commit-time IntegrityError into the right HTTP response.
+
+    A foreign-key violation (e.g. a caller-supplied entity_id that doesn't
+    exist) and a unique-constraint violation (e.g. a duplicate name) both
+    surface as the same IntegrityError class from SQLAlchemy — without
+    distinguishing them, an invalid FK reference gets misreported as
+    "already exists" (409) instead of a reference to a missing resource
+    (404). Detection is done via the driver error message text rather than
+    a driver-specific exception class (e.g. psycopg2.errors.ForeignKeyViolation)
+    so it works identically against the real Postgres backend and the
+    SQLite backend the test suite runs against — both drivers include
+    "foreign key" in a FK violation's message text ("FOREIGN KEY constraint
+    failed" for SQLite, "violates foreign key constraint" for Postgres).
+
+    Caveat: Postgres's constraint-violation text is emitted in the server's
+    `lc_messages` locale. This match assumes an English-locale Postgres
+    (this project's default) — a non-English `lc_messages` setting would no
+    longer contain "foreign key", silently misrouting every FK violation to
+    409 instead of 404. If this project ever runs Postgres with a non-English
+    `lc_messages`, this detection needs to switch to a driver-specific
+    exception class (e.g. `psycopg2.errors.ForeignKeyViolation`) instead, at
+    the cost of no longer being testable against SQLite in the same way.
+    """
+    if "foreign key" in str(error.orig).lower():
+        raise HTTPException(
+            status_code=404,
+            detail="One or more referenced resources do not exist.",
+        )
+    raise HTTPException(
+        status_code=409,
+        detail=f"A {model.__name__} with these values already exists.",
+    )
 
 
 class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
@@ -96,7 +132,11 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         obj_in_data = jsonable_encoder(obj_in)
         db_obj = self.model(**obj_in_data)
         db.add(db_obj)
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError as error:
+            db.rollback()
+            raise_for_integrity_error(self.model, error)
         db.refresh(db_obj)
         return db_obj
 
@@ -117,7 +157,11 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             if field in update_data:
                 setattr(db_obj, field, update_data[field])
         db.add(db_obj)
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError as error:
+            db.rollback()
+            raise_for_integrity_error(self.model, error)
         db.refresh(db_obj)
         return db_obj
 
