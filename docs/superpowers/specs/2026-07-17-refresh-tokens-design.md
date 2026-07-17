@@ -37,10 +37,13 @@ def create_access_token(subject, expires_delta=None) -> str:
     # existing behavior, plus: to_encode["type"] = "access"
 
 def create_refresh_token(subject, expires_delta=None) -> str:
-    # new function, mirrors create_access_token but: to_encode["type"] = "refresh"
+    # new function, mirrors create_access_token but: to_encode["type"] = "refresh",
+    # plus a "jti": uuid.uuid4().hex claim (see note below)
 ```
 
 Any endpoint that decodes a token checks `payload["type"]` matches what it expects, rejecting a token of the wrong type with 401. This closes the "a refresh token can be used anywhere an access token works, and vice versa" gap the earlier security review flagged as a token-confusion risk.
+
+**Uniqueness note:** `create_refresh_token` must include a unique claim (`jti`, a random UUID) in its payload. JWT encoding is deterministic — two refresh tokens minted for the same user within the same second-resolution `exp` would otherwise produce byte-identical JWTs, which silently defeats the rotation guarantee below (an "old" token that's byte-identical to the "new" one trivially still matches). This was missed in the initial design pass and only surfaced once `/auth/refresh`'s rotation tests were written.
 
 ### Settings
 
@@ -70,11 +73,15 @@ Flow:
 5. Compute `sha256(presented_token)` and compare against `user.hashed_refresh_token`. Mismatch → 401. This is what makes rotation double as reuse-detection: once a refresh token has been used (and the stored hash overwritten with the new one), presenting the old token again can never match.
 6. On all checks passing: issue a *new* access token and a *new* refresh token, overwrite `hashed_refresh_token` with the new hash, return both in a `Token` response.
 
+**Concurrency note:** steps 5–6 must be a single atomic compare-and-swap (`UPDATE ... WHERE hashed_refresh_token = <the hash just verified>`, checking the affected-row count), not a plain read-then-write. Two concurrent `/auth/refresh` calls presenting the same not-yet-rotated token would otherwise both pass step 5 before either commits step 6, both minting a valid pair from what should be a single-use token. This was missed in the initial design pass and only caught during an exhaustive post-implementation review.
+
 Not rate-limited beyond the general 60/min limit — this endpoint requires possession of a valid refresh token already, unlike `/login` which accepts a guessable password, so it doesn't need the stricter 10/min auth limit.
 
 ### `POST /auth/logout` (new endpoint)
 
 Gated by `get_current_user` (valid access token required). Sets `user.hashed_refresh_token = None` and commits. This is the actual revocation trigger the storage design exists to support — without it, the only way to invalidate a refresh token early is a password change (which already implicitly should clear it too — see Testing below).
+
+**Scope limitation:** this revokes the refresh token only — it does not and cannot invalidate the caller's already-issued access token, which remains valid until its own expiry (up to `ACCESS_TOKEN_EXPIRE_MINUTES`) like any stateless JWT. "Logout" here means "this session can't be refreshed past its current access token," not "immediately revoke all access." Full access-token revocation would require a server-side blocklist, which is out of scope for this design (see Non-goals).
 
 ### Side effect: password change also revokes
 
@@ -92,4 +99,10 @@ Gated by `get_current_user` (valid access token required). Sets `user.hashed_ref
 
 ## Risks / open questions for planning
 
-- None outstanding — the single open question from the parent spec (session model) and the hashing algorithm were both resolved during this design's brainstorming.
+The single open question from the parent spec (session model) and the hashing algorithm were both resolved during this design's brainstorming. Three further risks were *not* caught at design time — noted here for the record, all found and fixed during implementation/review rather than during this design pass:
+
+- **Same-second token collision** (see the "Uniqueness note" under Token claims above) — required adding a `jti` claim.
+- **Rotation race condition** (see the "Concurrency note" under `POST /auth/refresh` above) — required an atomic compare-and-swap instead of a plain read-then-write.
+- **Logout doesn't revoke the access token** (see the "Scope limitation" under `POST /auth/logout` above) — an inherent tradeoff of stateless JWTs, not a bug, but worth stating explicitly rather than letting "ending their session" imply more than it delivers.
+
+None of these changed the overall design — they're implementation-level corrections within the shape already described above — but a future design pass in this codebase should treat "is token generation collision-resistant" and "is this read-check-write atomic under concurrency" as standard checklist items, not afterthoughts.
