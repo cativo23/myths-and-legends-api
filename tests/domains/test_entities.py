@@ -749,3 +749,68 @@ class TestEntitiesEndpoints:
         assert "relations" in data
         assert len(data["relations"]) == 1
         assert data["relations"][0]["relation_type"] == "FATHER_CHILD"
+
+    def test_create_relation(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test creating a relation between two entities as superuser."""
+        deps = self._seed_dependencies(db)
+        origin = Entity(
+            name="Origin Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        destination = Entity(
+            name="Destination Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add_all([origin, destination])
+        db.commit()
+
+        response = client.post(
+            f"/api/v1/entities/{origin.id}/relations",
+            json={
+                "entity_destination_id": destination.id,
+                "relation_type": "ENEMIES",
+                "description": "Test rivalry",
+            },
+            headers=superuser_headers,
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["relation_type"] == "ENEMIES"
+
+        # ENEMIES is symmetric — verify the reverse relation was also created
+        reverse_check = client.get(f"/api/v1/entities/{destination.id}/relations")
+        assert reverse_check.status_code == 200
+        reverse_data = reverse_check.json()
+        assert any(r["relation_type"] == "ENEMIES" for r in reverse_data)
+
+    def test_create_relation_entity_not_found(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        """Test creating a relation from a non-existent entity returns 404."""
+        response = client.post(
+            "/api/v1/entities/99999/relations",
+            json={"entity_destination_id": 1, "relation_type": "ALLIES"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 404
+
+    def test_create_relation_without_auth(self, client: TestClient, db: Session):
+        """Test creating a relation without auth returns 401."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Some Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+
+        response = client.post(
+            f"/api/v1/entities/{entity.id}/relations",
+            json={"entity_destination_id": entity.id, "relation_type": "ALLIES"},
+        )
+        assert response.status_code == 401
