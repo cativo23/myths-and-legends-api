@@ -5,6 +5,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Path, Re
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import jwt, JWTError
 from pydantic import BaseModel, Field, ValidationError
+from sqlalchemy import update
 from sqlalchemy.orm import Session
 
 from app.api.common.middleware.rate_limiter import limiter
@@ -127,12 +128,13 @@ def login_access_token(
     user.hashed_refresh_token = security.hash_refresh_token(refresh_token)
     db.add(user)
     db.commit()
+    access_token = security.create_access_token(
+        user.id, expires_delta=access_token_expires
+    )
     return {
-        "access_token": security.create_access_token(
-            user.id, expires_delta=access_token_expires
-        ),
+        "access_token": access_token,
         "refresh_token": refresh_token,
-        "expires_at": datetime.utcnow() + access_token_expires,
+        "expires_at": security.get_token_expiry(access_token),
         "token_type": "Bearer",
     }
 
@@ -169,23 +171,40 @@ def refresh_access_token(
     if not user or not user_crud.is_active(user):
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 
-    if not security.verify_refresh_token_hash(
-        refresh_in.refresh_token, user.hashed_refresh_token
-    ):
+    presented_hash = user.hashed_refresh_token
+    if not security.verify_refresh_token_hash(refresh_in.refresh_token, presented_hash):
         raise HTTPException(status_code=401, detail="Refresh token has already been used")
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     new_refresh_token = security.create_refresh_token(user.id)
-    user.hashed_refresh_token = security.hash_refresh_token(new_refresh_token)
-    db.add(user)
+    new_refresh_token_hash = security.hash_refresh_token(new_refresh_token)
+
+    # Atomic compare-and-swap: only rotate if hashed_refresh_token is still
+    # exactly what we just verified. Without this, two concurrent /auth/refresh
+    # calls presenting the same token could both pass the check above before
+    # either commits, both minting a valid pair from what should be a single-use
+    # token. The WHERE clause makes the second writer's UPDATE match zero rows
+    # once the first writer's commit has changed the column underneath it.
+    result = db.execute(
+        update(UserModel)
+        .where(
+            UserModel.id == user.id,
+            UserModel.hashed_refresh_token == presented_hash,
+        )
+        .values(hashed_refresh_token=new_refresh_token_hash)
+    )
     db.commit()
 
+    if result.rowcount != 1:
+        raise HTTPException(status_code=401, detail="Refresh token has already been used")
+
+    access_token = security.create_access_token(
+        user.id, expires_delta=access_token_expires
+    )
     return {
-        "access_token": security.create_access_token(
-            user.id, expires_delta=access_token_expires
-        ),
+        "access_token": access_token,
         "refresh_token": new_refresh_token,
-        "expires_at": datetime.utcnow() + access_token_expires,
+        "expires_at": security.get_token_expiry(access_token),
         "token_type": "Bearer",
     }
 
@@ -210,7 +229,12 @@ def get_current_user_info(
 @router.post(
     "/logout",
     summary="Logout",
-    description="Revoke the current user's refresh token, ending their session.",
+    description="Revoke the current user's refresh token, so it can no "
+    "longer be exchanged via /auth/refresh. This does NOT invalidate the "
+    "caller's current access token — like any stateless JWT, it remains "
+    "valid until it expires (see ACCESS_TOKEN_EXPIRE_MINUTES). Use this to "
+    "end a session going forward, not to instantly revoke an "
+    "already-issued access token.",
     responses={
         200: {"description": "Successfully logged out"},
         401: {"description": "Unauthorized - No valid token provided"},

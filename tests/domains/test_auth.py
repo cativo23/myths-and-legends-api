@@ -415,6 +415,30 @@ class TestAuthEndpoints:
         )
         assert response.status_code == 401
 
+    def test_refresh_rejects_deactivated_user(
+        self, client: TestClient, test_user: dict, db: Session
+    ):
+        """Test that a deactivated user's still-valid, still-stored refresh
+        token is rejected — deactivation must invalidate outstanding sessions
+        the same way logout/password-reset do."""
+        from app.api.v1.domains.users.models.user import User
+
+        login = client.post(
+            "/api/v1/auth/login",
+            data={"username": test_user["email"], "password": test_user["password"]},
+        )
+        refresh_token = login.json()["refresh_token"]
+
+        user = db.get(User, test_user["id"])
+        user.is_active = False
+        db.add(user)
+        db.commit()
+
+        response = client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": refresh_token}
+        )
+        assert response.status_code == 401
+
     def test_logout_revokes_refresh_token(self, client: TestClient, test_user: dict):
         """Test that /auth/logout clears the stored refresh token, so a
         subsequent /auth/refresh with the pre-logout token is rejected."""

@@ -89,6 +89,14 @@ def verify_refresh_token_hash(token: str, hashed: str | None) -> bool:
     return hmac.compare_digest(hash_refresh_token(token), hashed)
 
 
+def get_token_expiry(token: str) -> datetime:
+    """Read a token's actual `exp` claim back out, so a response's
+    `expires_at` field always matches the token's real expiry exactly
+    instead of independently recomputing `now + delta` a moment later."""
+    payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+    return datetime.utcfromtimestamp(payload["exp"])
+
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
