@@ -100,6 +100,11 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         try:
             db.commit()
         except IntegrityError:
+            # Assumes the violation is a unique-constraint conflict (true for
+            # every current caller, which only have unique-name columns and
+            # no FK columns on create/update). If a future model added here
+            # has FK columns, an FK-violation IntegrityError would also hit
+            # this branch and get a misleading "already exists" message.
             db.rollback()
             raise HTTPException(
                 status_code=409,
@@ -128,6 +133,11 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         try:
             db.commit()
         except IntegrityError:
+            # Assumes the violation is a unique-constraint conflict (true for
+            # every current caller, which only have unique-name columns and
+            # no FK columns on create/update). If a future model added here
+            # has FK columns, an FK-violation IntegrityError would also hit
+            # this branch and get a misleading "already exists" message.
             db.rollback()
             raise HTTPException(
                 status_code=409,
