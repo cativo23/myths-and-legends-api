@@ -294,3 +294,90 @@ class TestAuthEndpoints:
         assert user.hashed_refresh_token == hashlib.sha256(
             refresh_token.encode()
         ).hexdigest()
+
+    def test_refresh_returns_new_token_pair(self, client: TestClient, test_user: dict):
+        """Test that /auth/refresh exchanges a valid refresh token for a new pair."""
+        login = client.post(
+            "/api/v1/auth/login",
+            data={"username": test_user["email"], "password": test_user["password"]},
+        )
+        original_refresh_token = login.json()["refresh_token"]
+
+        response = client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": original_refresh_token}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "access_token" in data
+        assert "refresh_token" in data
+        assert data["refresh_token"] != original_refresh_token
+
+        me_response = client.get(
+            "/api/v1/auth/me",
+            headers={"Authorization": f"Bearer {data['access_token']}"},
+        )
+        assert me_response.status_code == 200
+
+    def test_refresh_rejects_reused_token_after_rotation(
+        self, client: TestClient, test_user: dict
+    ):
+        """Test that a refresh token can't be reused once rotated (single-use)."""
+        login = client.post(
+            "/api/v1/auth/login",
+            data={"username": test_user["email"], "password": test_user["password"]},
+        )
+        original_refresh_token = login.json()["refresh_token"]
+
+        first = client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": original_refresh_token}
+        )
+        assert first.status_code == 200
+
+        second = client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": original_refresh_token}
+        )
+        assert second.status_code == 401
+
+    def test_refresh_rejects_access_token(self, client: TestClient, test_user: dict):
+        """Test that an access token presented to /auth/refresh is rejected
+        (type-confusion guard)."""
+        login = client.post(
+            "/api/v1/auth/login",
+            data={"username": test_user["email"], "password": test_user["password"]},
+        )
+        access_token = login.json()["access_token"]
+
+        response = client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": access_token}
+        )
+        assert response.status_code == 401
+
+    def test_refresh_rejects_malformed_token(self, client: TestClient):
+        """Test that a garbage refresh token is rejected, not a 500."""
+        response = client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": "not-a-real-jwt"}
+        )
+        assert response.status_code == 401
+
+    def test_refresh_rejects_expired_token(
+        self, client: TestClient, test_user: dict, db: Session
+    ):
+        """Test that an expired refresh token is rejected with 401, not a
+        500 from an uncaught ExpiredSignatureError."""
+        from datetime import timedelta
+
+        from app.core import security
+        from app.api.v1.domains.users.models.user import User
+
+        expired_token = security.create_refresh_token(
+            test_user["id"], expires_delta=timedelta(days=-1)
+        )
+        user = db.get(User, test_user["id"])
+        user.hashed_refresh_token = security.hash_refresh_token(expired_token)
+        db.add(user)
+        db.commit()
+
+        response = client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": expired_token}
+        )
+        assert response.status_code == 401

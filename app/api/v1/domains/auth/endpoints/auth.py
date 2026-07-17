@@ -3,6 +3,7 @@ from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Path, Request
 from fastapi.security import OAuth2PasswordRequestForm
+from jose import jwt, JWTError
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -31,6 +32,16 @@ class LoginRequest(BaseModel):
         ..., description="User email address", examples=["user@example.com"]
     )
     password: str = Field(..., description="User password", examples=["SecureP@ss123"])
+
+
+class RefreshRequest(BaseModel):
+    """Request body for POST /auth/refresh."""
+
+    refresh_token: str = Field(
+        ...,
+        description="A valid, non-expired, non-rotated refresh token",
+        examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."],
+    )
 
 
 class PasswordReset(BaseModel):
@@ -121,6 +132,59 @@ def login_access_token(
             user.id, expires_delta=access_token_expires
         ),
         "refresh_token": refresh_token,
+        "expires_at": datetime.utcnow() + access_token_expires,
+        "token_type": "Bearer",
+    }
+
+
+@router.post(
+    "/refresh",
+    response_model=Token,
+    summary="Refresh Access Token",
+    description="Exchange a valid refresh token for a new access token and a "
+    "new (rotated) refresh token. The presented refresh token is invalidated "
+    "on use — it cannot be reused.",
+    responses={
+        200: {"description": "New token pair issued"},
+        401: {"description": "Invalid, expired, wrong-type, or already-used refresh token"},
+    },
+)
+def refresh_access_token(
+    refresh_in: RefreshRequest,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Exchange a refresh token for a new access + refresh token pair."""
+    try:
+        payload = jwt.decode(
+            refresh_in.refresh_token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
+        )
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+
+    if payload.get("type") != "refresh":
+        raise HTTPException(status_code=401, detail="Not a refresh token")
+
+    user_id = payload.get("sub")
+    user = user_crud.get(db, item_id=int(user_id)) if user_id else None
+    if not user or not user_crud.is_active(user):
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+
+    if not security.verify_refresh_token_hash(
+        refresh_in.refresh_token, user.hashed_refresh_token
+    ):
+        raise HTTPException(status_code=401, detail="Refresh token has already been used")
+
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    new_refresh_token = security.create_refresh_token(user.id)
+    user.hashed_refresh_token = security.hash_refresh_token(new_refresh_token)
+    db.add(user)
+    db.commit()
+
+    return {
+        "access_token": security.create_access_token(
+            user.id, expires_delta=access_token_expires
+        ),
+        "refresh_token": new_refresh_token,
         "expires_at": datetime.utcnow() + access_token_expires,
         "token_type": "Bearer",
     }
