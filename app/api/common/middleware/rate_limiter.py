@@ -61,7 +61,13 @@ def setup_rate_limiter(app):
     Configure rate limiting on the FastAPI app.
 
     - All endpoints: Default limit from settings (60/min)
-    - Login/password recovery: Stricter limit from settings (10/min)
+    - Login/password recovery/refresh: additionally decorated with a
+      stricter per-route limit from settings (10/min)
+
+    A route-level @limiter.limit(...) decorator does NOT replace the
+    default limit above — slowapi enforces both, additively. A decorated
+    route is rejected once either limit is hit, whichever comes first;
+    it does not get a separate 10/min budget in place of the 60/min default.
     """
     app.add_middleware(SlowAPIMiddleware)
     app.state.limiter = limiter
