@@ -15,6 +15,12 @@ class Token(BaseModel):
         description="JWT access token for authenticated requests",
         examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."],
     )
+    refresh_token: str = Field(
+        ...,
+        title="Refresh Token",
+        description="Long-lived JWT used to obtain a new access token via /auth/refresh",
+        examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."],
+    )
     expires_at: Any = Field(
         ...,
         title="Expires At",

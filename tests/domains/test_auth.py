@@ -261,3 +261,36 @@ class TestAuthEndpoints:
         # because the handler returned a dict instead of a Response.
         body = last_response.json()
         assert body is not None
+
+    def test_login_returns_refresh_token(self, client: TestClient, test_user: dict):
+        """Test that login returns both an access token and a refresh token."""
+        response = client.post(
+            "/api/v1/auth/login",
+            data={"username": test_user["email"], "password": test_user["password"]},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "access_token" in data
+        assert "refresh_token" in data
+        assert data["refresh_token"]
+
+    def test_login_stores_hashed_refresh_token(
+        self, client: TestClient, test_user: dict, db: Session
+    ):
+        """Test that login stores a SHA-256 hash of the refresh token, not
+        the raw token, on the user row."""
+        import hashlib
+
+        from app.api.v1.domains.users.models.user import User
+
+        response = client.post(
+            "/api/v1/auth/login",
+            data={"username": test_user["email"], "password": test_user["password"]},
+        )
+        refresh_token = response.json()["refresh_token"]
+
+        db.expire_all()
+        user = db.get(User, test_user["id"])
+        assert user.hashed_refresh_token == hashlib.sha256(
+            refresh_token.encode()
+        ).hexdigest()

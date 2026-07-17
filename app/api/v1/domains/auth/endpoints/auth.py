@@ -1,3 +1,4 @@
+import hashlib
 from datetime import timedelta, datetime
 from typing import Any
 
@@ -112,10 +113,15 @@ def login_access_token(
     elif not user_crud.is_active(user):
         raise HTTPException(status_code=400, detail="Inactive user")
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    refresh_token = security.create_refresh_token(user.id)
+    user.hashed_refresh_token = hashlib.sha256(refresh_token.encode()).hexdigest()
+    db.add(user)
+    db.commit()
     return {
         "access_token": security.create_access_token(
             user.id, expires_delta=access_token_expires
         ),
+        "refresh_token": refresh_token,
         "expires_at": datetime.utcnow() + access_token_expires,
         "token_type": "Bearer",
     }
