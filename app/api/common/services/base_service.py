@@ -17,7 +17,7 @@ CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
 
-def _raise_for_integrity_error(model: Type[Any], error: IntegrityError) -> None:
+def raise_for_integrity_error(model: Type[Any], error: IntegrityError) -> None:
     """Translate a commit-time IntegrityError into the right HTTP response.
 
     A foreign-key violation (e.g. a caller-supplied entity_id that doesn't
@@ -127,7 +127,7 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             db.commit()
         except IntegrityError as error:
             db.rollback()
-            _raise_for_integrity_error(self.model, error)
+            raise_for_integrity_error(self.model, error)
         db.refresh(db_obj)
         return db_obj
 
@@ -152,7 +152,7 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             db.commit()
         except IntegrityError as error:
             db.rollback()
-            _raise_for_integrity_error(self.model, error)
+            raise_for_integrity_error(self.model, error)
         db.refresh(db_obj)
         return db_obj
 

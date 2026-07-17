@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.api.common.services.base_service import (
     CRUDBaseService,
-    _raise_for_integrity_error,
+    raise_for_integrity_error,
 )
 from app.api.v1.domains.entities.models.entity_relation import (
     EntityRelation,
@@ -81,7 +81,7 @@ class EntityRelationService(
             db.commit()
         except IntegrityError as error:
             db.rollback()
-            _raise_for_integrity_error(EntityRelation, error)
+            raise_for_integrity_error(EntityRelation, error)
         db.refresh(forward)
         if reverse:
             db.refresh(reverse)
