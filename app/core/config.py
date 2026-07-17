@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     # 60 minutes * 24 hours * 8 days = 8 days
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     SERVER_HOST: str = "http://localhost"
     # BACKEND_CORS_ORIGINS is a JSON-formatted list of origins
     BACKEND_CORS_ORIGINS: List[str] = [

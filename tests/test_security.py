@@ -7,6 +7,7 @@ from jose import jwt, JWTError
 
 from app.core.security import (
     create_access_token,
+    create_refresh_token,
     verify_password,
     get_password_hash,
     ALGORITHM,
@@ -52,6 +53,32 @@ class TestCreateAccessToken:
             else payload["exp"] - expected_seconds
         )
         assert abs(actual_lifetime - expected_seconds) < 5
+
+
+def test_create_access_token_has_type_claim():
+    token = create_access_token(subject=1)
+    payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+    assert payload["type"] == "access"
+    assert payload["sub"] == "1"
+
+
+def test_create_refresh_token_has_type_claim():
+    token = create_refresh_token(subject=1)
+    payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+    assert payload["type"] == "refresh"
+    assert payload["sub"] == "1"
+
+
+def test_create_refresh_token_default_expiry_uses_settings():
+    from datetime import datetime
+
+    token = create_refresh_token(subject=1)
+    payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+    expires_in_days = (
+        datetime.utcfromtimestamp(payload["exp"]) - datetime.utcnow()
+    ).days
+    # Allow a 1-day tolerance for test execution time.
+    assert settings.REFRESH_TOKEN_EXPIRE_DAYS - 1 <= expires_in_days <= settings.REFRESH_TOKEN_EXPIRE_DAYS
 
 
 class TestVerifyPassword:
