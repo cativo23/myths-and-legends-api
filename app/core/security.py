@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import uuid
 from datetime import datetime, timedelta
 from typing import Any, Union
 
@@ -58,7 +59,16 @@ def create_refresh_token(
         expire = datetime.utcnow() + timedelta(
             days=settings.REFRESH_TOKEN_EXPIRE_DAYS
         )
-    to_encode = {"exp": expire, "sub": str(subject), "type": "refresh"}
+    # A unique jti guards against two refresh tokens minted for the same
+    # subject within the same second-resolution `exp` colliding into an
+    # identical JWT (same header/payload/signature), which would silently
+    # defeat single-use rotation.
+    to_encode = {
+        "exp": expire,
+        "sub": str(subject),
+        "type": "refresh",
+        "jti": uuid.uuid4().hex,
+    }
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
