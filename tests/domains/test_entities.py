@@ -841,3 +841,41 @@ class TestEntitiesEndpoints:
             headers=superuser_headers,
         )
         assert response.status_code == 400
+
+    def test_create_duplicate_relation_returns_409(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test that creating the same (origin, destination, relation_type)
+        relation twice returns 409, rather than an unhandled 500 from the
+        uq_entity_relation_unique constraint."""
+        deps = self._seed_dependencies(db)
+        origin = Entity(
+            name="Origin Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        destination = Entity(
+            name="Destination Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add_all([origin, destination])
+        db.commit()
+
+        payload = {
+            "entity_destination_id": destination.id,
+            "relation_type": "ALLIES",
+        }
+        first = client.post(
+            f"/api/v1/entities/{origin.id}/relations",
+            json=payload,
+            headers=superuser_headers,
+        )
+        assert first.status_code == 201
+
+        second = client.post(
+            f"/api/v1/entities/{origin.id}/relations",
+            json=payload,
+            headers=superuser_headers,
+        )
+        assert second.status_code == 409

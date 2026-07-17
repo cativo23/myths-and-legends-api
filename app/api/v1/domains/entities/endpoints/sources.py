@@ -60,6 +60,27 @@ def list_sources(
     return paginate(db, stmt, Params(page=page, size=size))
 
 
+@router.get(
+    "/{id}",
+    response_model=SourceSchema,
+    summary="Get Source by ID",
+    description="Retrieve a single source by its ID.",
+    responses={
+        200: {"description": "Successful retrieval of source"},
+        404: {"description": "Source not found"},
+    },
+)
+def get_source(
+    db: Annotated[Session, Depends(get_db)],
+    id: Annotated[int, Path(gt=0, description="Source ID", examples=[1])],
+):
+    """Get a single source by its ID."""
+    db_source = source.get(db, item_id=id)
+    if not db_source:
+        raise HTTPException(status_code=404, detail="Source not found")
+    return db_source
+
+
 @router.post(
     "/",
     response_model=SourceSchema,

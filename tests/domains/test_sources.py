@@ -190,6 +190,35 @@ class TestSourcesEndpoints:
         assert "author" in s
         assert "url" in s
 
+    def test_get_source_by_id(self, client: TestClient, db: Session):
+        """Test getting a single source by its ID."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+        source = Source(
+            entity_id=entity.id,
+            source_type=SourceType.BOOK,
+            title="The Golden Bough",
+        )
+        db.add(source)
+        db.commit()
+
+        response = client.get(f"/api/v1/sources/{source.id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == source.id
+        assert data["title"] == "The Golden Bough"
+
+    def test_get_source_by_id_not_found(self, client: TestClient):
+        """Test getting a non-existent source by ID returns 404."""
+        response = client.get("/api/v1/sources/999")
+        assert response.status_code == 404
+
     def test_create_source(
         self, client: TestClient, db: Session, superuser_headers: dict
     ):
