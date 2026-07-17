@@ -45,7 +45,8 @@ def list_sources(
         Query(description="Sort field", examples=["title", "author", "id"]),
     ] = "id",
     order: Annotated[
-        str, Query(description="Sort order (asc, desc)", examples=["asc", "desc"])
+        Literal["asc", "desc"],
+        Query(description="Sort order (asc, desc)", examples=["asc", "desc"]),
     ] = "asc",
 ):
     """List all sources, optionally filtered by type, paginated and sorted at the database level."""
@@ -91,6 +92,7 @@ def get_source(
         201: {"description": "Source successfully created"},
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
+        404: {"description": "The referenced entity_id does not exist"},
     },
 )
 def create_source(
@@ -109,7 +111,9 @@ def create_source(
     description="Update an existing source by ID. Requires superuser privileges.",
     responses={
         200: {"description": "Source successfully updated"},
-        404: {"description": "Source not found"},
+        404: {
+            "description": "Source not found, or the referenced entity_id does not exist"
+        },
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
     },

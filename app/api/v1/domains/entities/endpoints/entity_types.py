@@ -37,7 +37,8 @@ def list_entity_types(
         Query(description="Sort field", examples=["name", "id"]),
     ] = "name",
     order: Annotated[
-        str, Query(description="Sort order (asc, desc)", examples=["asc", "desc"])
+        Literal["asc", "desc"],
+        Query(description="Sort order (asc, desc)", examples=["asc", "desc"]),
     ] = "asc",
 ):
     """List all entity types, paginated and sorted at the database level."""
@@ -79,6 +80,7 @@ def get_entity_type(
         201: {"description": "Entity type successfully created"},
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
+        409: {"description": "An entity type with this name already exists"},
     },
 )
 def create_entity_type(
@@ -100,6 +102,7 @@ def create_entity_type(
         404: {"description": "Entity type not found"},
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
+        409: {"description": "An entity type with this name already exists"},
     },
 )
 def update_entity_type(

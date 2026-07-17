@@ -37,7 +37,8 @@ def list_categories(
         Query(description="Sort field", examples=["name", "id"]),
     ] = "name",
     order: Annotated[
-        str, Query(description="Sort order (asc, desc)", examples=["asc", "desc"])
+        Literal["asc", "desc"],
+        Query(description="Sort order (asc, desc)", examples=["asc", "desc"]),
     ] = "asc",
 ):
     """List all categories, paginated and sorted at the database level."""
@@ -79,6 +80,7 @@ def get_category(
         201: {"description": "Category successfully created"},
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
+        409: {"description": "A category with this name already exists"},
     },
 )
 def create_category(
@@ -100,6 +102,7 @@ def create_category(
         404: {"description": "Category not found"},
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
+        409: {"description": "A category with this name already exists"},
     },
 )
 def update_category(

@@ -100,6 +100,7 @@ def get_location_by_department(
         201: {"description": "Location successfully created"},
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
+        404: {"description": "The referenced entity_id does not exist"},
     },
 )
 def create_location(
@@ -118,7 +119,9 @@ def create_location(
     description="Update an existing location by ID. Requires superuser privileges.",
     responses={
         200: {"description": "Location successfully updated"},
-        404: {"description": "Location not found"},
+        404: {
+            "description": "Location not found, or the referenced entity_id does not exist"
+        },
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
     },

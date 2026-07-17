@@ -294,6 +294,9 @@ def get_entity_relations(
         404: {"description": "Entity not found"},
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
+        409: {
+            "description": "This exact relation (origin, destination, type) already exists"
+        },
     },
 )
 def create_entity_relation(
@@ -303,16 +306,21 @@ def create_entity_relation(
     current_user: UserModel = Depends(get_current_active_superuser),
 ):
     """Create a relation from this entity to another. Requires superuser privileges."""
+    if not entity.exists(db, item_id=id):
+        raise HTTPException(status_code=404, detail="Entity not found")
     if relation_in.entity_destination_id == id:
-        # For symmetric relation types, the forward and reverse rows created
-        # by create_bidirectional() would be identical, tripping the
-        # uq_entity_relation_unique constraint and surfacing as an unhandled
-        # 500 instead of a clear client error.
+        # Checked only after confirming the origin exists, so a self-relation
+        # against a nonexistent entity correctly reports 404 rather than 400.
+        # Rejected unconditionally, regardless of relation_type: for symmetric
+        # types (SIBLINGS/ALLIES/ENEMIES) the forward and reverse rows created
+        # by create_bidirectional() would otherwise be identical, tripping
+        # the uq_entity_relation_unique constraint and surfacing as an
+        # unhandled 500; for non-symmetric types (e.g. MOTHER_CHILD) it would
+        # succeed but be semantically nonsensical (an entity as its own
+        # parent), so it's rejected the same way for both.
         raise HTTPException(
             status_code=400, detail="An entity cannot have a relation to itself"
         )
-    if not entity.exists(db, item_id=id):
-        raise HTTPException(status_code=404, detail="Entity not found")
     if not entity.exists(db, item_id=relation_in.entity_destination_id):
         raise HTTPException(status_code=404, detail="Destination entity not found")
 

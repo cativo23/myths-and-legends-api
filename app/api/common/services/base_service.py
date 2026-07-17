@@ -31,6 +31,15 @@ def raise_for_integrity_error(model: Type[Any], error: IntegrityError) -> None:
     SQLite backend the test suite runs against — both drivers include
     "foreign key" in a FK violation's message text ("FOREIGN KEY constraint
     failed" for SQLite, "violates foreign key constraint" for Postgres).
+
+    Caveat: Postgres's constraint-violation text is emitted in the server's
+    `lc_messages` locale. This match assumes an English-locale Postgres
+    (this project's default) — a non-English `lc_messages` setting would no
+    longer contain "foreign key", silently misrouting every FK violation to
+    409 instead of 404. If this project ever runs Postgres with a non-English
+    `lc_messages`, this detection needs to switch to a driver-specific
+    exception class (e.g. `psycopg2.errors.ForeignKeyViolation`) instead, at
+    the cost of no longer being testable against SQLite in the same way.
     """
     if "foreign key" in str(error.orig).lower():
         raise HTTPException(
