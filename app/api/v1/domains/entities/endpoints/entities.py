@@ -306,7 +306,8 @@ def create_entity_relation(
     current_user: UserModel = Depends(get_current_active_superuser),
 ):
     """Create a relation from this entity to another. Requires superuser privileges."""
-    if not entity.exists(db, item_id=id):
+    origin_entity = entity.get(db, item_id=id)
+    if not origin_entity:
         raise HTTPException(status_code=404, detail="Entity not found")
     if relation_in.entity_destination_id == id:
         # Checked only after confirming the origin exists, so a self-relation
@@ -321,7 +322,8 @@ def create_entity_relation(
         raise HTTPException(
             status_code=400, detail="An entity cannot have a relation to itself"
         )
-    if not entity.exists(db, item_id=relation_in.entity_destination_id):
+    destination_entity = entity.get(db, item_id=relation_in.entity_destination_id)
+    if not destination_entity:
         raise HTTPException(status_code=404, detail="Destination entity not found")
 
     forward, _reverse = relation.create_bidirectional(
@@ -331,4 +333,12 @@ def create_entity_relation(
         relation_type=relation_in.relation_type,
         description=relation_in.description,
     )
-    return forward
+    return EntityRelation(
+        id=forward.id,
+        entity_origin_id=forward.entity_origin_id,
+        entity_destination_id=forward.entity_destination_id,
+        relation_type=forward.relation_type,
+        description=forward.description,
+        entity_origin_name=origin_entity.name,
+        entity_destination_name=destination_entity.name,
+    )

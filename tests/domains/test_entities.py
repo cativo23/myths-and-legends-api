@@ -781,6 +781,8 @@ class TestEntitiesEndpoints:
         data = response.json()
         assert data["relation_type"] == "ENEMIES"
         assert data["description"] == "Test rivalry"
+        assert data["entity_origin_name"] == "Origin Entity"
+        assert data["entity_destination_name"] == "Destination Entity"
 
         # ENEMIES is symmetric — verify the reverse relation was also created,
         # and that the description was carried over to it too.
