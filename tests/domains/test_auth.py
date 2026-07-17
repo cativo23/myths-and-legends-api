@@ -230,6 +230,29 @@ class TestAuthEndpoints:
         )
         assert login_response.status_code == 200
 
+    def test_reset_password_revokes_refresh_token(
+        self, client: TestClient, test_user: dict, db: Session
+    ):
+        """Test that resetting a password also invalidates any outstanding
+        refresh token, so a stale session can't survive a password change."""
+        login = client.post(
+            "/api/v1/auth/login",
+            data={"username": test_user["email"], "password": test_user["password"]},
+        )
+        refresh_token = login.json()["refresh_token"]
+
+        reset_token = generate_password_reset_token(test_user["email"])
+        reset_response = client.post(
+            "/api/v1/auth/reset-password/",
+            json={"token": reset_token, "new_password": "BrandNewP@ss123"},
+        )
+        assert reset_response.status_code == 200
+
+        refresh_response = client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": refresh_token}
+        )
+        assert refresh_response.status_code == 401
+
     def test_login_rate_limit_returns_429_with_valid_json_body(
         self, client: TestClient, test_user: dict
     ):
@@ -390,4 +413,30 @@ class TestAuthEndpoints:
         response = client.post(
             "/api/v1/auth/refresh", json={"refresh_token": expired_token}
         )
+        assert response.status_code == 401
+
+    def test_logout_revokes_refresh_token(self, client: TestClient, test_user: dict):
+        """Test that /auth/logout clears the stored refresh token, so a
+        subsequent /auth/refresh with the pre-logout token is rejected."""
+        login = client.post(
+            "/api/v1/auth/login",
+            data={"username": test_user["email"], "password": test_user["password"]},
+        )
+        access_token = login.json()["access_token"]
+        refresh_token = login.json()["refresh_token"]
+
+        logout_response = client.post(
+            "/api/v1/auth/logout",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        assert logout_response.status_code == 200
+
+        refresh_response = client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": refresh_token}
+        )
+        assert refresh_response.status_code == 401
+
+    def test_logout_without_auth_returns_401(self, client: TestClient):
+        """Test that /auth/logout requires authentication."""
+        response = client.post("/api/v1/auth/logout")
         assert response.status_code == 401

@@ -208,6 +208,26 @@ def get_current_user_info(
 
 
 @router.post(
+    "/logout",
+    summary="Logout",
+    description="Revoke the current user's refresh token, ending their session.",
+    responses={
+        200: {"description": "Successfully logged out"},
+        401: {"description": "Unauthorized - No valid token provided"},
+    },
+)
+def logout(
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    """Revoke the current user's refresh token."""
+    current_user.hashed_refresh_token = None
+    db.add(current_user)
+    db.commit()
+    return {"msg": "Successfully logged out"}
+
+
+@router.post(
     "/password-recovery/{email}",
     summary="Password Recovery",
     description="Initiate password recovery by sending a reset email to the user.",
@@ -283,6 +303,7 @@ def reset_password(
         raise HTTPException(status_code=400, detail="Inactive user")
     hashed_password = get_password_hash(new_password)
     user.hashed_password = hashed_password
+    user.hashed_refresh_token = None
     db.add(user)
     db.commit()
     return {"msg": "Password updated successfully"}
