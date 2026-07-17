@@ -290,6 +290,7 @@ def get_entity_relations(
     "relation too. Requires superuser privileges.",
     responses={
         201: {"description": "Relation successfully created"},
+        400: {"description": "An entity cannot have a relation to itself"},
         404: {"description": "Entity not found"},
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
@@ -302,6 +303,14 @@ def create_entity_relation(
     current_user: UserModel = Depends(get_current_active_superuser),
 ):
     """Create a relation from this entity to another. Requires superuser privileges."""
+    if relation_in.entity_destination_id == id:
+        # For symmetric relation types, the forward and reverse rows created
+        # by create_bidirectional() would be identical, tripping the
+        # uq_entity_relation_unique constraint and surfacing as an unhandled
+        # 500 instead of a clear client error.
+        raise HTTPException(
+            status_code=400, detail="An entity cannot have a relation to itself"
+        )
     if not entity.exists(db, item_id=id):
         raise HTTPException(status_code=404, detail="Entity not found")
     if not entity.exists(db, item_id=relation_in.entity_destination_id):

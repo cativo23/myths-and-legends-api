@@ -819,3 +819,25 @@ class TestEntitiesEndpoints:
             json={"entity_destination_id": entity.id, "relation_type": "ALLIES"},
         )
         assert response.status_code == 401
+
+    def test_create_relation_to_self_rejected(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test creating a relation from an entity to itself returns 400,
+        rather than an unhandled 500 from the unique-constraint collision
+        between the forward and reverse rows of a symmetric relation."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Solo Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+
+        response = client.post(
+            f"/api/v1/entities/{entity.id}/relations",
+            json={"entity_destination_id": entity.id, "relation_type": "SIBLINGS"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 400
