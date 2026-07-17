@@ -35,15 +35,23 @@ class TestLocationsEndpoints:
 
     def test_list_locations(self, client: TestClient, db: Session):
         """Test listing all locations."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
         locations = [
             Location(
-                entity_id=1,
+                entity_id=entity.id,
                 department="Cundinamarca",
                 municipality="Bogota",
                 place_description="Capital city",
             ),
             Location(
-                entity_id=1,
+                entity_id=entity.id,
                 department="Oaxaca",
                 municipality="Tlacolula",
                 place_description="Valley town",
@@ -60,14 +68,22 @@ class TestLocationsEndpoints:
 
     def test_filter_locations_by_department(self, client: TestClient, db: Session):
         """Test filtering locations by department query parameter."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
         locations = [
             Location(
-                entity_id=1,
+                entity_id=entity.id,
                 department="Cundinamarca",
                 municipality="Bogota",
             ),
             Location(
-                entity_id=1,
+                entity_id=entity.id,
                 department="Antioquia",
                 municipality="Medellin",
             ),
@@ -85,19 +101,27 @@ class TestLocationsEndpoints:
         self, client: TestClient, db: Session
     ):
         """Test that department filter uses partial (LIKE) matching."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
         locations = [
             Location(
-                entity_id=1,
+                entity_id=entity.id,
                 department="San Antonio",
                 municipality="City",
             ),
             Location(
-                entity_id=1,
+                entity_id=entity.id,
                 department="San Francisco",
                 municipality="City",
             ),
             Location(
-                entity_id=1,
+                entity_id=entity.id,
                 department="New York",
                 municipality="City",
             ),
@@ -113,8 +137,16 @@ class TestLocationsEndpoints:
 
     def test_get_location_by_id(self, client: TestClient, db: Session):
         """Test getting a single location by its numeric ID."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
         location = Location(
-            entity_id=1,
+            entity_id=entity.id,
             department="Cundinamarca",
             municipality="Bogota",
             place_description="Capital city",
@@ -141,13 +173,21 @@ class TestLocationsEndpoints:
     ):
         """A numeric ID path segment must resolve via the /{id} route, not be
         swallowed by the string-typed /{department} route."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
         department_only = Location(
-            entity_id=1,
+            entity_id=entity.id,
             department="42",
             municipality="Numeric Department",
         )
         real_location = Location(
-            entity_id=1,
+            entity_id=entity.id,
             department="Cundinamarca",
         )
         db.add_all([department_only, real_location])
@@ -163,19 +203,27 @@ class TestLocationsEndpoints:
 
     def test_get_locations_by_department_path(self, client: TestClient, db: Session):
         """Test getting locations by department via path parameter."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
         locations = [
             Location(
-                entity_id=1,
+                entity_id=entity.id,
                 department="Oaxaca",
                 municipality="Oaxaca City",
             ),
             Location(
-                entity_id=1,
+                entity_id=entity.id,
                 department="Oaxaca",
                 municipality="Tlacolula",
             ),
             Location(
-                entity_id=1,
+                entity_id=entity.id,
                 department="Chiapas",
                 municipality="San Cristobal",
             ),
@@ -200,8 +248,16 @@ class TestLocationsEndpoints:
 
     def test_location_response_schema(self, client: TestClient, db: Session):
         """Test that location response matches expected schema."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
         location = Location(
-            entity_id=1,
+            entity_id=entity.id,
             department="TestDept",
             municipality="TestMuni",
             place_description="Test description",
@@ -264,6 +320,19 @@ class TestLocationsEndpoints:
             json={"department": "Sonsonate", "entity_id": 1},
         )
         assert response.status_code == 401
+
+    def test_create_location_nonexistent_entity_id_returns_404(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        """Test creating a location with an entity_id that doesn't exist
+        returns 404 (a foreign-key violation), not 409 (which would
+        incorrectly imply the location itself already exists)."""
+        response = client.post(
+            "/api/v1/locations/",
+            json={"department": "Sonsonate", "entity_id": 999999},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 404
 
     def test_update_location(
         self, client: TestClient, db: Session, superuser_headers: dict

@@ -17,6 +17,32 @@ CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
 
+def _raise_for_integrity_error(model: Type[Any], error: IntegrityError) -> None:
+    """Translate a commit-time IntegrityError into the right HTTP response.
+
+    A foreign-key violation (e.g. a caller-supplied entity_id that doesn't
+    exist) and a unique-constraint violation (e.g. a duplicate name) both
+    surface as the same IntegrityError class from SQLAlchemy — without
+    distinguishing them, an invalid FK reference gets misreported as
+    "already exists" (409) instead of a reference to a missing resource
+    (404). Detection is done via the driver error message text rather than
+    a driver-specific exception class (e.g. psycopg2.errors.ForeignKeyViolation)
+    so it works identically against the real Postgres backend and the
+    SQLite backend the test suite runs against — both drivers include
+    "foreign key" in a FK violation's message text ("FOREIGN KEY constraint
+    failed" for SQLite, "violates foreign key constraint" for Postgres).
+    """
+    if "foreign key" in str(error.orig).lower():
+        raise HTTPException(
+            status_code=404,
+            detail="One or more referenced resources do not exist.",
+        )
+    raise HTTPException(
+        status_code=409,
+        detail=f"A {model.__name__} with these values already exists.",
+    )
+
+
 class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     """
     SQLAlchemy 2.0 CRUD Service with default methods for Create, Read, Update, Delete.
@@ -99,17 +125,9 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.add(db_obj)
         try:
             db.commit()
-        except IntegrityError:
-            # Assumes the violation is a unique-constraint conflict (true for
-            # every current caller, which only have unique-name columns and
-            # no FK columns on create/update). If a future model added here
-            # has FK columns, an FK-violation IntegrityError would also hit
-            # this branch and get a misleading "already exists" message.
+        except IntegrityError as error:
             db.rollback()
-            raise HTTPException(
-                status_code=409,
-                detail=f"A {self.model.__name__} with these values already exists.",
-            )
+            _raise_for_integrity_error(self.model, error)
         db.refresh(db_obj)
         return db_obj
 
@@ -132,17 +150,9 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.add(db_obj)
         try:
             db.commit()
-        except IntegrityError:
-            # Assumes the violation is a unique-constraint conflict (true for
-            # every current caller, which only have unique-name columns and
-            # no FK columns on create/update). If a future model added here
-            # has FK columns, an FK-violation IntegrityError would also hit
-            # this branch and get a misleading "already exists" message.
+        except IntegrityError as error:
             db.rollback()
-            raise HTTPException(
-                status_code=409,
-                detail=f"A {self.model.__name__} with these values already exists.",
-            )
+            _raise_for_integrity_error(self.model, error)
         db.refresh(db_obj)
         return db_obj
 

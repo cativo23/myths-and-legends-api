@@ -36,16 +36,24 @@ class TestSourcesEndpoints:
 
     def test_list_sources(self, client: TestClient, db: Session):
         """Test listing all sources."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
         sources = [
             Source(
-                entity_id=1,
+                entity_id=entity.id,
                 source_type=SourceType.BOOK,
                 title="The Golden Bough",
                 author="James Frazer",
                 url="https://example.com/golden-bough",
             ),
             Source(
-                entity_id=1,
+                entity_id=entity.id,
                 source_type=SourceType.WEB,
                 title="Mythology Archive",
                 author=None,
@@ -63,9 +71,17 @@ class TestSourcesEndpoints:
 
     def test_list_sources_sorted_by_title(self, client: TestClient, db: Session):
         """Test sorting sources by title field."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
         sources = [
-            Source(entity_id=1, source_type=SourceType.BOOK, title="Zebra Book"),
-            Source(entity_id=1, source_type=SourceType.BOOK, title="Alpha Book"),
+            Source(entity_id=entity.id, source_type=SourceType.BOOK, title="Zebra Book"),
+            Source(entity_id=entity.id, source_type=SourceType.BOOK, title="Alpha Book"),
         ]
         db.add_all(sources)
         db.commit()
@@ -86,9 +102,17 @@ class TestSourcesEndpoints:
 
     def test_list_sources_sorted_desc(self, client: TestClient, db: Session):
         """Test listing sources sorted descending."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
         sources = [
-            Source(entity_id=1, source_type=SourceType.BOOK, title="Alpha Book"),
-            Source(entity_id=1, source_type=SourceType.BOOK, title="Beta Book"),
+            Source(entity_id=entity.id, source_type=SourceType.BOOK, title="Alpha Book"),
+            Source(entity_id=entity.id, source_type=SourceType.BOOK, title="Beta Book"),
         ]
         db.add_all(sources)
         db.commit()
@@ -101,19 +125,27 @@ class TestSourcesEndpoints:
 
     def test_filter_sources_by_type(self, client: TestClient, db: Session):
         """Test filtering sources by source type."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
         sources = [
             Source(
-                entity_id=1,
+                entity_id=entity.id,
                 source_type=SourceType.BOOK,
                 title="A Book",
             ),
             Source(
-                entity_id=1,
+                entity_id=entity.id,
                 source_type=SourceType.WEB,
                 title="A Website",
             ),
             Source(
-                entity_id=1,
+                entity_id=entity.id,
                 source_type=SourceType.ORAL_TRADITION,
                 title="Oral Story",
             ),
@@ -129,8 +161,16 @@ class TestSourcesEndpoints:
 
     def test_source_response_schema(self, client: TestClient, db: Session):
         """Test that source response matches expected schema."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
         source = Source(
-            entity_id=1,
+            entity_id=entity.id,
             source_type=SourceType.DOCUMENT,
             title="Historical Document",
             author="Anonymous",
@@ -196,6 +236,23 @@ class TestSourcesEndpoints:
             json={"source_type": "BOOK", "title": "Test Source", "entity_id": 1},
         )
         assert response.status_code == 401
+
+    def test_create_source_nonexistent_entity_id_returns_404(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        """Test creating a source with an entity_id that doesn't exist
+        returns 404 (a foreign-key violation), not 409 (which would
+        incorrectly imply the source itself already exists)."""
+        response = client.post(
+            "/api/v1/sources/",
+            json={
+                "source_type": "BOOK",
+                "title": "Test Source",
+                "entity_id": 999999,
+            },
+            headers=superuser_headers,
+        )
+        assert response.status_code == 404
 
     def test_update_source(
         self, client: TestClient, db: Session, superuser_headers: dict
