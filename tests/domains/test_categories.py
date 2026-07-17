@@ -197,3 +197,30 @@ class TestCategoriesEndpoints:
             "/api/v1/categories/99999", headers=superuser_headers
         )
         assert response.status_code == 404
+
+    def test_create_category_duplicate_name_returns_409(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test creating a category with a name that already exists returns
+        409, not an unhandled IntegrityError (Category.name is unique)."""
+        db.add(Category(name=CategoryName.MYTH, description="Existing"))
+        db.commit()
+
+        response = client.post(
+            "/api/v1/categories/",
+            json={"name": "MYTH", "description": "Duplicate"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 409
+
+    def test_create_category_invalid_name_rejected(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        """Test creating a category with a name outside the CategoryName enum
+        is rejected with 422 by Pydantic validation, not silently accepted."""
+        response = client.post(
+            "/api/v1/categories/",
+            json={"name": "NOT_A_REAL_CATEGORY", "description": "test"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 422

@@ -1,11 +1,12 @@
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 
+from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi_pagination.bases import AbstractPage, AbstractParams
 from fastapi_pagination.ext.sqlalchemy import paginate
 from pydantic import BaseModel
 from sqlalchemy import select
-from sqlalchemy.exc import ArgumentError
+from sqlalchemy.exc import ArgumentError, IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.common.exceptions.api_exception import RelationshipNotFoundException
@@ -96,7 +97,14 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         obj_in_data = jsonable_encoder(obj_in)
         db_obj = self.model(**obj_in_data)
         db.add(db_obj)
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            raise HTTPException(
+                status_code=409,
+                detail=f"A {self.model.__name__} with these values already exists.",
+            )
         db.refresh(db_obj)
         return db_obj
 
@@ -117,7 +125,14 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             if field in update_data:
                 setattr(db_obj, field, update_data[field])
         db.add(db_obj)
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            raise HTTPException(
+                status_code=409,
+                detail=f"A {self.model.__name__} with these values already exists.",
+            )
         db.refresh(db_obj)
         return db_obj
 

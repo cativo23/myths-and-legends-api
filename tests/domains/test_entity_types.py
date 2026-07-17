@@ -208,3 +208,31 @@ class TestEntityTypesEndpoints:
             "/api/v1/entity-types/99999", headers=superuser_headers
         )
         assert response.status_code == 404
+
+    def test_create_entity_type_duplicate_name_returns_409(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test creating an entity type with a name that already exists
+        returns 409, not an unhandled IntegrityError (EntityType.name is
+        unique)."""
+        db.add(EntityType(name=EntityTypeName.CHARACTER, description="Existing"))
+        db.commit()
+
+        response = client.post(
+            "/api/v1/entity-types/",
+            json={"name": "CHARACTER", "description": "Duplicate"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 409
+
+    def test_create_entity_type_invalid_name_rejected(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        """Test creating an entity type with a name outside the
+        EntityTypeName enum is rejected with 422, not silently accepted."""
+        response = client.post(
+            "/api/v1/entity-types/",
+            json={"name": "NOT_A_REAL_TYPE", "description": "test"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 422
