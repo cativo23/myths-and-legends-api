@@ -44,6 +44,7 @@ class EntityRelationService(
         origin_id: int,
         destination_id: int,
         relation_type: RelationType,
+        description: str | None = None,
     ) -> tuple[EntityRelation, EntityRelation | None]:
         """
         Create bidirectional relation if symmetric (SIBLINGS, ALLIES, ENEMIES).
@@ -53,6 +54,7 @@ class EntityRelationService(
             entity_origin_id=origin_id,
             entity_destination_id=destination_id,
             relation_type=relation_type,
+            description=description,
         )
         db.add(forward)
 
@@ -67,6 +69,7 @@ class EntityRelationService(
                 entity_origin_id=destination_id,
                 entity_destination_id=origin_id,
                 relation_type=relation_type,
+                description=description,
             )
             db.add(reverse)
 

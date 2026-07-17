@@ -780,12 +780,17 @@ class TestEntitiesEndpoints:
         assert response.status_code == 201
         data = response.json()
         assert data["relation_type"] == "ENEMIES"
+        assert data["description"] == "Test rivalry"
 
-        # ENEMIES is symmetric — verify the reverse relation was also created
+        # ENEMIES is symmetric — verify the reverse relation was also created,
+        # and that the description was carried over to it too.
         reverse_check = client.get(f"/api/v1/entities/{destination.id}/relations")
         assert reverse_check.status_code == 200
         reverse_data = reverse_check.json()
-        assert any(r["relation_type"] == "ENEMIES" for r in reverse_data)
+        assert any(
+            r["relation_type"] == "ENEMIES" and r["description"] == "Test rivalry"
+            for r in reverse_data
+        )
 
     def test_create_relation_entity_not_found(
         self, client: TestClient, superuser_headers: dict

@@ -312,5 +312,6 @@ def create_entity_relation(
         origin_id=id,
         destination_id=relation_in.entity_destination_id,
         relation_type=relation_in.relation_type,
+        description=relation_in.description,
     )
     return forward
