@@ -4,14 +4,14 @@ from typing import Any
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Path, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import jwt, JWTError
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy.orm import Session
 
 from app.api.common.middleware.rate_limiter import limiter
 from app.api.v1.domains.users.services.user import user as user_crud
 from app.api.v1.domains.users.models.user import User as UserModel
 from app.api.v1.domains.users.schemas.user import User as UserSchema
-from app.api.v1.domains.users.schemas.token import Token
+from app.api.v1.domains.users.schemas.token import Token, TokenPayload
 from app.api.v1.shared.deps import get_db, get_current_user
 from app.core import security
 from app.core.config import settings
@@ -158,17 +158,14 @@ def refresh_access_token(
         payload = jwt.decode(
             refresh_in.refresh_token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
         )
-    except JWTError:
+        token_data = TokenPayload(**payload)
+    except (JWTError, ValidationError):
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 
     if payload.get("type") != "refresh":
         raise HTTPException(status_code=401, detail="Not a refresh token")
 
-    user_id = payload.get("sub")
-    try:
-        user = user_crud.get(db, item_id=int(user_id)) if user_id else None
-    except (TypeError, ValueError):
-        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+    user = user_crud.get(db, item_id=token_data.sub) if token_data.sub else None
     if not user or not user_crud.is_active(user):
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 
