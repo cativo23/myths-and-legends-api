@@ -6,7 +6,7 @@ from app.api.v1.domains.countries.endpoints.countries import router as countries
 from app.api.v1.domains.users.endpoints.users import router as users_router
 from app.api.v1.domains.images.endpoints.images import router as images_router
 from app.api.v1.domains.health.endpoints.health import router as health_router
-from app.api.v1.entities.endpoints import (
+from app.api.v1.domains.entities.endpoints import (
     entities,
     locations,
     sources,

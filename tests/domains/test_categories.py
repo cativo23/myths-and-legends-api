@@ -5,8 +5,8 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.api.v1.entities.models.category import Category
-from app.api.v1.entities.enums import CategoryName
+from app.api.v1.domains.entities.models.category import Category
+from app.api.v1.domains.entities.enums import CategoryName
 
 
 class TestCategoriesEndpoints:
