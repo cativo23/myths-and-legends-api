@@ -257,6 +257,17 @@ class TestLocationsEndpoints:
         )
         assert response.status_code == 422
 
+    def test_create_location_invalid_entity_id(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        """Test creating a location with a nonexistent entity_id returns 404, not a 500."""
+        response = client.post(
+            "/api/v1/locations/",
+            json={"department": "Sonsonate", "entity_id": 99999},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 404
+
     def test_create_location_without_auth(self, client: TestClient):
         """Test creating a location without auth returns 401."""
         response = client.post(

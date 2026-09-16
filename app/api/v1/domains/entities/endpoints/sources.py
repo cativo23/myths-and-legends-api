@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.v1.shared.deps import get_db, get_current_active_superuser
-from app.api.v1.domains.entities.services import source
+from app.api.v1.domains.entities.services import entity, source
 from app.api.v1.domains.entities.models.source import Source
 from app.api.v1.domains.entities.schemas.source import (
     Source as SourceSchema,
@@ -70,6 +70,7 @@ def list_sources(
         201: {"description": "Source successfully created"},
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
+        404: {"description": "Entity not found"},
     },
 )
 def create_source(
@@ -78,6 +79,8 @@ def create_source(
     current_user: UserModel = Depends(get_current_active_superuser),
 ):
     """Create a new source. Requires superuser privileges."""
+    if not entity.exists(db, item_id=source_in.entity_id):
+        raise HTTPException(status_code=404, detail="Entity not found")
     return source.create(db, obj_in=source_in)
 
 

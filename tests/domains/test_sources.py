@@ -189,6 +189,21 @@ class TestSourcesEndpoints:
         )
         assert response.status_code == 422
 
+    def test_create_source_invalid_entity_id(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        """Test creating a source with a nonexistent entity_id returns 404, not a 500."""
+        response = client.post(
+            "/api/v1/sources/",
+            json={
+                "source_type": "BOOK",
+                "title": "Test Source",
+                "entity_id": 99999,
+            },
+            headers=superuser_headers,
+        )
+        assert response.status_code == 404
+
     def test_create_source_without_auth(self, client: TestClient):
         """Test creating a source without auth returns 401."""
         response = client.post(

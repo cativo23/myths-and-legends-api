@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.v1.shared.deps import get_db, get_current_active_superuser
-from app.api.v1.domains.entities.services import location
+from app.api.v1.domains.entities.services import entity, location
 from app.api.v1.domains.entities.models.location import Location
 from app.api.v1.domains.entities.schemas.location import (
     Location as LocationSchema,
@@ -100,6 +100,7 @@ def get_location_by_department(
         201: {"description": "Location successfully created"},
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
+        404: {"description": "Entity not found"},
     },
 )
 def create_location(
@@ -108,6 +109,8 @@ def create_location(
     current_user: UserModel = Depends(get_current_active_superuser),
 ):
     """Create a new location. Requires superuser privileges."""
+    if not entity.exists(db, item_id=location_in.entity_id):
+        raise HTTPException(status_code=404, detail="Entity not found")
     return location.create(db, obj_in=location_in)
 
 
