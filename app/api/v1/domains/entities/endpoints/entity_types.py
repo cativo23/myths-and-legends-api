@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.v1.shared.deps import get_db, get_current_active_superuser
@@ -79,6 +80,7 @@ def get_entity_type(
         201: {"description": "Entity type successfully created"},
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
+        409: {"description": "Entity type with this name already exists"},
     },
 )
 def create_entity_type(
@@ -87,7 +89,13 @@ def create_entity_type(
     current_user: UserModel = Depends(get_current_active_superuser),
 ):
     """Create a new entity type. Requires superuser privileges."""
-    return entity_type.create(db, obj_in=entity_type_in)
+    try:
+        return entity_type.create(db, obj_in=entity_type_in)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409, detail="Entity type with this name already exists"
+        )
 
 
 @router.put(

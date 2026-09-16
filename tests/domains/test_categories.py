@@ -143,6 +143,27 @@ class TestCategoriesEndpoints:
         )
         assert response.status_code == 403
 
+    def test_create_category_duplicate_name(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        """Test creating a category with a name that already exists returns
+        409, instead of an unhandled 500 from the DB unique constraint."""
+        response = client.post(
+            "/api/v1/categories/",
+            json={"name": "MYTH", "description": "Myths and mythological tales"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 201
+
+        response = client.post(
+            "/api/v1/categories/",
+            json={"name": "MYTH", "description": "A duplicate myth category"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 409
+        data = response.json()
+        assert "already exists" in data["detail"].lower()
+
     def test_update_category(
         self, client: TestClient, db: Session, superuser_headers: dict
     ):

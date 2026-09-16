@@ -152,6 +152,28 @@ class TestEntityTypesEndpoints:
         )
         assert response.status_code == 403
 
+    def test_create_entity_type_duplicate_name(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        """Test creating an entity type with a name that already exists
+        returns 409, instead of an unhandled 500 from the DB unique
+        constraint."""
+        response = client.post(
+            "/api/v1/entity-types/",
+            json={"name": "GROUP", "description": "Groups of mythological beings"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 201
+
+        response = client.post(
+            "/api/v1/entity-types/",
+            json={"name": "GROUP", "description": "A duplicate group entity type"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 409
+        data = response.json()
+        assert "already exists" in data["detail"].lower()
+
     def test_update_entity_type(
         self, client: TestClient, db: Session, superuser_headers: dict
     ):
