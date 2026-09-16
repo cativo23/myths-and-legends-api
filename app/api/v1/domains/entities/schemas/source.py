@@ -43,8 +43,8 @@ class SourceBase(BaseModel):
 class SourceCreate(SourceBase):
     """Schema for creating a new source."""
 
-    entity_id: int | None = Field(
-        None,
+    entity_id: int = Field(
+        ...,
         title="Entity ID",
         description="ID of the associated entity",
         examples=[1],

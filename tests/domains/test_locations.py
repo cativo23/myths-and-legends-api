@@ -6,10 +6,24 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.api.v1.domains.entities.models.location import Location
+from app.api.v1.domains.entities.models.category import Category
+from app.api.v1.domains.entities.models.entity import Entity
+from app.api.v1.domains.entities.models.entity_type import EntityType
+from app.api.v1.domains.entities.enums import CategoryName, EntityTypeName
 
 
 class TestLocationsEndpoints:
     """Integration tests for Locations endpoints."""
+
+    def _seed_dependencies(self, db: Session) -> dict:
+        """Create required Category and EntityType records and return their IDs."""
+        category = Category(name=CategoryName.MYTH, description="A myth category")
+        entity_type = EntityType(
+            name=EntityTypeName.CHARACTER, description="A character type"
+        )
+        db.add_all([category, entity_type])
+        db.commit()
+        return {"category_id": category.id, "entity_type_id": entity_type.id}
 
     def test_list_locations_empty(self, client: TestClient):
         """Test listing locations when database is empty."""
@@ -204,3 +218,95 @@ class TestLocationsEndpoints:
         assert "department" in loc
         assert "municipality" in loc
         assert "place_description" in loc
+
+    def test_create_location(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test creating a location as superuser."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+
+        response = client.post(
+            "/api/v1/locations/",
+            json={
+                "department": "Sonsonate",
+                "municipality": "Izalco",
+                "entity_id": entity.id,
+            },
+            headers=superuser_headers,
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["department"] == "Sonsonate"
+        assert data["entity_id"] == entity.id
+
+    def test_create_location_missing_entity_id_rejected(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        """Test creating a location without entity_id returns 422, not a 500."""
+        response = client.post(
+            "/api/v1/locations/",
+            json={"department": "Sonsonate"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 422
+
+    def test_create_location_without_auth(self, client: TestClient):
+        """Test creating a location without auth returns 401."""
+        response = client.post(
+            "/api/v1/locations/",
+            json={"department": "Sonsonate", "entity_id": 1},
+        )
+        assert response.status_code == 401
+
+    def test_update_location(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test updating a location as superuser."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity 2",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+        loc = Location(department="Old Dept", entity_id=entity.id)
+        db.add(loc)
+        db.commit()
+
+        response = client.put(
+            f"/api/v1/locations/{loc.id}",
+            json={"department": "New Dept"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["department"] == "New Dept"
+
+    def test_delete_location(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test deleting a location as superuser."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity 3",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+        loc = Location(department="To Delete", entity_id=entity.id)
+        db.add(loc)
+        db.commit()
+        loc_id = loc.id
+
+        response = client.delete(
+            f"/api/v1/locations/{loc_id}", headers=superuser_headers
+        )
+        assert response.status_code == 204

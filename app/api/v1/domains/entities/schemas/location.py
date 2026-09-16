@@ -35,8 +35,8 @@ class LocationBase(BaseModel):
 class LocationCreate(LocationBase):
     """Schema for creating a new location."""
 
-    entity_id: int | None = Field(
-        None,
+    entity_id: int = Field(
+        ...,
         title="Entity ID",
         description="ID of the associated entity",
         examples=[1],

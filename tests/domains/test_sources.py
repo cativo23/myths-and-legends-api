@@ -7,10 +7,24 @@ from sqlalchemy.orm import Session
 
 from app.api.v1.domains.entities.models.source import Source
 from app.api.v1.domains.entities.enums import SourceType
+from app.api.v1.domains.entities.models.category import Category
+from app.api.v1.domains.entities.models.entity import Entity
+from app.api.v1.domains.entities.models.entity_type import EntityType
+from app.api.v1.domains.entities.enums import CategoryName, EntityTypeName
 
 
 class TestSourcesEndpoints:
     """Integration tests for Sources endpoints."""
+
+    def _seed_dependencies(self, db: Session) -> dict:
+        """Create required Category and EntityType records and return their IDs."""
+        category = Category(name=CategoryName.MYTH, description="A myth category")
+        entity_type = EntityType(
+            name=EntityTypeName.CHARACTER, description="A character type"
+        )
+        db.add_all([category, entity_type])
+        db.commit()
+        return {"category_id": category.id, "entity_type_id": entity_type.id}
 
     def test_list_sources_empty(self, client: TestClient):
         """Test listing sources when database is empty."""
@@ -135,3 +149,100 @@ class TestSourcesEndpoints:
         assert "title" in s
         assert "author" in s
         assert "url" in s
+
+    def test_create_source(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test creating a source as superuser."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+
+        response = client.post(
+            "/api/v1/sources/",
+            json={
+                "source_type": "BOOK",
+                "title": "Test Source Title",
+                "author": "Test Author",
+                "entity_id": entity.id,
+            },
+            headers=superuser_headers,
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["title"] == "Test Source Title"
+        assert data["entity_id"] == entity.id
+
+    def test_create_source_missing_entity_id_rejected(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        """Test creating a source without entity_id returns 422, not a 500."""
+        response = client.post(
+            "/api/v1/sources/",
+            json={"source_type": "BOOK", "title": "Test Source"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 422
+
+    def test_create_source_without_auth(self, client: TestClient):
+        """Test creating a source without auth returns 401."""
+        response = client.post(
+            "/api/v1/sources/",
+            json={"source_type": "BOOK", "title": "Test Source", "entity_id": 1},
+        )
+        assert response.status_code == 401
+
+    def test_update_source(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test updating a source as superuser."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity 2",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+        source = Source(
+            source_type=SourceType.BOOK, title="Old Title", entity_id=entity.id
+        )
+        db.add(source)
+        db.commit()
+
+        response = client.put(
+            f"/api/v1/sources/{source.id}",
+            json={"title": "New Title"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["title"] == "New Title"
+
+    def test_delete_source(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test deleting a source as superuser."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity 3",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+        source = Source(
+            source_type=SourceType.WEB, title="To Delete", entity_id=entity.id
+        )
+        db.add(source)
+        db.commit()
+        source_id = source.id
+
+        response = client.delete(
+            f"/api/v1/sources/{source_id}", headers=superuser_headers
+        )
+        assert response.status_code == 204
