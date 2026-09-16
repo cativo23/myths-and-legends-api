@@ -2,6 +2,7 @@ from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from fastapi_pagination import Page, Params
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.v1.shared.deps import get_db, get_current_active_superuser
@@ -290,9 +291,11 @@ def get_entity_relations(
     "relation too. Requires superuser privileges.",
     responses={
         201: {"description": "Relation successfully created"},
+        400: {"description": "An entity cannot have a relation to itself"},
         404: {"description": "Entity not found"},
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
+        409: {"description": "This relation already exists"},
     },
 )
 def create_entity_relation(
@@ -304,13 +307,22 @@ def create_entity_relation(
     """Create a relation from this entity to another. Requires superuser privileges."""
     if not entity.exists(db, item_id=id):
         raise HTTPException(status_code=404, detail="Entity not found")
+    if relation_in.entity_destination_id == id:
+        raise HTTPException(
+            status_code=400, detail="An entity cannot have a relation to itself"
+        )
     if not entity.exists(db, item_id=relation_in.entity_destination_id):
         raise HTTPException(status_code=404, detail="Destination entity not found")
 
-    forward, _reverse = relation.create_bidirectional(
-        db,
-        origin_id=id,
-        destination_id=relation_in.entity_destination_id,
-        relation_type=relation_in.relation_type,
-    )
+    try:
+        forward, _reverse = relation.create_bidirectional(
+            db,
+            origin_id=id,
+            destination_id=relation_in.entity_destination_id,
+            relation_type=relation_in.relation_type,
+            description=relation_in.description,
+        )
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="This relation already exists")
     return forward

@@ -780,12 +780,19 @@ class TestEntitiesEndpoints:
         assert response.status_code == 201
         data = response.json()
         assert data["relation_type"] == "ENEMIES"
+        assert data["description"] == "Test rivalry"
 
         # ENEMIES is symmetric — verify the reverse relation was also created
         reverse_check = client.get(f"/api/v1/entities/{destination.id}/relations")
         assert reverse_check.status_code == 200
         reverse_data = reverse_check.json()
         assert any(r["relation_type"] == "ENEMIES" for r in reverse_data)
+        # Reverse relation shares the same description — it describes the
+        # relationship between the same two entities, not a one-directional fact
+        assert any(
+            r["relation_type"] == "ENEMIES" and r["description"] == "Test rivalry"
+            for r in reverse_data
+        )
 
     def test_create_relation_entity_not_found(
         self, client: TestClient, superuser_headers: dict
@@ -797,6 +804,116 @@ class TestEntitiesEndpoints:
             headers=superuser_headers,
         )
         assert response.status_code == 404
+
+    def test_create_relation_destination_not_found(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test creating a relation to a non-existent destination returns 404."""
+        deps = self._seed_dependencies(db)
+        origin = Entity(
+            name="Origin Only",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(origin)
+        db.commit()
+
+        response = client.post(
+            f"/api/v1/entities/{origin.id}/relations",
+            json={"entity_destination_id": 99999, "relation_type": "ALLIES"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 404
+        data = response.json()
+        assert data["detail"] == "Destination entity not found"
+
+    def test_create_relation_self_relation_rejected(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test creating a relation from an entity to itself returns 400."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Narcissus",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+
+        response = client.post(
+            f"/api/v1/entities/{entity.id}/relations",
+            json={"entity_destination_id": entity.id, "relation_type": "SIBLINGS"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 400
+        data = response.json()
+        assert data["detail"] == "An entity cannot have a relation to itself"
+
+    def test_create_duplicate_relation_rejected(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test posting the same relation twice returns 409 on the second attempt."""
+        deps = self._seed_dependencies(db)
+        origin = Entity(
+            name="Origin Dup",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        destination = Entity(
+            name="Destination Dup",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add_all([origin, destination])
+        db.commit()
+
+        payload = {
+            "entity_destination_id": destination.id,
+            "relation_type": "MOTHER_CHILD",
+        }
+        first = client.post(
+            f"/api/v1/entities/{origin.id}/relations",
+            json=payload,
+            headers=superuser_headers,
+        )
+        assert first.status_code == 201
+
+        second = client.post(
+            f"/api/v1/entities/{origin.id}/relations",
+            json=payload,
+            headers=superuser_headers,
+        )
+        assert second.status_code == 409
+        data = second.json()
+        assert data["detail"] == "This relation already exists"
+
+    def test_create_relation_as_regular_user(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        """Test creating a relation as non-superuser returns 403."""
+        deps = self._seed_dependencies(db)
+        origin = Entity(
+            name="Origin Forbidden",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        destination = Entity(
+            name="Destination Forbidden",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add_all([origin, destination])
+        db.commit()
+
+        response = client.post(
+            f"/api/v1/entities/{origin.id}/relations",
+            headers=auth_headers,
+            json={
+                "entity_destination_id": destination.id,
+                "relation_type": "ALLIES",
+            },
+        )
+        assert response.status_code == 403
 
     def test_create_relation_without_auth(self, client: TestClient, db: Session):
         """Test creating a relation without auth returns 401."""
