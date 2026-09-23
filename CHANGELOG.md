@@ -9,9 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Write endpoints for the entities domain (all superuser-gated):
+  - `POST`, `PUT`, `DELETE` for categories (`/api/v1/categories`)
+  - `POST`, `PUT`, `DELETE` for entity types (`/api/v1/entity-types`)
+  - `POST`, `PUT`, `DELETE` for locations (`/api/v1/locations`)
+  - `POST`, `PUT`, `DELETE` for sources (`/api/v1/sources`)
+  - `POST /api/v1/entities/{id}/relations` to create relations between entities,
+    with symmetric relation types (SIBLINGS, ALLIES, ENEMIES) automatically
+    creating the reverse relation
+- 404 responses on `POST /api/v1/locations` and `POST /api/v1/sources` when the
+  given `entity_id` does not reference an existing entity, instead of an
+  unhandled 500
+
 ### Changed
 
+- **Breaking:** `entity_id` is now a required field when creating a `Location`
+  or a `Source` (previously optional). Omitting it now returns a `422`
+  instead of raising an unhandled `500` on the database foreign key
+  constraint.
+
 ### Fixed
+
+- 409 response on duplicate category/entity-type name instead of an unhandled
+  `IntegrityError`
 
 ### Database Migrations
 

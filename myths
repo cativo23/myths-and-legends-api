@@ -290,7 +290,7 @@ elif [ "$1" == "seed" ]; then
     if [ "$EXEC" == "yes" ]; then
         ARGS+=(exec -u myths)
         [ ! -t 0 ] && ARGS+=(-T)
-        ARGS+=("$APP_SERVICE" python -c "from app.api.v1.entities.seed import init_seed_data; from app.db.session import SessionLocal; db = SessionLocal(); init_seed_data(db); db.close()")
+        ARGS+=("$APP_SERVICE" python -c "from app.api.v1.domains.entities.seed import init_seed_data; from app.db.session import SessionLocal; db = SessionLocal(); init_seed_data(db); db.close()")
     else
         myths_is_not_running
     fi

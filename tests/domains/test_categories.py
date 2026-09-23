@@ -5,8 +5,8 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.api.v1.entities.models.category import Category
-from app.api.v1.entities.enums import CategoryName
+from app.api.v1.domains.entities.models.category import Category
+from app.api.v1.domains.entities.enums import CategoryName
 
 
 class TestCategoriesEndpoints:
@@ -110,3 +110,111 @@ class TestCategoriesEndpoints:
         assert "name" in data
         assert "description" in data
         assert "entity_count" in data
+
+    def test_create_category(self, client: TestClient, superuser_headers: dict):
+        """Test creating a category as superuser."""
+        response = client.post(
+            "/api/v1/categories/",
+            json={"name": "LEGEND", "description": "Legends from folklore"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["name"] == "LEGEND"
+        assert data["description"] == "Legends from folklore"
+        assert "id" in data
+
+    def test_create_category_without_auth(self, client: TestClient):
+        """Test creating a category without auth returns 401."""
+        response = client.post(
+            "/api/v1/categories/",
+            json={"name": "OBJECT", "description": "test"},
+        )
+        assert response.status_code == 401
+
+    def test_create_category_as_regular_user(
+        self, client: TestClient, auth_headers: dict
+    ):
+        """Test creating a category as non-superuser returns 403."""
+        response = client.post(
+            "/api/v1/categories/",
+            json={"name": "OBJECT", "description": "test"},
+            headers=auth_headers,
+        )
+        assert response.status_code == 403
+
+    def test_create_category_duplicate_name(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        """Test creating a category with a name that already exists returns
+        422, instead of an unhandled 500 from the DB unique constraint."""
+        response = client.post(
+            "/api/v1/categories/",
+            json={"name": "MYTH", "description": "Myths and mythological tales"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 201
+
+        response = client.post(
+            "/api/v1/categories/",
+            json={"name": "MYTH", "description": "A duplicate myth category"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 422
+        data = response.json()
+        assert "already exists" in data["message"].lower()
+
+    def test_update_category(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test updating a category as superuser."""
+        category = Category(name=CategoryName.MYTH, description="Original description")
+        db.add(category)
+        db.commit()
+
+        response = client.put(
+            f"/api/v1/categories/{category.id}",
+            json={"description": "Updated description"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["description"] == "Updated description"
+        assert data["name"] == "MYTH"
+
+    def test_update_category_not_found(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        """Test updating a non-existent category returns 404."""
+        response = client.put(
+            "/api/v1/categories/99999",
+            json={"description": "test"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 404
+
+    def test_delete_category(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test deleting a category as superuser."""
+        category = Category(name=CategoryName.TRADITION, description="test")
+        db.add(category)
+        db.commit()
+        category_id = category.id
+
+        response = client.delete(
+            f"/api/v1/categories/{category_id}", headers=superuser_headers
+        )
+        assert response.status_code == 204
+
+        get_response = client.get(f"/api/v1/categories/{category_id}")
+        assert get_response.status_code == 404
+
+    def test_delete_category_not_found(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        """Test deleting a non-existent category returns 404."""
+        response = client.delete(
+            "/api/v1/categories/99999", headers=superuser_headers
+        )
+        assert response.status_code == 404
