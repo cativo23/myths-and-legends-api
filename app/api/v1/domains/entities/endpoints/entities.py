@@ -5,6 +5,7 @@ from fastapi_pagination import Page, Params
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.api.common.exceptions import ExistsException
 from app.api.v1.shared.deps import get_db, get_current_active_superuser
 from app.api.v1.domains.entities.services import entity, relation
 from app.api.v1.domains.entities.schemas.entity import (
@@ -295,7 +296,7 @@ def get_entity_relations(
         404: {"description": "Entity not found"},
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
-        409: {"description": "This relation already exists"},
+        422: {"description": "This relation already exists"},
     },
 )
 def create_entity_relation(
@@ -324,5 +325,5 @@ def create_entity_relation(
         )
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=409, detail="This relation already exists")
+        raise ExistsException(name="This relation")
     return forward

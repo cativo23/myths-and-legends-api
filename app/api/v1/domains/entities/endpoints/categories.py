@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.api.common.exceptions import ExistsException
 from app.api.v1.shared.deps import get_db, get_current_active_superuser
 from app.api.v1.domains.entities.services import category
 from app.api.v1.domains.entities.models.category import Category
@@ -80,7 +81,7 @@ def get_category(
         201: {"description": "Category successfully created"},
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
-        409: {"description": "Category with this name already exists"},
+        422: {"description": "Category with this name already exists"},
     },
 )
 def create_category(
@@ -93,9 +94,7 @@ def create_category(
         return category.create(db, obj_in=category_in)
     except IntegrityError:
         db.rollback()
-        raise HTTPException(
-            status_code=409, detail="Category with this name already exists"
-        )
+        raise ExistsException(name="Category with this name")
 
 
 @router.put(

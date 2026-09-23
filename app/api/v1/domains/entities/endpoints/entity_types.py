@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.api.common.exceptions import ExistsException
 from app.api.v1.shared.deps import get_db, get_current_active_superuser
 from app.api.v1.domains.entities.services import entity_type
 from app.api.v1.domains.entities.models.entity_type import EntityType
@@ -80,7 +81,7 @@ def get_entity_type(
         201: {"description": "Entity type successfully created"},
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
-        409: {"description": "Entity type with this name already exists"},
+        422: {"description": "Entity type with this name already exists"},
     },
 )
 def create_entity_type(
@@ -93,9 +94,7 @@ def create_entity_type(
         return entity_type.create(db, obj_in=entity_type_in)
     except IntegrityError:
         db.rollback()
-        raise HTTPException(
-            status_code=409, detail="Entity type with this name already exists"
-        )
+        raise ExistsException(name="Entity type with this name")
 
 
 @router.put(

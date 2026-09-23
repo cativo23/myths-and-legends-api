@@ -852,7 +852,7 @@ class TestEntitiesEndpoints:
     def test_create_duplicate_relation_rejected(
         self, client: TestClient, db: Session, superuser_headers: dict
     ):
-        """Test posting the same relation twice returns 409 on the second attempt."""
+        """Test posting the same relation twice returns 422 on the second attempt."""
         deps = self._seed_dependencies(db)
         origin = Entity(
             name="Origin Dup",
@@ -883,9 +883,9 @@ class TestEntitiesEndpoints:
             json=payload,
             headers=superuser_headers,
         )
-        assert second.status_code == 409
+        assert second.status_code == 422
         data = second.json()
-        assert data["detail"] == "This relation already exists"
+        assert data["message"] == "This relation already exists"
 
     def test_create_relation_as_regular_user(
         self, client: TestClient, db: Session, auth_headers: dict
