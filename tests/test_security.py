@@ -7,6 +7,9 @@ from jose import jwt, JWTError
 
 from app.core.security import (
     create_access_token,
+    create_refresh_token,
+    hash_refresh_token,
+    verify_refresh_token_hash,
     verify_password,
     get_password_hash,
     ALGORITHM,
@@ -53,6 +56,31 @@ class TestCreateAccessToken:
         )
         assert abs(actual_lifetime - expected_seconds) < 5
 
+    def test_type_claim_is_access(self):
+        token = create_access_token(subject=1)
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+        assert payload["type"] == "access"
+        assert payload["sub"] == "1"
+
+
+class TestCreateRefreshToken:
+    def test_type_claim_is_refresh(self):
+        token = create_refresh_token(subject=1)
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+        assert payload["type"] == "refresh"
+        assert payload["sub"] == "1"
+
+    def test_default_expiry_uses_settings(self):
+        from datetime import datetime
+
+        token = create_refresh_token(subject=1)
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+        expires_in_days = (
+            datetime.utcfromtimestamp(payload["exp"]) - datetime.utcnow()
+        ).days
+        # Allow a 1-day tolerance for test execution time.
+        assert settings.REFRESH_TOKEN_EXPIRE_DAYS - 1 <= expires_in_days <= settings.REFRESH_TOKEN_EXPIRE_DAYS
+
 
 class TestVerifyPassword:
     def test_returns_true_for_correct_password(self):
@@ -62,6 +90,29 @@ class TestVerifyPassword:
     def test_returns_false_for_wrong_password(self):
         hashed = get_password_hash("my-secret")
         assert verify_password("wrong-password", hashed) is False
+
+
+class TestHashRefreshToken:
+    def test_hash_is_deterministic_sha256(self):
+        import hashlib
+
+        token = "some-refresh-token-value"
+        assert hash_refresh_token(token) == hashlib.sha256(token.encode()).hexdigest()
+
+    def test_different_tokens_hash_differently(self):
+        assert hash_refresh_token("token-a") != hash_refresh_token("token-b")
+
+
+class TestVerifyRefreshTokenHash:
+    def test_matching_token_verifies(self):
+        token = "some-refresh-token-value"
+        assert verify_refresh_token_hash(token, hash_refresh_token(token)) is True
+
+    def test_mismatched_token_does_not_verify(self):
+        assert verify_refresh_token_hash("wrong-token", hash_refresh_token("real-token")) is False
+
+    def test_none_stored_hash_does_not_verify(self):
+        assert verify_refresh_token_hash("any-token", None) is False
 
 
 class TestGetPasswordHash:
