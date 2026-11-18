@@ -56,9 +56,7 @@ def create_refresh_token(
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(
-            days=settings.REFRESH_TOKEN_EXPIRE_DAYS
-        )
+        expire = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     # A unique jti guards against two refresh tokens minted for the same
     # subject within the same second-resolution `exp` colliding into an
     # identical JWT (same header/payload/signature), which would silently

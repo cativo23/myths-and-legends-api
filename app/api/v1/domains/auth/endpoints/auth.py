@@ -148,7 +148,9 @@ def login_access_token(
     "on use — it cannot be reused.",
     responses={
         200: {"description": "New token pair issued"},
-        401: {"description": "Invalid, expired, wrong-type, or already-used refresh token"},
+        401: {
+            "description": "Invalid, expired, wrong-type, or already-used refresh token"
+        },
     },
 )
 def refresh_access_token(
@@ -158,7 +160,9 @@ def refresh_access_token(
     """Exchange a refresh token for a new access + refresh token pair."""
     try:
         payload = jwt.decode(
-            refresh_in.refresh_token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
+            refresh_in.refresh_token,
+            settings.SECRET_KEY,
+            algorithms=[security.ALGORITHM],
         )
         token_data = TokenPayload(**payload)
     except (JWTError, ValidationError):
@@ -173,7 +177,9 @@ def refresh_access_token(
 
     presented_hash = user.hashed_refresh_token
     if not security.verify_refresh_token_hash(refresh_in.refresh_token, presented_hash):
-        raise HTTPException(status_code=401, detail="Refresh token has already been used")
+        raise HTTPException(
+            status_code=401, detail="Refresh token has already been used"
+        )
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     new_refresh_token = security.create_refresh_token(user.id)
@@ -196,7 +202,9 @@ def refresh_access_token(
     db.commit()
 
     if result.rowcount != 1:
-        raise HTTPException(status_code=401, detail="Refresh token has already been used")
+        raise HTTPException(
+            status_code=401, detail="Refresh token has already been used"
+        )
 
     access_token = security.create_access_token(
         user.id, expires_delta=access_token_expires
