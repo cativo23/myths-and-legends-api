@@ -1,7 +1,11 @@
 from sqlalchemy import select, or_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
-from app.api.common.services.base_service import CRUDBaseService
+from app.api.common.services.base_service import (
+    CRUDBaseService,
+    raise_for_integrity_error,
+)
 from app.api.v1.domains.entities.models.entity_relation import (
     EntityRelation,
     RelationType,
@@ -65,9 +69,6 @@ class EntityRelationService(
             RelationType.ALLIES,
             RelationType.ENEMIES,
         ]:
-            # The reverse relation shares the same description: it describes
-            # the relationship between the same two entities, not a fact that
-            # only holds in one direction.
             reverse = EntityRelation(
                 entity_origin_id=destination_id,
                 entity_destination_id=origin_id,
@@ -76,5 +77,12 @@ class EntityRelationService(
             )
             db.add(reverse)
 
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError as error:
+            db.rollback()
+            raise_for_integrity_error(EntityRelation, error)
+        db.refresh(forward)
+        if reverse:
+            db.refresh(reverse)
         return forward, reverse

@@ -54,7 +54,7 @@ def get_current_active_user(
 
 
 def get_current_active_superuser(
-    current_user: UserModel = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_active_user),
 ) -> UserModel:
     if not user_crud.is_superuser(current_user):
         raise HTTPException(

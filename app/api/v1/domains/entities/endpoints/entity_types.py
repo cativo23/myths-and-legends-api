@@ -4,10 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.api.common.exceptions import ExistsException
 from app.api.v1.shared.deps import get_db, get_current_active_superuser
 from app.api.v1.domains.entities.services import entity_type
 from app.api.v1.domains.entities.models.entity_type import EntityType
@@ -39,7 +37,8 @@ def list_entity_types(
         Query(description="Sort field", examples=["name", "id"]),
     ] = "name",
     order: Annotated[
-        str, Query(description="Sort order (asc, desc)", examples=["asc", "desc"])
+        Literal["asc", "desc"],
+        Query(description="Sort order (asc, desc)", examples=["asc", "desc"]),
     ] = "asc",
 ):
     """List all entity types, paginated and sorted at the database level."""
@@ -81,7 +80,7 @@ def get_entity_type(
         201: {"description": "Entity type successfully created"},
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
-        422: {"description": "Entity type with this name already exists"},
+        409: {"description": "An entity type with this name already exists"},
     },
 )
 def create_entity_type(
@@ -90,11 +89,7 @@ def create_entity_type(
     current_user: UserModel = Depends(get_current_active_superuser),
 ):
     """Create a new entity type. Requires superuser privileges."""
-    try:
-        return entity_type.create(db, obj_in=entity_type_in)
-    except IntegrityError:
-        db.rollback()
-        raise ExistsException(name="Entity type with this name")
+    return entity_type.create(db, obj_in=entity_type_in)
 
 
 @router.put(
@@ -107,6 +102,7 @@ def create_entity_type(
         404: {"description": "Entity type not found"},
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
+        409: {"description": "An entity type with this name already exists"},
     },
 )
 def update_entity_type(

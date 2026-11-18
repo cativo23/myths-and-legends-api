@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.v1.shared.deps import get_db, get_current_active_superuser
-from app.api.v1.domains.entities.services import entity, source
+from app.api.v1.domains.entities.services import source
 from app.api.v1.domains.entities.models.source import Source
 from app.api.v1.domains.entities.schemas.source import (
     Source as SourceSchema,
@@ -45,7 +45,8 @@ def list_sources(
         Query(description="Sort field", examples=["title", "author", "id"]),
     ] = "id",
     order: Annotated[
-        str, Query(description="Sort order (asc, desc)", examples=["asc", "desc"])
+        Literal["asc", "desc"],
+        Query(description="Sort order (asc, desc)", examples=["asc", "desc"]),
     ] = "asc",
 ):
     """List all sources, optionally filtered by type, paginated and sorted at the database level."""
@@ -60,6 +61,27 @@ def list_sources(
     return paginate(db, stmt, Params(page=page, size=size))
 
 
+@router.get(
+    "/{id}",
+    response_model=SourceSchema,
+    summary="Get Source by ID",
+    description="Retrieve a single source by its ID.",
+    responses={
+        200: {"description": "Successful retrieval of source"},
+        404: {"description": "Source not found"},
+    },
+)
+def get_source(
+    db: Annotated[Session, Depends(get_db)],
+    id: Annotated[int, Path(gt=0, description="Source ID", examples=[1])],
+):
+    """Get a single source by its ID."""
+    db_source = source.get(db, item_id=id)
+    if not db_source:
+        raise HTTPException(status_code=404, detail="Source not found")
+    return db_source
+
+
 @router.post(
     "/",
     response_model=SourceSchema,
@@ -70,7 +92,7 @@ def list_sources(
         201: {"description": "Source successfully created"},
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
-        404: {"description": "Entity not found"},
+        404: {"description": "The referenced entity_id does not exist"},
     },
 )
 def create_source(
@@ -79,8 +101,6 @@ def create_source(
     current_user: UserModel = Depends(get_current_active_superuser),
 ):
     """Create a new source. Requires superuser privileges."""
-    if not entity.exists(db, item_id=source_in.entity_id):
-        raise HTTPException(status_code=404, detail="Entity not found")
     return source.create(db, obj_in=source_in)
 
 
@@ -91,7 +111,9 @@ def create_source(
     description="Update an existing source by ID. Requires superuser privileges.",
     responses={
         200: {"description": "Source successfully updated"},
-        404: {"description": "Source not found"},
+        404: {
+            "description": "Source not found, or the referenced entity_id does not exist"
+        },
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
     },

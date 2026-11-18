@@ -81,6 +81,12 @@ class TestEntityTypesEndpoints:
         response = client.get("/api/v1/entity-types/?sort=not_a_real_field")
         assert response.status_code == 422
 
+    def test_list_entity_types_invalid_order_value_rejected(self, client: TestClient):
+        """Test that an invalid order value is rejected with a 422, rather
+        than silently falling back to ascending."""
+        response = client.get("/api/v1/entity-types/?order=sideways")
+        assert response.status_code == 422
+
     def test_get_entity_type_by_id(self, client: TestClient, db: Session):
         """Test getting an entity type by ID."""
         entity_type = EntityType(
@@ -125,19 +131,19 @@ class TestEntityTypesEndpoints:
         """Test creating an entity type as superuser."""
         response = client.post(
             "/api/v1/entity-types/",
-            json={"name": "GROUP", "description": "Groups of mythological beings"},
+            json={"name": "EVENT", "description": "Norse mythology"},
             headers=superuser_headers,
         )
         assert response.status_code == 201
         data = response.json()
-        assert data["name"] == "GROUP"
+        assert data["name"] == "EVENT"
         assert "id" in data
 
     def test_create_entity_type_without_auth(self, client: TestClient):
         """Test creating an entity type without auth returns 401."""
         response = client.post(
             "/api/v1/entity-types/",
-            json={"name": "NORSE", "description": "test"},
+            json={"name": "EVENT", "description": "test"},
         )
         assert response.status_code == 401
 
@@ -147,32 +153,10 @@ class TestEntityTypesEndpoints:
         """Test creating an entity type as non-superuser returns 403."""
         response = client.post(
             "/api/v1/entity-types/",
-            json={"name": "NORSE", "description": "test"},
+            json={"name": "EVENT", "description": "test"},
             headers=auth_headers,
         )
         assert response.status_code == 403
-
-    def test_create_entity_type_duplicate_name(
-        self, client: TestClient, superuser_headers: dict
-    ):
-        """Test creating an entity type with a name that already exists
-        returns 422, instead of an unhandled 500 from the DB unique
-        constraint."""
-        response = client.post(
-            "/api/v1/entity-types/",
-            json={"name": "GROUP", "description": "Groups of mythological beings"},
-            headers=superuser_headers,
-        )
-        assert response.status_code == 201
-
-        response = client.post(
-            "/api/v1/entity-types/",
-            json={"name": "GROUP", "description": "A duplicate group entity type"},
-            headers=superuser_headers,
-        )
-        assert response.status_code == 422
-        data = response.json()
-        assert "already exists" in data["message"].lower()
 
     def test_update_entity_type(
         self, client: TestClient, db: Session, superuser_headers: dict
@@ -193,6 +177,37 @@ class TestEntityTypesEndpoints:
         data = response.json()
         assert data["description"] == "Updated description"
         assert data["name"] == "CHARACTER"
+
+    def test_update_entity_type_without_auth(self, client: TestClient, db: Session):
+        """Test updating an entity type without authentication returns 401."""
+        entity_type = EntityType(
+            name=EntityTypeName.CHARACTER, description="Original description"
+        )
+        db.add(entity_type)
+        db.commit()
+
+        response = client.put(
+            f"/api/v1/entity-types/{entity_type.id}",
+            json={"description": "Updated description"},
+        )
+        assert response.status_code == 401
+
+    def test_update_entity_type_as_regular_user(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        """Test updating an entity type as non-superuser returns 403."""
+        entity_type = EntityType(
+            name=EntityTypeName.CHARACTER, description="Original description"
+        )
+        db.add(entity_type)
+        db.commit()
+
+        response = client.put(
+            f"/api/v1/entity-types/{entity_type.id}",
+            json={"description": "Updated description"},
+            headers=auth_headers,
+        )
+        assert response.status_code == 403
 
     def test_update_entity_type_not_found(
         self, client: TestClient, superuser_headers: dict
@@ -222,6 +237,28 @@ class TestEntityTypesEndpoints:
         get_response = client.get(f"/api/v1/entity-types/{entity_type_id}")
         assert get_response.status_code == 404
 
+    def test_delete_entity_type_without_auth(self, client: TestClient, db: Session):
+        """Test deleting an entity type without authentication returns 401."""
+        entity_type = EntityType(name=EntityTypeName.PLACE, description="test")
+        db.add(entity_type)
+        db.commit()
+
+        response = client.delete(f"/api/v1/entity-types/{entity_type.id}")
+        assert response.status_code == 401
+
+    def test_delete_entity_type_as_regular_user(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        """Test deleting an entity type as non-superuser returns 403."""
+        entity_type = EntityType(name=EntityTypeName.PLACE, description="test")
+        db.add(entity_type)
+        db.commit()
+
+        response = client.delete(
+            f"/api/v1/entity-types/{entity_type.id}", headers=auth_headers
+        )
+        assert response.status_code == 403
+
     def test_delete_entity_type_not_found(
         self, client: TestClient, superuser_headers: dict
     ):
@@ -230,3 +267,31 @@ class TestEntityTypesEndpoints:
             "/api/v1/entity-types/99999", headers=superuser_headers
         )
         assert response.status_code == 404
+
+    def test_create_entity_type_duplicate_name_returns_409(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """Test creating an entity type with a name that already exists
+        returns 409, not an unhandled IntegrityError (EntityType.name is
+        unique)."""
+        db.add(EntityType(name=EntityTypeName.CHARACTER, description="Existing"))
+        db.commit()
+
+        response = client.post(
+            "/api/v1/entity-types/",
+            json={"name": "CHARACTER", "description": "Duplicate"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 409
+
+    def test_create_entity_type_invalid_name_rejected(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        """Test creating an entity type with a name outside the
+        EntityTypeName enum is rejected with 422, not silently accepted."""
+        response = client.post(
+            "/api/v1/entity-types/",
+            json={"name": "NOT_A_REAL_TYPE", "description": "test"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 422

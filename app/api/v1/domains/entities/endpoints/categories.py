@@ -4,10 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.api.common.exceptions import ExistsException
 from app.api.v1.shared.deps import get_db, get_current_active_superuser
 from app.api.v1.domains.entities.services import category
 from app.api.v1.domains.entities.models.category import Category
@@ -39,7 +37,8 @@ def list_categories(
         Query(description="Sort field", examples=["name", "id"]),
     ] = "name",
     order: Annotated[
-        str, Query(description="Sort order (asc, desc)", examples=["asc", "desc"])
+        Literal["asc", "desc"],
+        Query(description="Sort order (asc, desc)", examples=["asc", "desc"]),
     ] = "asc",
 ):
     """List all categories, paginated and sorted at the database level."""
@@ -81,7 +80,7 @@ def get_category(
         201: {"description": "Category successfully created"},
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
-        422: {"description": "Category with this name already exists"},
+        409: {"description": "A category with this name already exists"},
     },
 )
 def create_category(
@@ -90,11 +89,7 @@ def create_category(
     current_user: UserModel = Depends(get_current_active_superuser),
 ):
     """Create a new category. Requires superuser privileges."""
-    try:
-        return category.create(db, obj_in=category_in)
-    except IntegrityError:
-        db.rollback()
-        raise ExistsException(name="Category with this name")
+    return category.create(db, obj_in=category_in)
 
 
 @router.put(
@@ -107,6 +102,7 @@ def create_category(
         404: {"description": "Category not found"},
         401: {"description": "Unauthorized - No valid token provided"},
         403: {"description": "Forbidden - User is not a superuser"},
+        409: {"description": "A category with this name already exists"},
     },
 )
 def update_category(
