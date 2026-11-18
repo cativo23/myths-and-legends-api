@@ -47,7 +47,7 @@ The Myths and Legends API is a comprehensive REST API for managing mythological 
 
 Admin endpoints (create, update, delete) are documented at `/admin/docs` (requires authentication).
     """,
-    version="1.0.0",
+    version="0.2.0",
     openapi_url=None,  # Disable default openapi.json
     docs_url=None,  # Disable default /docs
     redoc_url=None,  # Disable default /redoc

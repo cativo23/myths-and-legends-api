@@ -36,7 +36,8 @@ def get_url():
     password = os.getenv("POSTGRES_PASSWORD", "")
     server = os.getenv("POSTGRES_SERVER", "db")
     db = os.getenv("POSTGRES_DB", "app")
-    return f"postgresql://{user}:{password}@{server}/{db}"
+    # Explicit driver: SQLAlchemy 2.1 defaults plain "postgresql" to psycopg3.
+    return f"postgresql+psycopg2://{user}:{password}@{server}/{db}"
 
 
 def run_migrations_offline():
