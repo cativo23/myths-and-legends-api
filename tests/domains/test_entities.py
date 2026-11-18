@@ -805,6 +805,26 @@ class TestEntitiesEndpoints:
         )
         assert response.status_code == 404
 
+    def test_create_relation_destination_not_found(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        """A relation to a non-existent destination returns 404 (origin exists)."""
+        deps = self._seed_dependencies(db)
+        origin = Entity(
+            name="Origin Only",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(origin)
+        db.commit()
+
+        response = client.post(
+            f"/api/v1/entities/{origin.id}/relations",
+            json={"entity_destination_id": 99999, "relation_type": "ALLIES"},
+            headers=superuser_headers,
+        )
+        assert response.status_code == 404
+
     def test_create_relation_without_auth(self, client: TestClient, db: Session):
         """Test creating a relation without auth returns 401."""
         deps = self._seed_dependencies(db)
