@@ -79,8 +79,10 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             return v
         values = info.data
+        # Explicit driver: SQLAlchemy 2.1 defaults plain "postgresql" to psycopg3,
+        # but this project ships psycopg2-binary.
         return PostgresDsn.build(
-            scheme="postgresql",
+            scheme="postgresql+psycopg2",
             username=values.get("POSTGRES_USER"),
             password=values.get("POSTGRES_PASSWORD"),
             host=values.get("POSTGRES_HOST"),

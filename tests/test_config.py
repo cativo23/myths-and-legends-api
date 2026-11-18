@@ -62,6 +62,22 @@ class TestSettingsLoading:
         assert "my-user" in str(settings.SQLALCHEMY_DATABASE_URI)
         assert "my-db" in str(settings.SQLALCHEMY_DATABASE_URI)
 
+    def test_database_uri_pins_psycopg2_driver(self, monkeypatch):
+        """The URI must name the driver explicitly.
+
+        SQLAlchemy 2.1 changed the default driver for plain `postgresql://` to
+        psycopg3, which is not installed (we ship psycopg2-binary).
+        """
+        monkeypatch.setenv("SECRET_KEY", "test-secret-key")
+        monkeypatch.setenv("POSTGRES_PASSWORD", "db-pass")
+        monkeypatch.setenv("FIRST_SUPERUSER_PASSWORD", "super-pass")
+
+        settings = _fresh_settings(monkeypatch)
+
+        assert str(settings.SQLALCHEMY_DATABASE_URI).startswith(
+            "postgresql+psycopg2://"
+        )
+
 
 class TestRequiredSecretsValidation:
     def test_raises_when_secret_key_missing(self, monkeypatch):
