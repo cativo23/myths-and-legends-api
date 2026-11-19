@@ -55,7 +55,7 @@ Versions are capped in `requirements.txt` (floor and next-breaking ceiling); che
 - FastAPI 0.135 / Starlette 1.0, Pydantic 2.x, pydantic-settings
 - SQLAlchemy 2.0 with an explicit `postgresql+psycopg2` driver (2.1 defaults to psycopg3 and broke CI)
 - Alembic, PostgreSQL 15
-- python-jose (JWT), passlib/bcrypt, slowapi (rate limiting)
+- python-jose (JWT), bcrypt (used directly), slowapi (rate limiting)
 - fastapi-pagination, Docker Compose
 
 ## Common Patterns

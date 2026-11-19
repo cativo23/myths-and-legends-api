@@ -33,6 +33,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `POST /api/v1/auth/login` now also returns a `refresh_token`. One refresh
   token per user is stored (hashed), so a new login replaces the previous
   session's refresh token.
+- Password hashing now calls `bcrypt` directly instead of the unmaintained
+  `passlib` (and its import-time monkeypatch of `bcrypt`). Existing stored
+  hashes keep verifying with no migration; passwords are still truncated to
+  72 bytes. A malformed stored hash now fails verification instead of raising,
+  and passwords containing a NUL byte are accepted instead of rejected.
 - Direct dependencies in `requirements.txt` now have upper bounds (next
   breaking release), so a fresh install cannot jump to an untested major.
 - **Breaking:** `entity_id` is now a required field when creating a `Location`

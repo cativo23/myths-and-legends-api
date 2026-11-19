@@ -16,8 +16,8 @@ description: "Task list for replacing passlib with direct bcrypt"
 
 ## Phase 1: Setup (baseline on the OLD implementation)
 
-- [ ] T001 Run `./myths test tests/test_security.py --no-cov` and record that it is green before any change
-- [ ] T002 Generate fixture data with the current code via `./myths python`: ~4 bcrypt hashes (ASCII password, accented/emoji password, empty password, an exactly-72-byte password) plus one `$2y$` variant; keep only throwaway dummy passwords. Paste the (hash, password) pairs as constants at the top of `tests/test_security.py`
+- [X] T001 Run `./myths test tests/test_security.py --no-cov` and record that it is green before any change
+- [X] T002 Generate fixture data with the current code via `./myths python`: ~4 bcrypt hashes (ASCII password, accented/emoji password, empty password, an exactly-72-byte password) plus one `$2y$` variant; keep only throwaway dummy passwords. Paste the (hash, password) pairs as constants at the top of `tests/test_security.py`
 
 ---
 
@@ -35,10 +35,10 @@ None. No schema, config, or dependency change blocks the stories.
 
 ### Tests
 
-- [ ] T003 [P] [US1] Add `should_verify_pre_change_hashes` (parametrized over T002 fixtures, incl. unicode, empty, `$2y$`) in `tests/test_security.py` — green on old code (FR-001)
-- [ ] T004 [P] [US1] Add `should_reject_wrong_password_against_pre_change_hash` in `tests/test_security.py` — green on old code (SC-001)
-- [ ] T005 [P] [US1] Add `should_fail_closed_on_malformed_stored_hash` parametrized over `"notahash"`, `""`, `None`, `"$2b$12$short"` and a NUL-byte password, asserting `verify_password(...) is False` and no exception, in `tests/test_security.py` — write this together with T012 (after T011) so no test stays uncommitted across commits; RED on old code, confirm the failure is `UnknownHashError`/`ValueError`, not a typo (FR-004)
-- [ ] T006 [US1] Commit T002–T004 (fixtures plus characterization tests) as green (`test(security): characterize password hashing before replacing passlib`)
+- [X] T003 [P] [US1] Add `should_verify_pre_change_hashes` (parametrized over T002 fixtures, incl. unicode, empty, `$2y$`) in `tests/test_security.py` — green on old code (FR-001)
+- [X] T004 [P] [US1] Add `should_reject_wrong_password_against_pre_change_hash` in `tests/test_security.py` — green on old code (SC-001)
+- [X] T005 [P] [US1] Add `should_fail_closed_on_malformed_stored_hash` parametrized over `"notahash"`, `""`, `None`, `"$2b$12$short"` and a NUL-byte password, asserting `verify_password(...) is False` and no exception, in `tests/test_security.py` — write this together with T012 (after T011) so no test stays uncommitted across commits; RED on old code, confirm the failure is `UnknownHashError`/`ValueError`, not a typo (FR-004)
+- [X] T006 [US1] Commit T002–T004 (fixtures plus characterization tests) as green (`test(security): characterize password hashing before replacing passlib`)
 
 ---
 
@@ -50,11 +50,11 @@ None. No schema, config, or dependency change blocks the stories.
 
 ### Tests
 
-- [ ] T007 [P] [US2] Add `should_produce_standard_bcrypt_hash_with_cost_12` (prefix `$2b$12$`, length 60) in `tests/test_security.py` — green on old code (FR-002)
-- [ ] T008 [P] [US2] Add `should_salt_each_hash` (two hashes of one password differ, both verify) in `tests/test_security.py` — green on old code (FR-002)
-- [ ] T009 [P] [US2] Add `should_treat_only_first_72_bytes_as_significant` covering 72, 73, 200 bytes and a multibyte character straddling byte 72; hashing and verifying never raise and a 72-byte hash verifies the longer original in `tests/test_security.py` — green on old code (FR-003)
-- [ ] T010 [P] [US2] Add a NUL-byte hashing test in `tests/test_security.py` — written as rejection on old code, replaced after the swap by `should_hash_and_verify_password_containing_nul_byte` (plan decision 5, revised)
-- [ ] T011 [US2] Commit T007–T010 (`test(security): pin hash format, salt and 72-byte truncation`)
+- [X] T007 [P] [US2] Add `should_produce_standard_bcrypt_hash_with_cost_12` (prefix `$2b$12$`, length 60) in `tests/test_security.py` — green on old code (FR-002)
+- [X] T008 [P] [US2] Add `should_salt_each_hash` (two hashes of one password differ, both verify) in `tests/test_security.py` — green on old code (FR-002)
+- [X] T009 [P] [US2] Add `should_treat_only_first_72_bytes_as_significant` covering 72, 73, 200 bytes and a multibyte character straddling byte 72; hashing and verifying never raise and a 72-byte hash verifies the longer original in `tests/test_security.py` — green on old code (FR-003)
+- [X] T010 [P] [US2] Add a NUL-byte hashing test in `tests/test_security.py` — written as rejection on old code, replaced after the swap by `should_hash_and_verify_password_containing_nul_byte` (plan decision 5, revised)
+- [X] T011 [US2] Commit T007–T010 (`test(security): pin hash format, salt and 72-byte truncation`)
 
 ---
 
@@ -66,23 +66,23 @@ None. No schema, config, or dependency change blocks the stories.
 
 ### Tests (red first)
 
-- [ ] T012 [US3] First write T005 here. Then add `should_not_patch_bcrypt_at_import` in `tests/test_security.py`: in a fresh subprocess, import `bcrypt` and `app.core.security`, assert `not hasattr(bcrypt, "__about__")` and `bcrypt.hashpw.__module__` is not `app.core.security` — RED on old code (FR-006)
-- [ ] T013 [US3] Run the new tests T005 and T012 and confirm they fail for the right reason (record the output in the commit message body); commit as `test(security): add failing tests for fail-closed verify and no import-time patch`
+- [X] T012 [US3] First write T005 here. Then add `should_not_patch_bcrypt_at_import` in `tests/test_security.py`: in a fresh subprocess, import `bcrypt` and `app.core.security`, assert `not hasattr(bcrypt, "__about__")` and `bcrypt.hashpw.__module__` is not `app.core.security` — RED on old code (FR-006)
+- [X] T013 [US3] Run the new tests T005 and T012 and confirm they fail for the right reason (record the output in the commit message body); commit as `test(security): add failing tests for fail-closed verify and no import-time patch`
 
 ### Implementation
 
-- [ ] T014 [US3] Rewrite `get_password_hash` and `verify_password` and delete the monkeypatch block and the passlib import in `app/core/security.py`, following the Design section of plan.md (`_BCRYPT_ROUNDS = 12`, `_BCRYPT_MAX_BYTES = 72`, one `_to_bcrypt_input` helper, `except ValueError` returning `False`); keep a one-line WHY comment for truncation and for fail-closed (FR-003, FR-004, FR-006)
-- [ ] T015 [US3] In `requirements.txt` replace `passlib[bcrypt]>=1.7.4,<2` with `bcrypt>=5,<6` (FR-007)
-- [ ] T016 [US3] Rebuild and run `./myths build` then `./myths test`; all tests including T003–T012 pass, coverage ≥ 68%, `./myths python -m pip show passlib` reports not found, and `grep -rn passlib app tests requirements.txt` finds nothing
-- [ ] T017 [US3] Commit T014–T015 (`refactor(security): replace passlib with direct bcrypt`, body explains why: unmaintained, needed a monkeypatch for bcrypt 5)
+- [X] T014 [US3] Rewrite `get_password_hash` and `verify_password` and delete the monkeypatch block and the passlib import in `app/core/security.py`, following the Design section of plan.md (`_BCRYPT_ROUNDS = 12`, `_BCRYPT_MAX_BYTES = 72`, one `_to_bcrypt_input` helper, `except ValueError` returning `False`); keep a one-line WHY comment for truncation and for fail-closed (FR-003, FR-004, FR-006)
+- [X] T015 [US3] In `requirements.txt` replace `passlib[bcrypt]>=1.7.4,<2` with `bcrypt>=5,<6` (FR-007)
+- [X] T016 [US3] Rebuild and run `./myths build` then `./myths test`; all tests including T003–T012 pass, coverage ≥ 68%, `./myths python -m pip show passlib` reports not found, and `grep -rn passlib app tests requirements.txt` finds nothing
+- [X] T017 [US3] Commit T014–T015 (`refactor(security): replace passlib with direct bcrypt`, body explains why: unmaintained, needed a monkeypatch for bcrypt 5)
 
 ---
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T018 Rollback-safety check (SC-003, one-off, not committed): hash a password with the new code, then verify it with the previous commit's implementation (`git stash`/worktree of `HEAD~1`); both agree
-- [ ] T019 Login smoke per quickstart step 6: seeded superuser `POST /api/v1/auth/login` returns 200 against the running stack (no secrets printed)
-- [ ] T020 Add a CHANGELOG `[Unreleased]` entry under Changed (passlib removed, bcrypt direct, malformed hashes now fail closed) in `CHANGELOG.md`, and replace `passlib/bcrypt` with `bcrypt` in the Key Technologies list of `CLAUDE.md`
+- [X] T018 Rollback-safety check (SC-003, one-off, not committed): hash a password with the new code, then verify it with the previous commit's implementation (`git stash`/worktree of `HEAD~1`); both agree
+- [X] T019 Login smoke per quickstart step 6: seeded superuser `POST /api/v1/auth/login` returns 200 against the running stack (no secrets printed)
+- [X] T020 Add a CHANGELOG `[Unreleased]` entry under Changed (passlib removed, bcrypt direct, malformed hashes now fail closed) in `CHANGELOG.md`, and replace `passlib/bcrypt` with `bcrypt` in the Key Technologies list of `CLAUDE.md`
 - [ ] T021 Self-review the full diff as if written by someone else; run `/speckit-converge`
 
 ---
