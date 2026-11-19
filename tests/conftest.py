@@ -7,10 +7,6 @@ import os
 import tempfile
 from typing import Generator
 
-# The bcrypt/passlib compatibility shim now lives in app.core.security
-# (must run before passlib is imported anywhere), so it's no longer
-# duplicated here — importing app.main below pulls it in transitively.
-
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event

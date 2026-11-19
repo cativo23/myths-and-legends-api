@@ -67,8 +67,18 @@ The Myths and Legends API is a production-ready RESTful service built with FastA
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
-   pip install -r requirements.txt
+   pip install --require-hashes -r requirements.txt
    ```
+
+   `requirements.txt` is a hashed lock compiled from `requirements.in` (the direct
+   dependencies and their version caps). To change a dependency, edit `requirements.in`
+   and regenerate the lock:
+
+   ```bash
+   uv pip compile requirements.in --universal --python-version 3.10 --generate-hashes -o requirements.txt
+   ```
+
+   Add `-P <package>` to upgrade a single package. CI fails if the lock is out of date.
 
 2. **Start database**
    ```bash
@@ -213,7 +223,8 @@ The `./myths` script provides convenient commands:
 ├── alembic/                        # Database migrations
 ├── tests/                          # Test suite
 ├── docker-compose.yml
-├── requirements.txt
+├── requirements.in                 # Direct dependencies and version caps
+├── requirements.txt                # Hashed lock (generated from requirements.in)
 └── ./myths                         # Development script
 ```
 

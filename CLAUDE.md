@@ -43,19 +43,19 @@ FastAPI REST API, "The API of Myths and Legends", that manages mythological enti
 ### Testing
 The stack must be running (`./myths up -d`). Run the suite in the container:
 
-- `./myths python test.py tests --no-cov -p no:cacheprovider` - Full suite
-- `./myths python test.py tests/test_cors.py --no-cov -p no:cacheprovider` - One file
+- `./myths test` - Full suite with coverage (runs as the `myths` user, so `htmlcov/` and `coverage.xml` are owned by you)
+- `./myths test tests/test_cors.py --no-cov` - One file (`--no-cov` skips the 68% coverage gate, which a single file cannot meet)
 
-`--no-cov` avoids a `htmlcov/` permission error (the directory is created by root in the container). Note: `./myths test` is currently broken (it runs `python test` instead of `python test.py`).
+If `htmlcov/`, `coverage.xml` or `.pytest_cache/` ever end up root-owned (tests run via `root-shell`), remove them with `docker compose exec -u root api rm -rf /code/htmlcov /code/coverage.xml /code/.pytest_cache`.
 
 ## Key Technologies
 
-Versions are capped in `requirements.txt` (floor and next-breaking ceiling); check it rather than trusting this list.
+Direct dependencies and their caps (floor and next-breaking ceiling) live in `requirements.in`; `requirements.txt` is the hashed lock generated from it with `uv pip compile requirements.in --universal --python-version 3.10 --generate-hashes -o requirements.txt` (add `-P <pkg>` to upgrade one package). Never edit `requirements.txt` by hand; CI fails if it is stale. Check these files rather than trusting this list.
 
 - FastAPI 0.135 / Starlette 1.0, Pydantic 2.x, pydantic-settings
 - SQLAlchemy 2.0 with an explicit `postgresql+psycopg2` driver (2.1 defaults to psycopg3 and broke CI)
 - Alembic, PostgreSQL 15
-- python-jose (JWT), passlib/bcrypt, slowapi (rate limiting)
+- python-jose (JWT), bcrypt (used directly), slowapi (rate limiting)
 - fastapi-pagination, Docker Compose
 
 ## Common Patterns

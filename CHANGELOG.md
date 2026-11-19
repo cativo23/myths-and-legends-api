@@ -33,8 +33,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `POST /api/v1/auth/login` now also returns a `refresh_token`. One refresh
   token per user is stored (hashed), so a new login replaces the previous
   session's refresh token.
+- Password hashing now calls `bcrypt` directly instead of the unmaintained
+  `passlib` (and its import-time monkeypatch of `bcrypt`). Existing stored
+  hashes keep verifying with no migration; passwords are still truncated to
+  72 bytes. A malformed stored hash now fails verification instead of raising,
+  and passwords containing a NUL byte are accepted instead of rejected.
 - Direct dependencies in `requirements.txt` now have upper bounds (next
   breaking release), so a fresh install cannot jump to an untested major.
+- Dependencies are now locked: `requirements.in` holds the direct dependencies
+  and their caps, and `requirements.txt` is a hashed lock generated from it
+  (`uv pip compile --universal`). Docker and CI install it with
+  `--require-hashes`, and a new CI `lock` job fails when the lock is stale, so
+  local, CI and container installs resolve identical versions.
+- `./myths test` now runs the real test runner (`test.py`) instead of failing,
+  and as the `myths` user so coverage artifacts are no longer root-owned.
 - **Breaking:** `entity_id` is now a required field when creating a `Location`
   or a `Source` (previously optional). Omitting it now returns a `422`
   instead of raising an unhandled `500` on the database foreign key

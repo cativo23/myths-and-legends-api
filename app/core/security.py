@@ -4,35 +4,16 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any, Union
 
-# Patch bcrypt compatibility issue with passlib (bcrypt >= 4.1 dropped the
-# __about__.__version__ attribute passlib's backend probe relies on, and
-# changed truncation behavior for passwords > 72 bytes). Must run before
-# passlib is imported.
-import bcrypt as _bcrypt_lib
-
-
-class _BcryptAbout:
-    __version__ = _bcrypt_lib.__version__
-
-
-_bcrypt_lib.__about__ = _BcryptAbout()
-_original_bcrypt_hashpw = _bcrypt_lib.hashpw
-
-
-def _safe_bcrypt_hashpw(password, salt):
-    if isinstance(password, bytes) and len(password) > 72:
-        password = password[:72]
-    return _original_bcrypt_hashpw(password, salt)
-
-
-_bcrypt_lib.hashpw = _safe_bcrypt_hashpw
-
+import bcrypt
 from jose import jwt
-from passlib.context import CryptContext
 
 from app.core.config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Cost 12 matches every hash already stored; changing it needs a rehash plan.
+_BCRYPT_ROUNDS = 12
+# bcrypt only reads the first 72 bytes. bcrypt 5 raises on longer input, so we
+# truncate explicitly to keep verifying hashes created from longer passwords.
+_BCRYPT_MAX_BYTES = 72
 ALGORITHM = "HS256"
 
 
@@ -95,9 +76,24 @@ def get_token_expiry(token: str) -> datetime:
     return datetime.utcfromtimestamp(payload["exp"])
 
 
+def _to_bcrypt_input(password: str) -> bytes:
+    return password.encode("utf-8")[:_BCRYPT_MAX_BYTES]
+
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    if not hashed_password:
+        return False
+    try:
+        return bcrypt.checkpw(
+            _to_bcrypt_input(plain_password), hashed_password.encode("utf-8")
+        )
+    except ValueError:
+        # Malformed stored hash: fail closed instead of surfacing an internal
+        # error to the client.
+        return False
 
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(
+        _to_bcrypt_input(password), bcrypt.gensalt(rounds=_BCRYPT_ROUNDS)
+    ).decode("ascii")

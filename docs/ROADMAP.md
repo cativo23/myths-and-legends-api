@@ -5,13 +5,13 @@
 **Alcance:** API + frontend + deploy (decidido por Carlos).
 **Fuentes:** `docs/superpowers/specs/2026-07-16-backend-phase1-hardening-design.md`, issues/PRs abiertos, `reviews/code-review-report.md`, CHANGELOG.
 
-> Estado al 2026-11-18: Fase 0 casi completa (#73–#80 en `develop`; docs, topes de dependencias y `test_cors` en el PR #81; falta la sesión 0.5). Issues abiertos: #26, #31, #54, #60, #68.
+> Estado al 2026-11-18: Fase 0 completa (#73–#81 en `develop`; la sesión 0.5 está en su PR). Issues abiertos: #26, #31, #54, #60, #68.
 
 ---
 
 ## Fase 0 — Cimientos y base estable
 
-Meta: `develop` con #73–#75 integrados, Spec Kit activo y docs al día. Nada de features nuevas hasta cerrar esto. **Estado: falta 0.5.**
+Meta: `develop` con #73–#75 integrados, Spec Kit activo y docs al día. Nada de features nuevas hasta cerrar esto. **Estado: completa.**
 
 | Sesión | Qué | Entregable |
 |---|---|---|
@@ -19,7 +19,7 @@ Meta: `develop` con #73–#75 integrados, Spec Kit activo y docs al día. Nada d
 | **0.2** | `/speckit-constitution`: principios del proyecto (TDD, security-first, minimalist, `def` sync + `Session` sync, error envelope `HTTPException`, conventional commits) | `.specify/memory/constitution.md` |
 | **0.3** | Revisar y mergear en orden: #74 (spec) → #73 (superficie admin + move `entities/`→`domains/`) → #75 (refresh tokens, rebase). Suite completa verde tras cada merge | #67, #69, #70 cerrados (verificar contra el diff) |
 | **0.4** | Sync de docs: `CLAUDE.md` y README desactualizados (mencionan `characters`, FastAPI 0.79, estructura vieja). CHANGELOG `[Unreleased]`. Incluye tope superior en `requirements.txt` y `test_cors` hermético | Docs = realidad |
-| **0.5** | Tooling pendiente (chore, sin ciclo Spec Kit): arreglar `./myths test` (`python test` → `python test.py`); `htmlcov/` pertenece a root en el contenedor (los tests con coverage fallan); revisar la combinación frágil `passlib 1.7.4` + `bcrypt 5.0.0`; usar constraints/lockfile para que CI y local resuelvan las mismas versiones; subir el tope de `fastapi-pagination` (`<0.15.16`) cuando salga un fix | Tests y CI reproducibles |
+| **0.5** | Tooling (chore; el reemplazo de passlib siguió el ciclo Spec Kit completo en `specs/001-replace-passlib-bcrypt/`): `./myths test` arreglado; artefactos de coverage root-owned limpiados (`./myths test` corre como `myths`); passlib reemplazado por `bcrypt` directo (sin monkeypatch); `requirements.in` (topes) + `requirements.txt` lock con hashes (`uv pip compile --universal`), instalado con `--require-hashes` en Docker y CI, con job `lock` que falla si está desactualizado | Tests y CI reproducibles |
 
 ## Fase 1 — Backend hardening (lo que falta de la spec Phase 1)
 
@@ -68,4 +68,6 @@ Meta: UI completa consumiendo la API. Decisión previa en 2.1: repo separado vs 
 2. **Refresh tokens:** sesión única por usuario vs tabla de tokens (default de la spec: una sesión).
 3. **Frontend:** ¿repo separado o monorepo? Condiciona CI y deploy.
 4. **Spec Kit y specs previas:** `docs/superpowers/` queda como historial; lo nuevo vive en `specs/NNN-*/`.
-5. **Dependencias:** resuelto en 0.4 (FastAPI 0.135, SQLAlchemy 2.0, Pydantic 2.12; topes en `requirements.txt`). Pendientes en la sesión 0.5 (`./myths test` roto, `htmlcov/` de root, `passlib`+`bcrypt`, falta de lockfile). Lección: un tope solo por major no alcanzó; `fastapi-pagination` 0.15.16 rompió la app en CI.
+5. **Dependencias:** resuelto en 0.4 y 0.5 (FastAPI 0.135, SQLAlchemy 2.0, Pydantic; topes en `requirements.in`, versiones exactas en el lock `requirements.txt`). Lección: un tope solo por major no alcanzó (`fastapi-pagination` 0.15.16 rompió la app en CI); el lock con hashes lo previene. Pendiente: subir el tope de `fastapi-pagination` (`<0.15.16`) cuando salga un fix, con `-P fastapi-pagination`.
+6. **Contenedor `api` corre como root** (el Dockerfile no define `USER`), lo que contradice Constitution II (least privilege) y origina artefactos root-owned en el bind mount. Sin sesión asignada; candidato a la fase de deploy (3.2) o a una sesión propia.
+7. **Passwords con bytes NUL:** pasaron de rechazados (500 latente) a aceptados al reemplazar passlib; verificado y con test. Sin acción pendiente.
