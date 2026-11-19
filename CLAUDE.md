@@ -43,10 +43,10 @@ FastAPI REST API, "The API of Myths and Legends", that manages mythological enti
 ### Testing
 The stack must be running (`./myths up -d`). Run the suite in the container:
 
-- `./myths python test.py tests --no-cov -p no:cacheprovider` - Full suite
-- `./myths python test.py tests/test_cors.py --no-cov -p no:cacheprovider` - One file
+- `./myths test` - Full suite with coverage (runs as the `myths` user, so `htmlcov/` and `coverage.xml` are owned by you)
+- `./myths test tests/test_cors.py --no-cov` - One file (`--no-cov` skips the 68% coverage gate, which a single file cannot meet)
 
-`--no-cov` avoids a `htmlcov/` permission error (the directory is created by root in the container). Note: `./myths test` is currently broken (it runs `python test` instead of `python test.py`).
+If `htmlcov/`, `coverage.xml` or `.pytest_cache/` ever end up root-owned (tests run via `root-shell`), remove them with `docker compose exec -u root api rm -rf /code/htmlcov /code/coverage.xml /code/.pytest_cache`.
 
 ## Key Technologies
 
