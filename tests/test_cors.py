@@ -19,8 +19,9 @@ class TestCorsMiddleware:
         origin should get that exact origin back in
         access-control-allow-origin — not a mangled version like
         'http:localhost:3000'."""
+        # Use whatever origin is configured: a hardcoded value makes the test
+        # depend on the developer's local .env (e.g. 8080 listed first).
         origin = settings.BACKEND_CORS_ORIGINS[0]
-        assert origin == "http://localhost:3000"
 
         response = client.get("/", headers={"Origin": origin})
 
