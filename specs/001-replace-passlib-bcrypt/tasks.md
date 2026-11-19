@@ -53,7 +53,7 @@ None. No schema, config, or dependency change blocks the stories.
 - [ ] T007 [P] [US2] Add `should_produce_standard_bcrypt_hash_with_cost_12` (prefix `$2b$12$`, length 60) in `tests/test_security.py` — green on old code (FR-002)
 - [ ] T008 [P] [US2] Add `should_salt_each_hash` (two hashes of one password differ, both verify) in `tests/test_security.py` — green on old code (FR-002)
 - [ ] T009 [P] [US2] Add `should_treat_only_first_72_bytes_as_significant` covering 72, 73, 200 bytes and a multibyte character straddling byte 72; hashing and verifying never raise and a 72-byte hash verifies the longer original in `tests/test_security.py` — green on old code (FR-003)
-- [ ] T010 [P] [US2] Add `should_reject_nul_byte_when_hashing` (`get_password_hash("a\x00b")` raises `ValueError`) in `tests/test_security.py` — green on old code (plan decision 5)
+- [ ] T010 [P] [US2] Add a NUL-byte hashing test in `tests/test_security.py` — written as rejection on old code, replaced after the swap by `should_hash_and_verify_password_containing_nul_byte` (plan decision 5, revised)
 - [ ] T011 [US2] Commit T007–T010 (`test(security): pin hash format, salt and 72-byte truncation`)
 
 ---

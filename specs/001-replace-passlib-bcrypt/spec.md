@@ -63,7 +63,7 @@ A maintainer installing the project gets no unmaintained password library and no
 - A multi-byte character that straddles the 72-byte boundary: truncation happens on bytes, as today, and must not raise.
 - An empty password: behaves as today.
 - A stored value that is not a valid bcrypt hash (corrupted, empty, or from another scheme): verification must fail closed (return failure), never authenticate and never surface an internal error to the client.
-- A password containing a NUL byte: behavior is explicitly defined and tested (see Assumptions).
+- A password containing a NUL byte: hashes and verifies normally as a distinct secret (the old library rejected it, which could surface as a server error); verification against an unrelated hash fails.
 
 ## Requirements *(mandatory)*
 
@@ -96,7 +96,7 @@ A maintainer installing the project gets no unmaintained password library and no
 
 - The current cost factor is the library default in use today (confirmed by inspecting a hash produced by the current code during planning); it is preserved, not tuned, in this change.
 - "Fail closed" on malformed stored hashes (FR-004) is a deliberate small hardening over today's behavior, where the old library may raise. No endpoint currently relies on that exception.
-- NUL-byte passwords: current behavior (rejection) will be captured by a characterization test first; whichever outcome it shows is preserved or, if it raised an internal error, mapped to a clean verification failure.
+- NUL-byte passwords: the old library rejected them; the replacement handles them correctly (verified against bcrypt 5.0.0 during implementation). Accepting them is a deliberate delta: it removes a latent server-error path, and adding a rejection would be new code with no benefit.
 - Rehash-on-login to a higher cost factor is out of scope (no cost change, YAGNI).
 - Only `app/core/security.py` uses the old library (verified by search); no other module changes.
 - Dependency pinning and the lockfile are handled by a separate step of the same session and are not part of this spec.

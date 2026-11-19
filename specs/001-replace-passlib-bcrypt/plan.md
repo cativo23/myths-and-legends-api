@@ -90,9 +90,9 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return False
     try:
         return bcrypt.checkpw(_to_bcrypt_input(plain_password), hashed_password.encode("utf-8"))
-    except ValueError:       # malformed hash or NUL byte: fail closed
+    except ValueError:       # malformed stored hash: fail closed
         return False
 ```
 
 Open verification points (resolved by tests, not assumptions): `$2y$` hashes verify (passlib
-accepted them); NUL byte in `get_password_hash` still raises `ValueError` (as passlib did).
+accepted them); NUL byte handling (measured during implementation: bcrypt 5 hashes and verifies it correctly, so no rejection code is added; this differs from passlib, which raised).

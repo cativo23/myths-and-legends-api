@@ -21,7 +21,7 @@
 2. **Explicit byte truncation to 72.** bcrypt 5 raises on longer input; truncating preserves today's semantics for stored hashes of long passwords.
 3. **Cost 12 explicit.** Same as existing hashes; stated in code so a library default change cannot silently alter it.
 4. **Fail closed on `ValueError` in verify.** Removes a 500-able path; the NUL-byte and malformed-hash cases both land here.
-5. **`get_password_hash` NUL byte still raises `ValueError`.** Preserves passlib's rejection; request schemas are the boundary validation layer.
+5. **NUL bytes are accepted.** Measured on bcrypt 5.0.0: hashes and verifies correctly and distinguishes `a\x00b` from `a\x00c`. Dropping passlib's rejection removes a latent 500 on registration; keeping it would need new code. Intentional delta, covered by a test.
 
 ## Not doing (YAGNI)
 

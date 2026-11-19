@@ -180,9 +180,13 @@ class TestBcrypt72ByteTruncation:
         hashed = get_password_hash(password)
         assert verify_password(password, hashed) is True
 
-    def test_should_reject_nul_byte_when_hashing(self):
-        with pytest.raises(ValueError):
-            get_password_hash("a\x00b")
+    def test_should_hash_and_verify_password_containing_nul_byte(self):
+        # passlib rejected NUL bytes (a latent 500 on registration); bcrypt 5
+        # handles them correctly, so the password is simply a different secret.
+        hashed = get_password_hash("a\x00b")
+        assert verify_password("a\x00b", hashed) is True
+        assert verify_password("a\x00c", hashed) is False
+        assert verify_password("a", hashed) is False
 
 
 class TestVerifyPasswordFailsClosed:
