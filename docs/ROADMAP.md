@@ -5,20 +5,20 @@
 **Alcance:** API + frontend + deploy (decidido por Carlos).
 **Fuentes:** `docs/superpowers/specs/2026-07-16-backend-phase1-hardening-design.md`, issues/PRs abiertos, `reviews/code-review-report.md`, CHANGELOG.
 
-> Estado al 2026-11-18: PRs #73 (admin write-surface), #74 (spec refresh-tokens) y #75 (refresh-token flow) abiertos sin mergear. Issues abiertos: #26, #31, #54, #60, #67, #68, #69, #70.
+> Estado al 2026-11-18: Fase 0 completa (#73–#80 en `develop`, docs sincronizados, dependencias con tope, `test_cors` hermético). Issues abiertos: #26, #31, #54, #60, #68.
 
 ---
 
 ## Fase 0 — Cimientos y base estable
 
-Meta: `develop` con #73–#75 integrados, Spec Kit activo y docs al día. Nada de features nuevas hasta cerrar esto.
+Meta: `develop` con #73–#75 integrados, Spec Kit activo y docs al día. Nada de features nuevas hasta cerrar esto. **Estado: completa.**
 
 | Sesión | Qué | Entregable |
 |---|---|---|
 | **0.1** | Mergear `chore/add-speckit` | Spec Kit en `develop` |
 | **0.2** | `/speckit-constitution`: principios del proyecto (TDD, security-first, minimalist, `def` sync + `Session` sync, error envelope `HTTPException`, conventional commits) | `.specify/memory/constitution.md` |
 | **0.3** | Revisar y mergear en orden: #74 (spec) → #73 (superficie admin + move `entities/`→`domains/`) → #75 (refresh tokens, rebase). Suite completa verde tras cada merge | #67, #69, #70 cerrados (verificar contra el diff) |
-| **0.4** | Sync de docs: `CLAUDE.md` y README desactualizados (mencionan `characters`, FastAPI 0.79, estructura vieja). CHANGELOG `[Unreleased]` | Docs = realidad |
+| **0.4** | Sync de docs: `CLAUDE.md` y README desactualizados (mencionan `characters`, FastAPI 0.79, estructura vieja). CHANGELOG `[Unreleased]`. Incluye tope superior en `requirements.txt` y `test_cors` hermético | Docs = realidad |
 
 ## Fase 1 — Backend hardening (lo que falta de la spec Phase 1)
 
@@ -67,4 +67,4 @@ Meta: UI completa consumiendo la API. Decisión previa en 2.1: repo separado vs 
 2. **Refresh tokens:** sesión única por usuario vs tabla de tokens (default de la spec: una sesión).
 3. **Frontend:** ¿repo separado o monorepo? Condiciona CI y deploy.
 4. **Spec Kit y specs previas:** `docs/superpowers/` queda como historial; lo nuevo vive en `specs/NNN-*/`.
-5. **Dependencias viejas:** CLAUDE.md cita FastAPI 0.79 / SQLAlchemy 1.4, pero el plan habla de SQLAlchemy 2.0 y Pydantic v2. Confirmar versiones reales en 0.4.
+5. **Dependencias:** resuelto en 0.4 (FastAPI 0.135, SQLAlchemy 2.0, Pydantic 2.12; topes en `requirements.txt`). Pendiente: `./myths test` ejecuta `python test` en vez de `python test.py`; `htmlcov/` pertenece a root en el contenedor.
