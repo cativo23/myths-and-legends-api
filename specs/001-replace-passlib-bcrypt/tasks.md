@@ -83,7 +83,7 @@ None. No schema, config, or dependency change blocks the stories.
 - [X] T018 Rollback-safety check (SC-003, one-off, not committed): hash a password with the new code, then verify it with the previous commit's implementation (`git stash`/worktree of `HEAD~1`); both agree
 - [X] T019 Login smoke per quickstart step 6: seeded superuser `POST /api/v1/auth/login` returns 200 against the running stack (no secrets printed)
 - [X] T020 Add a CHANGELOG `[Unreleased]` entry under Changed (passlib removed, bcrypt direct, malformed hashes now fail closed) in `CHANGELOG.md`, and replace `passlib/bcrypt` with `bcrypt` in the Key Technologies list of `CLAUDE.md`
-- [ ] T021 Self-review the full diff as if written by someone else; run `/speckit-converge`
+- [X] T021 Self-review the full diff as if written by someone else; run `/speckit-converge`
 
 ---
 
@@ -96,3 +96,7 @@ None. No schema, config, or dependency change blocks the stories.
 ## Implementation Strategy
 
 MVP is US1 + US2 characterization on the old code (nothing ships broken), then the swap. If T013 shows an unexpected failure shape, stop and revisit plan.md before T014.
+
+## Phase 7: Convergence
+
+- [X] T022 Restore the `verify_password` parameter annotation to `hashed_password: str` in `app/core/security.py` (keep the runtime `if not hashed_password` guard) per FR-005 (contradicts)

@@ -80,7 +80,7 @@ def _to_bcrypt_input(password: str) -> bytes:
     return password.encode("utf-8")[:_BCRYPT_MAX_BYTES]
 
 
-def verify_password(plain_password: str, hashed_password: str | None) -> bool:
+def verify_password(plain_password: str, hashed_password: str) -> bool:
     if not hashed_password:
         return False
     try:
