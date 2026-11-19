@@ -1,6 +1,6 @@
 # Myths and Legends API
 
-> A RESTful API for managing mythological characters and folklore data.
+> A RESTful API for managing mythological entities (characters, creatures, places, objects) and folklore data.
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.135.2-green.svg)](https://fastapi.tiangolo.com/)
@@ -12,15 +12,15 @@
 
 ## Overview
 
-The Myths and Legends API is a production-ready RESTful service built with FastAPI. It provides endpoints for managing mythological characters, countries, and related folklore data with full CRUD operations, authentication, and image upload support.
+The Myths and Legends API is a production-ready RESTful service built with FastAPI. It provides endpoints for managing mythological entities, countries, and related folklore data with full CRUD operations, authentication, and image upload support.
 
 ## Features
 
 - RESTful API design with OpenAPI documentation
-- JWT-based authentication
+- JWT-based authentication with refresh tokens
 - PostgreSQL database with SQLAlchemy ORM
 - Database migrations with Alembic
-- File upload support for character images
+- File upload support for entity images
 - Email notifications support
 - Docker-based development environment
 - Hot reload for development
@@ -110,6 +110,7 @@ Copy `.env.example` to `.env` and configure the following variables:
 | GET | `/api/v1/entities/search?q=term` | Search entities by name/description |
 | GET | `/api/v1/entities/{id}` | Get entity with full relations |
 | GET | `/api/v1/entities/{id}/relations` | Get entity relations |
+| POST | `/api/v1/entities/{id}/relations` | Create a relation (admin); symmetric types create the reverse row |
 | POST | `/api/v1/entities/` | Create entity (admin) |
 | PUT | `/api/v1/entities/{id}` | Update entity (admin) |
 | DELETE | `/api/v1/entities/{id}` | Delete entity (admin) |
@@ -132,12 +133,15 @@ Copy `.env.example` to `.env` and configure the following variables:
 | GET | `/api/v1/entity-types/` | List entity types |
 | GET | `/api/v1/locations/` | List locations (filterable by department) |
 | GET | `/api/v1/sources/` | List sources (filterable by type) |
+| POST/PUT/DELETE | `/api/v1/{categories,entity-types,locations,sources}/` | Manage reference data (admin). Duplicates return `409` |
 
 ### Authentication & Users
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/v1/auth/login` | Authenticate user |
+| POST | `/api/v1/auth/login` | Authenticate user (returns access + refresh token) |
+| POST | `/api/v1/auth/refresh` | Exchange a refresh token for a new pair (rotated, single use; one session per user) |
+| POST | `/api/v1/auth/logout` | Revoke the refresh token (the access token stays valid until it expires) |
 | GET | `/api/v1/auth/me` | Get current user |
 | POST | `/api/v1/auth/password-recovery/{email}` | Request password reset |
 | POST | `/api/v1/auth/reset-password/` | Reset password with token |
@@ -185,17 +189,13 @@ The `./myths` script provides convenient commands:
 │   ├── api/
 │   │   ├── v1/
 │   │   │   ├── domains/            # Domain-driven modules
-│   │   │   │   ├── auth/           # Authentication (login, password reset)
+│   │   │   │   ├── auth/           # Authentication (login, refresh, logout, password reset)
 │   │   │   │   ├── countries/      # Country CRUD
+│   │   │   │   ├── entities/       # Entities, categories, entity types, locations, sources
 │   │   │   │   ├── health/         # Health check endpoints
 │   │   │   │   ├── home/           # API root endpoint
 │   │   │   │   ├── images/         # Image serving
 │   │   │   │   └── users/          # User management
-│   │   │   ├── entities/           # Entity domain (mythological items)
-│   │   │   │   ├── endpoints/      # Entity-related routes
-│   │   │   │   ├── models/         # Entity DB models
-│   │   │   │   ├── schemas/        # Pydantic schemas
-│   │   │   │   └── services/       # Business logic
 │   │   │   └── shared/             # Shared deps (auth, db)
 │   │   └── common/
 │   │       ├── middleware/         # Rate limiting, security headers, request ID

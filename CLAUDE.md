@@ -4,71 +4,69 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a FastAPI-based REST API called "The API of Myths and Legends" that manages mythological characters and countries. It uses PostgreSQL as the database backend with SQLAlchemy ORM and implements a service-layer architecture.
+FastAPI REST API, "The API of Myths and Legends", that manages mythological entities (characters, creatures, places, objects), their relations, and countries. PostgreSQL + SQLAlchemy 2.0 ORM, service-layer architecture, JWT auth with refresh tokens.
+
+## Workflow
+
+- Spec-Driven Development with GitHub Spec Kit: `/speckit-specify → clarify → plan → tasks → analyze → implement → converge`. New feature specs live in `specs/NNN-*/`; `docs/superpowers/` is historical.
+- Every plan must pass the Constitution Check against `.specify/memory/constitution.md` (TDD, security-first, minimalism, sync `def` + `Session`, `HTTPException` error envelope, conventional commits).
+- Roadmap and session order: `docs/ROADMAP.md`. Branches are `type/short-description`; `develop` requires 1 review and green CI.
 
 ## Architecture Structure
 
-- **app/main.py**: Main FastAPI application entry point with CORS middleware and pagination
-- **app/api/v1/**: API version 1 with endpoints, services, models, schemas, and enums
-- **app/api/v1/endpoints/**: API route definitions (characters, countries, images, login, home)
-- **app/api/v1/services/**: Business logic layer with CRUD operations (character_service, country_service, etc.)
-- **app/api/v1/models/**: SQLAlchemy database models (Character, Country, User)
-- **app/api/v1/schemas/**: Pydantic data transfer objects for request/response validation
-- **app/api/common/**: Shared utilities including base service class and exception handlers
-- **app/core/config.py**: Configuration settings using Pydantic BaseSettings
-- **app/db/base_class.py**: Base SQLAlchemy class with automatic table naming
+- **app/main.py**: FastAPI entry point (CORS, rate limiting, pagination, middleware)
+- **app/api/v1/router.py**: Aggregates all v1 routers
+- **app/api/v1/domains/<domain>/**: one folder per domain, each with `endpoints/`, `services/`, and where applicable `models/`, `schemas/`
+  - `auth` (login, refresh, logout, password reset), `users`, `countries`, `health`, `home`, `images`
+  - `entities` (entities, categories, entity types, locations, sources, relations; also `enums.py` and `seed.py`)
+- **app/api/v1/shared/**: shared dependencies (`deps/dependencies.py`: DB session, current user) and enums
+- **app/api/common/**: base CRUD service, exception handlers, response helpers, middleware (rate limiter, security headers, request ID), pagination
+- **app/core/**: `config.py` (Pydantic `BaseSettings`), `security.py` (JWT, hashing), logging and OpenAPI config
+- **app/db/**: session and base SQLAlchemy class with automatic table naming
+- **alembic/**: migrations
+- **tests/**: pytest suite; `tests/domains/` mirrors the domains
 
 ## Development Commands
 
-### Starting the Application
-- `./myths up` - Start the application in foreground
-- `./myths up -d` - Start the application in background
-- `./myths stop` - Stop the application
-- `./myths restart` - Restart the application
+### Application
+- `./myths up` / `./myths up -d` - Start (foreground / background)
+- `./myths stop`, `./myths restart`, `./myths ps`
+- `./myths shell` / `./myths bash` - Container shell; `./myths root-shell` as root
+- `./myths python ...` - Run Python in the container
+- `./myths build --no-cache` - Rebuild containers
 
-### Database Operations
-- `./myths alembic revision --autogenerate -m "migration message"` - Create a new migration
-- `./myths alembic upgrade head` - Apply all pending migrations
-- `./myths psql` - Connect to PostgreSQL database directly
+### Database
+- `./myths alembic revision --autogenerate -m "message"` - New migration
+- `./myths alembic upgrade head` - Apply migrations
+- `./myths psql` - PostgreSQL shell
 
 ### Testing
-- `./myths test` - Run tests
+The stack must be running (`./myths up -d`). Run the suite in the container:
 
-### Container Operations
-- `./myths shell` or `./myths bash` - Access application container shell
-- `./myths root-shell` - Access application container as root
+- `./myths python test.py tests --no-cov -p no:cacheprovider` - Full suite
+- `./myths python test.py tests/test_cors.py --no-cov -p no:cacheprovider` - One file
 
-### Development Utilities
-- `./myths python ...` - Execute Python commands in the container
-- `./myths build --no-cache` - Rebuild all containers
+`--no-cov` avoids a `htmlcov/` permission error (the directory is created by root in the container). Note: `./myths test` is currently broken (it runs `python test` instead of `python test.py`).
 
 ## Key Technologies
 
-- FastAPI (0.79.0) - Modern Python web framework
-- SQLAlchemy (1.4.40) - Database ORM
-- PostgreSQL - Primary database
-- Docker & Docker Compose - Containerization
-- Alembic - Database migrations
-- Pydantic - Data validation and settings management
-- fastapi-pagination - Pagination support
+Versions are capped in `requirements.txt` (floor and next-breaking ceiling); check it rather than trusting this list.
 
-## API Structure
-
-The API follows a service-oriented architecture with:
-- **Endpoints** in `app/api/v1/endpoints/` - Handle HTTP requests and responses
-- **Services** in `app/api/v1/services/` - Implement business logic using the CRUDBaseService
-- **Models** in `app/api/v1/models/` - Define database schema
-- **Schemas** in `app/api/v1/schemas/` - Define API request/response structures
+- FastAPI 0.135 / Starlette 1.0, Pydantic 2.x, pydantic-settings
+- SQLAlchemy 2.0 with an explicit `postgresql+psycopg2` driver (2.1 defaults to psycopg3 and broke CI)
+- Alembic, PostgreSQL 15
+- python-jose (JWT), passlib/bcrypt, slowapi (rate limiting)
+- fastapi-pagination, Docker Compose
 
 ## Common Patterns
 
-- Service classes extend `CRUDBaseService` for standard CRUD operations
-- Dependency injection using FastAPI's Depends for database sessions
-- Form handling with `schema.as_form` pattern for multipart uploads
-- Custom response functions for standardized API responses (created, updated, deleted, etc.)
-- Exception handling with custom exception classes
-- Image upload functionality integrated into character creation/update
+- Services extend `CRUDBaseService` for standard CRUD; endpoints and services are sync (`def` + `Session`), not async
+- DB sessions via `Depends(get_db)`; auth via `get_current_user` / superuser dependencies
+- Errors are raised as `HTTPException` (standard envelope); duplicate names on write endpoints return `409`
+- Writes on reference data and entities are superuser-gated; reads are public
+- Auth: access token plus a single-use, rotated refresh token stored hashed on the user (one session per user); logout revokes the refresh token only
+- Image upload is integrated into entity create/update
 
 ## Environment Configuration
 
-Configuration is managed through environment variables defined in `.env` file and accessed via `app/core/config.py`. Key settings include database connection, server host/port, and security configurations.
+Settings come from environment variables or `.env` via `app/core/config.py`. `SECRET_KEY`, `POSTGRES_PASSWORD` and `FIRST_SUPERUSER_PASSWORD` are required; startup fails without them. Never commit `.env`. `BACKEND_CORS_ORIGINS` varies per developer, so tests must not hardcode origins.
