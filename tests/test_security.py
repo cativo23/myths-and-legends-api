@@ -3,6 +3,9 @@ Tests for the security utilities: JWT token creation, password hashing, and veri
 """
 from datetime import timedelta
 
+import subprocess
+import sys
+
 import pytest
 from jose import jwt, JWTError
 
@@ -180,3 +183,27 @@ class TestBcrypt72ByteTruncation:
     def test_should_reject_nul_byte_when_hashing(self):
         with pytest.raises(ValueError):
             get_password_hash("a\x00b")
+
+
+class TestVerifyPasswordFailsClosed:
+    @pytest.mark.parametrize("stored", ["notahash", "", None, "$2b$12$short"])
+    def test_should_fail_closed_on_malformed_stored_hash(self, stored):
+        assert verify_password("anything", stored) is False
+
+    def test_should_fail_closed_on_nul_byte_password(self):
+        stored = PRE_CHANGE_HASHES[0][1]
+        assert verify_password("a\x00b", stored) is False
+
+
+class TestNoImportTimePatching:
+    def test_should_not_patch_bcrypt_at_import(self):
+        # Fresh interpreter: other tests may already have imported the module.
+        code = (
+            "import bcrypt\n"
+            "original = bcrypt.hashpw\n"
+            "import app.core.security\n"
+            "assert bcrypt.hashpw is original, 'hashpw was replaced'\n"
+            "assert not hasattr(bcrypt, '__about__'), '__about__ shim was added'\n"
+        )
+        result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+        assert result.returncode == 0, result.stderr[-500:]
