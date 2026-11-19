@@ -17,12 +17,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `POST /api/v1/entities/{id}/relations` to create relations between entities,
     with symmetric relation types (SIBLINGS, ALLIES, ENEMIES) automatically
     creating the reverse relation
+- Refresh-token auth flow:
+  - `POST /api/v1/auth/refresh` exchanges a refresh token for a new access +
+    refresh pair; refresh tokens are single use (rotated on every call, with an
+    atomic compare-and-swap so concurrent calls cannot both succeed)
+  - `POST /api/v1/auth/logout` revokes the user's refresh token (the access
+    token stays valid until it expires)
+  - `REFRESH_TOKEN_EXPIRE_DAYS` setting (default 30)
 - 404 responses on `POST /api/v1/locations` and `POST /api/v1/sources` when the
   given `entity_id` does not reference an existing entity, instead of an
   unhandled 500
 
 ### Changed
 
+- `POST /api/v1/auth/login` now also returns a `refresh_token`. One refresh
+  token per user is stored (hashed), so a new login replaces the previous
+  session's refresh token.
+- Direct dependencies in `requirements.txt` now have upper bounds (next
+  breaking release), so a fresh install cannot jump to an untested major.
 - **Breaking:** `entity_id` is now a required field when creating a `Location`
   or a `Source` (previously optional). Omitting it now returns a `422`
   instead of raising an unhandled `500` on the database foreign key
@@ -32,10 +44,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 409 response on duplicate category/entity-type name instead of an unhandled
   `IntegrityError`
+- Database URLs use the explicit `postgresql+psycopg2` driver (app settings and
+  `alembic/env.py`). SQLAlchemy 2.1 defaults plain `postgresql` to psycopg3,
+  which this project does not ship; this broke CI.
 
 ### Database Migrations
 
-- No new migrations required
+- `0f2ce4cae13f`: adds nullable `user.hashed_refresh_token` column
 
 ## [0.1.0] - 2026-04-02
 
