@@ -1,7 +1,8 @@
 # Core dependencies
 alembic>=1.15.0,<2
 fastapi>=0.115.0,<0.136
-fastapi-pagination>=0.12.0,<0.16
+# 0.15.16 breaks add_pagination() against FastAPI 0.135 (get_body_field body_params TypeError)
+fastapi-pagination>=0.12.0,<0.15.16
 passlib[bcrypt]>=1.7.4,<2
 psycopg2-binary>=2.9.10,<3
 pydantic>=2.10.0,<3
