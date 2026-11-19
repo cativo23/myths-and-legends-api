@@ -50,7 +50,7 @@ If `htmlcov/`, `coverage.xml` or `.pytest_cache/` ever end up root-owned (tests 
 
 ## Key Technologies
 
-Versions are capped in `requirements.txt` (floor and next-breaking ceiling); check it rather than trusting this list.
+Direct dependencies and their caps (floor and next-breaking ceiling) live in `requirements.in`; `requirements.txt` is the hashed lock generated from it with `uv pip compile requirements.in --universal --python-version 3.10 --generate-hashes -o requirements.txt` (add `-P <pkg>` to upgrade one package). Never edit `requirements.txt` by hand; CI fails if it is stale. Check these files rather than trusting this list.
 
 - FastAPI 0.135 / Starlette 1.0, Pydantic 2.x, pydantic-settings
 - SQLAlchemy 2.0 with an explicit `postgresql+psycopg2` driver (2.1 defaults to psycopg3 and broke CI)

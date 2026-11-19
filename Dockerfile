@@ -12,7 +12,9 @@ WORKDIR /code
 
 COPY ./requirements.txt /code/requirements.txt
 
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+# requirements.txt is the hashed lock (see requirements.in); --require-hashes
+# makes pip refuse anything that is not exactly what was locked.
+RUN pip install --no-cache-dir --require-hashes -r /code/requirements.txt
 
 COPY ./ /code/
 
