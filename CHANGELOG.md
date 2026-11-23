@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- In-memory response cache (`fastapi-cache2`, no Redis) on the public `GET` endpoints
+  of categories, entity types and sources (list and detail): 300 s for categories
+  and entity types, 60 s for sources (#26). Writes do not invalidate it, so data can
+  be stale until the TTL expires. Responses carry `Cache-Control: max-age` and a weak
+  `ETag` (`If-None-Match` returns `304`); `X-FastAPI-Cache` is stripped. Keys use only
+  validated parameters, and errors and empty pages are never cached. The cache is
+  per worker and starts empty on every restart. New dependencies: `fastapi-cache2`
+  and `jinja2` (a hidden import of fastapi-cache2).
 - Database-level `CHECK` constraints on the enum-like columns `category.name`,
   `entity_type.name`, `characteristic.type`, `entity_relation.relation_type` and
   `source.source_type` (migration `ce04f762989d`), so raw SQL or bulk imports can

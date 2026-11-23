@@ -1,10 +1,13 @@
 import logging
+from contextlib import asynccontextmanager
 from typing import Any, Dict
 
 from starlette.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
 from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi_cache import FastAPICache
 
+from app.api.common.cache import init_cache
 from app.api.common.exceptions.api_exception import add_exception_handler
 from app.api.common.middleware import SecurityHeadersMiddleware, RequestIDMiddleware
 from app.api.common.middleware.rate_limiter import setup_rate_limiter
@@ -19,7 +22,16 @@ setup_logging(level="INFO")
 
 logger = logging.getLogger(__name__)
 
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    init_cache()
+    yield
+    FastAPICache.reset()
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title=settings.PROJECT_NAME,
     description="""
 ## Overview
