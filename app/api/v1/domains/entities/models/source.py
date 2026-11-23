@@ -4,7 +4,7 @@ from sqlalchemy import String, ForeignKey, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
-from app.api.v1.domains.entities.enums import SourceType
+from app.api.v1.domains.entities.enums import SourceType, enum_check
 
 if TYPE_CHECKING:
     from app.api.v1.domains.entities.models.entity import Entity
@@ -25,4 +25,7 @@ class Source(Base):
     # Relationships
     entity: Mapped["Entity"] = relationship("Entity", back_populates="sources")
 
-    __table_args__ = (Index("ix_source_entity_type", "entity_id", "source_type"),)
+    __table_args__ = (
+        Index("ix_source_entity_type", "entity_id", "source_type"),
+        enum_check("source_type", SourceType, "ck_source_source_type"),
+    )

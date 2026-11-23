@@ -39,13 +39,13 @@ None. No dependency, config or schema change blocks the stories.
 
 ### Implementation
 
-- [ ] T004 [US1] Add `enum_check(column, enum_cls, name)` to `app/api/v1/domains/entities/enums.py`, returning a `sqlalchemy.CheckConstraint` of the form `column IN ('A', 'B', ...)` built from the enum values, with a one-line comment on why values come from the enum (prevents drift, see research.md R3)
-- [ ] T005 [P] [US1] Add `enum_check("name", CategoryName, "ck_category_name")` to `__table_args__` in `app/api/v1/domains/entities/models/category.py` (`Category.name`, data-model.md)
-- [ ] T006 [P] [US1] Add `enum_check("name", EntityTypeName, "ck_entity_type_name")` to `__table_args__` in `app/api/v1/domains/entities/models/entity_type.py` (`EntityType.name`, data-model.md)
-- [ ] T007 [P] [US1] Append `enum_check("type", CharacteristicType, "ck_characteristic_type")` to the existing `__table_args__` in `app/api/v1/domains/entities/models/characteristic.py` (`Characteristic.type`, data-model.md)
-- [ ] T008 [P] [US1] Append `enum_check("relation_type", RelationType, "ck_entity_relation_relation_type")` to the existing `__table_args__` in `app/api/v1/domains/entities/models/entity_relation.py` (`EntityRelation.relation_type`, data-model.md)
-- [ ] T009 [P] [US1] Append `enum_check("source_type", SourceType, "ck_source_source_type")` to the existing `__table_args__` in `app/api/v1/domains/entities/models/source.py` (`Source.source_type`, data-model.md)
-- [ ] T010 [US1] Run `./myths test tests/domains/test_enum_check_constraints.py --no-cov` until green, then commit as `feat(entities): declare CHECK constraints on enum columns` (the helper and the five models are one concern)
+- [X] T004 [US1] Add `enum_check(column, enum_cls, name)` to `app/api/v1/domains/entities/enums.py`, returning a `sqlalchemy.CheckConstraint` of the form `column IN ('A', 'B', ...)` built from the enum values, with a one-line comment on why values come from the enum (prevents drift, see research.md R3)
+- [X] T005 [P] [US1] Add `enum_check("name", CategoryName, "ck_category_name")` to `__table_args__` in `app/api/v1/domains/entities/models/category.py` (`Category.name`, data-model.md)
+- [X] T006 [P] [US1] Add `enum_check("name", EntityTypeName, "ck_entity_type_name")` to `__table_args__` in `app/api/v1/domains/entities/models/entity_type.py` (`EntityType.name`, data-model.md)
+- [X] T007 [P] [US1] Append `enum_check("type", CharacteristicType, "ck_characteristic_type")` to the existing `__table_args__` in `app/api/v1/domains/entities/models/characteristic.py` (`Characteristic.type`, data-model.md)
+- [X] T008 [P] [US1] Append `enum_check("relation_type", RelationType, "ck_entity_relation_relation_type")` to the existing `__table_args__` in `app/api/v1/domains/entities/models/entity_relation.py` (`EntityRelation.relation_type`, data-model.md)
+- [X] T009 [P] [US1] Append `enum_check("source_type", SourceType, "ck_source_source_type")` to the existing `__table_args__` in `app/api/v1/domains/entities/models/source.py` (`Source.source_type`, data-model.md)
+- [X] T010 [US1] Run `./myths test tests/domains/test_enum_check_constraints.py --no-cov` until green, then commit as `feat(entities): declare CHECK constraints on enum columns` (the helper and the five models are one concern)
 
 **Checkpoint**: US1 complete in the test DB; real databases still need the migration (US2).
 
