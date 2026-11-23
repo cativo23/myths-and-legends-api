@@ -5,7 +5,7 @@
 **Alcance:** API + frontend + deploy (decidido por Carlos).
 **Fuentes:** `docs/superpowers/specs/2026-07-16-backend-phase1-hardening-design.md`, issues/PRs abiertos, `reviews/code-review-report.md`, CHANGELOG.
 
-> Estado al 2026-11-23: Fase 0 completa; sesiones 1.1 y 1.2 hechas (#68 y #60 se cierran a mano tras el merge). Issues abiertos: #26, #31, #54, #60.
+> Estado al 2026-11-23: Fase 0 completa; sesiones 1.1, 1.2 y 1.3 hechas (#26 se cierra a mano tras el merge). Issues abiertos: #26, #31, #54.
 
 ---
 
@@ -29,7 +29,7 @@ Meta: contrato de API estable y robusto para el frontend. Cada sesión es una fe
 |---|---|---|---|
 | **1.1** ✅ | CHECK constraints en columnas enum (`Category.name`, `EntityType.name`, `Characteristic.type`, `EntityRelation.relation_type`, `Source.source_type`) | #68 | `specs/002-enum-check-constraints/`. Migración `ce04f762989d` verificada up/down/up en Postgres 15; aborta sin tocar datos si hay filas fuera del enum. Editar un enum ahora exige migración (un test lo detecta) |
 | **1.2** ✅ | Búsqueda con `pg_trgm` (extensión + índices GIN; dropear `ix_entity_description`) | #60 | `specs/003-pg-trgm-search-indexes/`. Migración `b0ac58dc2755` verificada up/down/up en Postgres 15: `pg_trgm` + 4 GIN (`entity.name/description/origin`, `location.department`); se quedan `ix_entity_name` e `ix_location_department`. Un índice solo en `description` no sirve: el OR de `search()` necesita los tres. Con 80k filas sintéticas, `search()` pasa de Seq Scan (96 ms) a BitmapOr (0,6 ms) y el filtro de department de 30 ms a ~5 ms. Costo: más escritura en `entity`. Limitaciones en `specs/003-pg-trgm-search-indexes/research.md` |
-| **1.3** | Caching `fastapi-cache2` InMemory en GET de categories/entity-types (5–10 min) y sources (60 s) | #26 | Sin invalidación explícita |
+| **1.3** ✅ | Caching `fastapi-cache2` InMemory en GET de categories/entity-types (5–10 min) y sources (60 s) | #26 | `specs/004-cache-reference-reads/`. 6 GET públicos (listado y detalle), TTL 300 s / 60 s, sin invalidación (dato viejo hasta el TTL, decidido con Carlos). Clave propia solo con parámetros validados (la clave por defecto incluye el repr de la `Session` y nunca da hit). `jinja2` es dependencia oculta de fastapi-cache2 (import de `starlette.templating`), fijada en `requirements.in`. Backend InMemory propio por instancia que no guarda páginas vacías (el de la librería solo borra vencidos al releer: `?page=N` crecía sin tope). Se quita `X-FastAPI-Cache`; quedan `Cache-Control` y `ETag`. Caché por worker; ETag cambia al reiniciar (`hash()` salado). `Cache-Control: no-cache` del cliente fuerza refresco (acotado por el rate limit) |
 | **1.4** | Leftovers #54: validar `sort` en countries/users, `max_length` en params libres, rate limit en `reset-password`, docstring del limiter, test de `Settings()` sin secretos, quitar default `POSTGRES_PASSWORD:-myths` | #54 | Una concern por commit |
 | **1.5** | Decidir y (si aplica) implementar `DELETE /entities/{id}/relations/{relation_id}` | — | Decisión abierta en la spec |
 | **1.6** | Tests E2E: ciclo de entidad+relaciones, ciclo de auth con refresh, límites de rate-limit | #31 | Depende de 1.1–1.5 |
@@ -75,3 +75,4 @@ Meta: UI completa consumiendo la API. Decisión previa en 2.1: repo separado vs 
 9. **Migraciones en modo offline (`alembic --sql`)** no funcionan con `ce04f762989d`: el pre-chequeo necesita conexión. El proyecto no usa modo offline; se deja así (YAGNI).
 10. **Índices trigram (1.2):** términos de menos de 3 caracteres no usan el índice; `%` y `_` en el término no se escapan (comodines); sin unificar acentos. Sin acción pendiente; si se quiere, `min_length=3` o escapado son cambios de API (otra sesión).
 11. **`ix_location_department` difiere entre modelo y BD migrada:** en la BD migrada es compuesto `(department, municipality)`, pero el modelo declara índices simples (`index=True`). Hallado en 1.2; sin tocar. Revisar al alinear modelos y migraciones.
+12. **Caché por worker (1.3):** con varios workers cada uno tiene su propia copia, con TTL y ETag independientes. Si se despliega con más de un worker (fase 3) y importa la coherencia, evaluar Redis (`fastapi-cache2` ya lo soporta) o invalidar al escribir. Sin acción pendiente hoy.
