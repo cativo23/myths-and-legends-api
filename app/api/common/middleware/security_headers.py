@@ -9,6 +9,9 @@ Adds essential security headers to all responses:
 - Content-Security-Policy: Controls resource loading
 - Referrer-Policy: Controls referrer information
 - Permissions-Policy: Controls browser features
+
+Also removes X-FastAPI-Cache (set by the response cache) so clients cannot
+see whether a response was a cache HIT or MISS.
 """
 
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -55,5 +58,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "accelerometer=(), camera=(), geolocation=(), gyroscope=(), "
             "magnetometer=(), microphone=(), payment=(), usb=()"
         )
+
+        # The cache library has no switch to disable its HIT/MISS header; do not
+        # reveal internal cache state to clients (specs/004, research.md R5).
+        if "x-fastapi-cache" in response.headers:
+            del response.headers["x-fastapi-cache"]
 
         return response
