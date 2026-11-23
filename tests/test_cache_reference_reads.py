@@ -25,6 +25,7 @@ from app.api.v1.domains.entities.models.category import Category
 from app.api.v1.domains.entities.models.entity import Entity
 from app.api.v1.domains.entities.models.entity_type import EntityType
 from app.api.v1.domains.entities.models.source import Source
+from app.core.config import settings
 from app.main import app
 
 
@@ -42,8 +43,8 @@ class TestCacheLifecycle:
         backend per startup, entries would leak across app instances (and
         across tests, since every test client runs the lifespan)."""
         with TestClient(app):
-            _store("leaky-key", b"{\"a\": 1}")
-            assert _read("leaky-key") == b"{\"a\": 1}"
+            _store("leaky-key", b'{"a": 1}')
+            assert _read("leaky-key") == b'{"a": 1}'
 
         with TestClient(app):
             assert _read("leaky-key") is None
@@ -249,3 +250,83 @@ class TestCacheKeysAndErrors:
         beyond = client.get("/api/v1/categories/?page=99")
         assert beyond.json()["items"] == []
         assert _entries() == before
+
+
+class TestCacheHeadersAndLimits:
+    @pytest.mark.parametrize("call", [1, 2], ids=["miss", "hit"])
+    def test_should_expose_cache_control_and_etag_but_not_cache_status_header(
+        self, client: TestClient, db: Session, call: int
+    ):
+        _seed(db)
+        for _ in range(call):
+            response = client.get("/api/v1/categories/")
+
+        assert response.headers["cache-control"].startswith("max-age=")
+        assert response.headers["etag"].startswith("W/")
+        assert "x-fastapi-cache" not in response.headers
+
+    def test_should_return_304_when_if_none_match_matches_the_etag(
+        self, client: TestClient, db: Session
+    ):
+        _seed(db)
+        etag = client.get("/api/v1/categories/").headers["etag"]
+
+        response = client.get("/api/v1/categories/", headers={"If-None-Match": etag})
+
+        assert response.status_code == 304
+        assert response.content == b""
+
+    def test_should_keep_security_headers_cors_and_request_id_on_cached_responses(
+        self, client: TestClient, db: Session
+    ):
+        _seed(db)
+        origin = settings.BACKEND_CORS_ORIGINS[0]
+        client.get("/api/v1/categories/")
+
+        hit = client.get("/api/v1/categories/", headers={"Origin": origin})
+
+        assert hit.headers["x-frame-options"] == "DENY"
+        assert hit.headers["x-request-id"]
+        assert hit.headers["access-control-allow-origin"] == origin
+
+    def test_should_still_rate_limit_cached_endpoints(
+        self, client: TestClient, db: Session
+    ):
+        _seed(db)
+        statuses = [
+            client.get("/api/v1/categories/").status_code
+            for _ in range(settings.RATE_LIMIT_PER_MINUTE + 1)
+        ]
+
+        assert statuses[:-1] == [200] * settings.RATE_LIMIT_PER_MINUTE
+        assert statuses[-1] == 429
+
+    def test_should_refresh_when_client_sends_cache_control_no_cache(
+        self, client: TestClient, db: Session
+    ):
+        """Documented library behavior: no-cache bypasses the cache (bounded by
+        the rate limit)."""
+        row, field, url, _ = _seed(db)["categories"]
+        client.get(url)
+        _mutate(db, row, field)
+
+        refreshed = client.get(url, headers={"Cache-Control": "no-cache"})
+
+        assert refreshed.json()["items"][0][field] == "changed"
+
+    def test_should_fall_back_to_the_database_when_the_backend_fails(
+        self, client: TestClient, db: Session, monkeypatch
+    ):
+        _seed(db)
+        backend = FastAPICache.get_backend()
+
+        async def boom(*args, **kwargs):
+            raise RuntimeError("backend down")
+
+        monkeypatch.setattr(backend, "get_with_ttl", boom)
+        monkeypatch.setattr(backend, "set", boom)
+
+        response = client.get("/api/v1/categories/")
+
+        assert response.status_code == 200
+        assert response.json()["items"][0]["description"] == "original"
