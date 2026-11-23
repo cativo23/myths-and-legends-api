@@ -32,4 +32,4 @@
 ## Notes
 
 - This is an infrastructure feature: index names, the trigram extension and the migration are the deliverable itself, so they appear in the requirements by necessity (same convention as spec 002).
-- FR-006 leaves the extension installed on downgrade; flagged for `/speckit-clarify` as a decision to confirm with Carlos.
+- FR-006 leaves the extension installed on downgrade; confirmed with Carlos in `/speckit-clarify` (2026-11-23).
