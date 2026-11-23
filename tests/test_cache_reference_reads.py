@@ -42,8 +42,8 @@ class TestCacheLifecycle:
         backend per startup, entries would leak across app instances (and
         across tests, since every test client runs the lifespan)."""
         with TestClient(app):
-            _store("leaky-key", b"value")
-            assert _read("leaky-key") == b"value"
+            _store("leaky-key", b"{\"a\": 1}")
+            assert _read("leaky-key") == b"{\"a\": 1}"
 
         with TestClient(app):
             assert _read("leaky-key") is None

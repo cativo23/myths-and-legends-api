@@ -20,7 +20,7 @@ SOURCES_TTL = 60
 
 
 class ReferenceCacheBackend(InMemoryBackend):
-    """InMemoryBackend with a per-instance store.
+    """InMemoryBackend with a per-instance store that skips empty pages.
 
     The library keeps ``_store`` and ``_lock`` at class level, so entries would
     leak across app instances (and across tests, which each start the app).
@@ -29,6 +29,16 @@ class ReferenceCacheBackend(InMemoryBackend):
     def __init__(self) -> None:
         self._store = {}
         self._lock = asyncio.Lock()
+
+    async def set(self, key: str, value: bytes, expire: Optional[int] = None) -> None:
+        # Never store an empty page: the library only evicts an expired key when
+        # it is read again, so `?page=N` over many N would grow memory without
+        # bound. Only pages that exist are cached, which limits entries to the
+        # real data (research.md R4).
+        body = json.loads(value)
+        if isinstance(body, dict) and body.get("items") == []:
+            return
+        await super().set(key, value, expire)
 
 
 def reference_key_builder(
