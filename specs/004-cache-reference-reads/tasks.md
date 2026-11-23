@@ -102,9 +102,9 @@ description: "Task list for caching public reference-data reads"
 
 ## Phase 6: Polish and cross-cutting
 
-- [ ] T024 [P] Update `CHANGELOG.md` `[Unreleased]` (Added: response cache for categories, entity types and sources with TTLs and staleness note; closes #26) and `docs/ROADMAP.md` (mark 1.3 done, status line, notes: jinja2 hidden dependency, empty pages not cached, per-worker cache, `no-cache` bypass; keep the Redis/invalidation items out of scope). Commit as `docs(roadmap): close session 1.3 and record follow-ups`
-- [ ] T025 Run `uvx black --check app`, then the full `./myths test` (SC-005: green, coverage at or above the 68% gate), then quickstart.md manual steps against the running stack
-- [ ] T026 Self-review the full diff as if written by someone else (secrets, keys, Constitution Check re-read, comments explain why); mark every task `[X]`; run `/speckit-converge` after implementing (analyze already ran before implementation)
+- [X] T024 [P] Update `CHANGELOG.md` `[Unreleased]` (Added: response cache for categories, entity types and sources with TTLs and staleness note; closes #26) and `docs/ROADMAP.md` (mark 1.3 done, status line, notes: jinja2 hidden dependency, empty pages not cached, per-worker cache, `no-cache` bypass; keep the Redis/invalidation items out of scope). Commit as `docs(roadmap): close session 1.3 and record follow-ups`
+- [X] T025 Run `uvx black --check app`, then the full `./myths test` (SC-005: green, coverage at or above the 68% gate), then quickstart.md manual steps against the running stack
+- [X] T026 Self-review the full diff as if written by someone else (secrets, keys, Constitution Check re-read, comments explain why); mark every task `[X]`; run `/speckit-converge` after implementing (analyze already ran before implementation)
 
 ---
 
