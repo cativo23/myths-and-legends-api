@@ -152,3 +152,100 @@ class TestCachedReads:
         library wrapper is async (it runs the function in the threadpool)."""
         assert hasattr(fn, "__wrapped__"), "endpoint is not cached"
         assert not inspect.iscoroutinefunction(fn.__wrapped__)
+
+
+def _entries() -> int:
+    """Number of live entries in the active cache backend (our own subclass)."""
+    return len(FastAPICache.get_backend()._store)
+
+
+class TestCacheKeysAndErrors:
+    def _seed_two_sources(self, db: Session) -> None:
+        category = Category(name=CategoryName.MYTH, description="c")
+        entity_type = EntityType(name=EntityTypeName.CHARACTER, description="t")
+        db.add_all([category, entity_type])
+        db.commit()
+        entity = Entity(
+            name="Zeus", category_id=category.id, entity_type_id=entity_type.id
+        )
+        db.add(entity)
+        db.commit()
+        db.add_all(
+            [
+                Source(entity_id=entity.id, source_type=SourceType.BOOK, title="A"),
+                Source(entity_id=entity.id, source_type=SourceType.WEB, title="B"),
+            ]
+        )
+        db.commit()
+
+    @pytest.mark.parametrize(
+        "query, expected_titles",
+        [
+            ("sort=title&order=asc", ["A", "B"]),
+            ("sort=title&order=desc", ["B", "A"]),
+            ("sort=title&size=1&page=1", ["A"]),
+            ("sort=title&size=1&page=2", ["B"]),
+            (f"source_type={SourceType.WEB.value}", ["B"]),
+        ],
+    )
+    def test_should_return_data_matching_each_parameter_combination(
+        self, client: TestClient, db: Session, query: str, expected_titles: list
+    ):
+        self._seed_two_sources(db)
+
+        for _ in range(2):  # second call is served from the cache
+            body = client.get(f"/api/v1/sources/?{query}").json()
+            assert [item["title"] for item in body["items"]] == expected_titles
+
+    def test_should_ignore_unknown_query_params_in_the_cache_key(
+        self, client: TestClient, db: Session
+    ):
+        """Guard (FR-004): junk params must not create new cache entries."""
+        self._seed_two_sources(db)
+        client.get("/api/v1/sources/")
+        baseline = _entries()
+
+        client.get("/api/v1/sources/?foo=1")
+        client.get("/api/v1/sources/?foo=2&bar=x")
+
+        assert _entries() == baseline
+
+    def test_should_not_cache_not_found_responses(
+        self, client: TestClient, db: Session
+    ):
+        """Guard (FR-005): a 404 must not hide the row once it exists."""
+        assert client.get("/api/v1/categories/1").status_code == 404
+        db.add(Category(name=CategoryName.MYTH, description="now exists"))
+        db.commit()
+
+        assert client.get("/api/v1/categories/1").status_code == 200
+
+    def test_should_not_cache_validation_errors(self, client: TestClient):
+        """Guard (FR-005)."""
+        assert client.get("/api/v1/categories/?size=0").status_code == 422
+        assert _entries() == 0
+
+    def test_should_return_same_body_for_anonymous_and_authenticated_callers(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        """Guard: the cache is shared, so the endpoints must not depend on the caller."""
+        _seed(db)
+        anonymous = client.get("/api/v1/categories/")
+        authenticated = client.get("/api/v1/categories/", headers=auth_headers)
+
+        assert anonymous.json() == authenticated.json()
+
+    def test_should_not_cache_empty_pages(self, client: TestClient, db: Session):
+        """Empty pages are not stored, so `page=N` cannot flood the cache."""
+        empty = client.get("/api/v1/categories/")
+        assert empty.json()["items"] == []
+        assert _entries() == 0
+
+        db.add(Category(name=CategoryName.MYTH, description="appears"))
+        db.commit()
+        assert len(client.get("/api/v1/categories/").json()["items"]) == 1
+
+        before = _entries()
+        beyond = client.get("/api/v1/categories/?page=99")
+        assert beyond.json()["items"] == []
+        assert _entries() == before
