@@ -93,7 +93,7 @@ API clients see no difference: same endpoints, same results, same responses.
 
 - **FR-001**: The database MUST have trigram substring-matching support enabled by the upgrade, and the upgrade MUST NOT fail if it is already enabled.
 - **FR-002**: The system MUST provide a trigram index on each of: entity name, entity description, entity origin, and location department, named `ix_entity_name_trgm`, `ix_entity_description_trgm`, `ix_entity_origin_trgm`, `ix_location_department_trgm`.
-- **FR-003**: The ordinary index `ix_entity_description` MUST be removed from both the migration history's end state and the entity model declaration, so a fresh table built from the model does not recreate it.
+- **FR-003**: The ordinary index `ix_entity_description` MUST be removed both from migrated databases and from the entity model declaration, so a fresh table built from the model does not recreate it.
 - **FR-004**: The ordinary indexes `ix_entity_name` and `ix_location_department` MUST remain.
 - **FR-005**: Entity search and the location department filter MUST keep their current query text and matching semantics (case-insensitive substring, same rows returned).
 - **FR-006**: The upgrade MUST have a downgrade that removes the four trigram indexes, restores `ix_entity_description` as it was, and leaves row data untouched. The extension is left installed on downgrade (decided in clarification), so up → down → up never fails on it and nothing else that might use it breaks.

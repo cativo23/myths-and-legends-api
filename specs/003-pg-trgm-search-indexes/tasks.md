@@ -33,8 +33,8 @@ description: "Task list for trigram search indexes (pg_trgm)"
 ### Implementation
 
 - [ ] T005 Remove `index=True` from `Entity.description` in `app/api/v1/domains/entities/models/entity.py` (one-line comment: description is served by a trigram index created in the migration; see research.md Decision 3). Run T003's file until green. Commit as `refactor(entities): drop btree index on entity.description from model`
-- [ ] T006 Create `alembic/versions/<rev>_add_trigram_search_indexes.py` with `./myths alembic revision -m "add trigram search indexes"` (hand-written body, not autogenerate; confirm `down_revision = 'ce04f762989d'`). `upgrade`: `op.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")`, then the four GIN `gin_trgm_ops` indexes, then drop `ix_entity_description` (order in data-model.md). `downgrade`: recreate `ix_entity_description` as in `bd728d1bc3f7`, then drop the four GIN indexes, leaving the extension installed. Comments: why GIN only here (SQLite), why the extension is not dropped, why defaults for `fastupdate`
-- [ ] T007 Run `./myths alembic upgrade head` on the dev DB; confirm the indexes (quickstart step 6). Commit as `feat(db): add pg_trgm and trigram indexes for substring search`
+- [ ] T006 Create `alembic/versions/<rev>_add_trigram_search_indexes.py` with `./myths alembic revision -m "add trigram search indexes"` (hand-written body, not autogenerate; confirm `down_revision = 'ce04f762989d'`). The `api` container runs as root, so the generated file is root-owned: fix it right away with `sudo chown "$USER":"$USER"` on that file (or `ls -l` first to confirm). `upgrade`: `op.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")`, then the four GIN `gin_trgm_ops` indexes, then drop `ix_entity_description` (order in data-model.md). `downgrade`: recreate `ix_entity_description` as in `bd728d1bc3f7`, then drop the four GIN indexes, leaving the extension installed. Comments: why GIN only here (SQLite), why the extension is not dropped, why defaults for `fastupdate`
+- [ ] T007 Run `./myths alembic upgrade head` on the dev DB; confirm the indexes (quickstart step 6) and that `ix_entity_name` and `ix_location_department` are still present (FR-004). Commit as `feat(db): add pg_trgm and trigram indexes for substring search`
 
 **Checkpoint**: schema in place; stories below are verification of behavior.
 
@@ -71,7 +71,7 @@ description: "Task list for trigram search indexes (pg_trgm)"
 
 - [ ] T013 [US3] Privilege check (quickstart step 4): `pg_available_extension_versions.trusted = t` for `pg_trgm`; record that the dev role is a superuser so the non-superuser path is documented, not exercised (spec assumption)
 - [ ] T014 [US3] `./myths alembic downgrade -1`: four `*_trgm` gone, `ix_entity_description` back as B-tree, row counts unchanged, `pg_trgm` still installed; `pg_dump -s` equals the T002 baseline apart from the extension lines
-- [ ] T015 [US3] `./myths alembic upgrade head` again (extension already present, no error); confirm head and the index set of T007; leave the dev DB at head
+- [ ] T015 [US3] `./myths alembic upgrade head` again (extension already present, no error); confirm head and the same index set as T007 (including the kept B-tree indexes); leave the dev DB at head
 
 ---
 
@@ -89,7 +89,7 @@ description: "Task list for trigram search indexes (pg_trgm)"
 
 ## Phase 7: Polish & cross-cutting
 
-- [ ] T019 Update `docs/ROADMAP.md`: mark session 1.2 closed with the evidence summary; record follow-ups (composite `ix_location_department` in migrated DBs vs single-column in the model; terms under 3 chars and unescaped wildcards as possible future work) and keep the existing pending items. Commit as `docs(roadmap): close session 1.2 and record follow-ups`
+- [ ] T019 Update `docs/ROADMAP.md`: mark session 1.2 closed with the evidence summary; link to `specs/003-pg-trgm-search-indexes/research.md` for the documented limitations (FR-009: terms under 3 chars, unescaped wildcards, no accent folding, write cost); record follow-ups (composite `ix_location_department` in migrated DBs vs single-column in the model; terms under 3 chars and unescaped wildcards as possible future work) and keep the existing pending items. Commit as `docs(roadmap): close session 1.2 and record follow-ups`
 - [ ] T020 Self-review the full diff as if written by someone else (comments explain why, one concern per commit); mark all tasks `[X]`; commit as `docs(specs): mark self-review done for trigram indexes`
 
 ---
