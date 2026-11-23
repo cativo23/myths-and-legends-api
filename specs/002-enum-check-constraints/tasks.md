@@ -16,7 +16,7 @@ description: "Task list for database-level CHECK constraints on enum columns"
 
 ## Phase 1: Setup (baseline)
 
-- [ ] T001 Run `./myths test --no-cov` on the untouched branch and record the green baseline (276 passed expected), confirming nothing in `tests/` builds these models from raw strings (`grep -rnE "(Category|EntityType|Characteristic|EntityRelation|Source)\(" tests`)
+- [X] T001 Run `./myths test --no-cov` on the untouched branch and record the green baseline (276 passed expected), confirming nothing in `tests/` builds these models from raw strings (`grep -rnE "(Category|EntityType|Characteristic|EntityRelation|Source)\(" tests`)
 
 ---
 
@@ -34,8 +34,8 @@ None. No dependency, config or schema change blocks the stories.
 
 ### Tests (write first, see them fail)
 
-- [ ] T002 [US1] Create `tests/domains/test_enum_check_constraints.py` using the existing `db` fixture. Parametrize over the five columns cited in data-model.md: `Category.name`, `EntityType.name`, `Characteristic.type`, `EntityRelation.relation_type`, `Source.source_type`. Cases: (a) every allowed value read from the enum is accepted; (b) each invalid value (`"INVALID"`, lowercase of a valid value, trailing space, `""`) raises `sqlalchemy.exc.IntegrityError` on execute, **parametrized per (column, invalid value)** so every case gets its own `db` fixture and a failed statement cannot contaminate the next; (c) updating a valid row to an invalid value raises `IntegrityError`; (d) inserting NULL raises `IntegrityError` (existing NOT NULL, not the new constraint; guards the spec edge case). Child tables need a parent `Entity` (and a second one for `EntityRelation`) built with `Category`/`EntityType` members. Insert invalid values with `sqlalchemy.insert()` on the table or `session.execute(text(...))`, not via the enum, to mimic raw SQL
-- [ ] T003 [US1] Run the new file and confirm it fails for the right reason: the invalid-value cases *do not raise* (no constraint yet). Commit as `test(entities): add failing tests for enum CHECK constraints`
+- [X] T002 [US1] Create `tests/domains/test_enum_check_constraints.py` using the existing `db` fixture. Parametrize over the five columns cited in data-model.md: `Category.name`, `EntityType.name`, `Characteristic.type`, `EntityRelation.relation_type`, `Source.source_type`. Cases: (a) every allowed value read from the enum is accepted; (b) each invalid value (`"INVALID"`, lowercase of a valid value, trailing space, `""`) raises `sqlalchemy.exc.IntegrityError` on execute, **parametrized per (column, invalid value)** so every case gets its own `db` fixture and a failed statement cannot contaminate the next; (c) updating a valid row to an invalid value raises `IntegrityError`; (d) inserting NULL raises `IntegrityError` (existing NOT NULL, not the new constraint; guards the spec edge case). Child tables need a parent `Entity` (and a second one for `EntityRelation`) built with `Category`/`EntityType` members. Insert invalid values with `sqlalchemy.insert()` on the table or `session.execute(text(...))`, not via the enum, to mimic raw SQL
+- [X] T003 [US1] Run the new file and confirm it fails for the right reason: the invalid-value cases *do not raise* (no constraint yet). Commit as `test(entities): add failing tests for enum CHECK constraints`
 
 ### Implementation
 
