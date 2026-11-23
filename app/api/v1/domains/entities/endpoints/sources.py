@@ -1,11 +1,13 @@
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from fastapi_cache.decorator import cache
 from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.api.common.cache import SOURCES_TTL
 from app.api.v1.shared.deps import get_db, get_current_active_superuser
 from app.api.v1.domains.entities.services import source
 from app.api.v1.domains.entities.models.source import Source
@@ -29,6 +31,7 @@ router = APIRouter(prefix="/sources", tags=["sources"])
         200: {"description": "Successful retrieval of sources"},
     },
 )
+@cache(expire=SOURCES_TTL)
 def list_sources(
     db: Annotated[Session, Depends(get_db)],
     source_type: Annotated[
@@ -71,6 +74,7 @@ def list_sources(
         404: {"description": "Source not found"},
     },
 )
+@cache(expire=SOURCES_TTL)
 def get_source(
     db: Annotated[Session, Depends(get_db)],
     id: Annotated[int, Path(gt=0, description="Source ID", examples=[1])],

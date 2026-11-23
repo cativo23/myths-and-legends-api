@@ -6,9 +6,17 @@ process. See specs/004-cache-reference-reads/ for the decisions behind it.
 """
 
 import asyncio
+import json
+from enum import Enum
+from typing import Any, Callable, Dict, Optional, Tuple
 
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.inmemory import InMemoryBackend
+from starlette.requests import Request
+from starlette.responses import Response
+
+REFERENCE_TTL = 300  # categories and entity types: seconds
+SOURCES_TTL = 60
 
 
 class ReferenceCacheBackend(InMemoryBackend):
@@ -23,10 +31,41 @@ class ReferenceCacheBackend(InMemoryBackend):
         self._lock = asyncio.Lock()
 
 
+def reference_key_builder(
+    func: Callable[..., Any],
+    namespace: str = "",
+    *,
+    request: Optional[Request] = None,
+    response: Optional[Response] = None,
+    args: Tuple[Any, ...],
+    kwargs: Dict[str, Any],
+) -> str:
+    """Build the cache key from the endpoint and its validated parameters only.
+
+    The library's default builder hashes ``str(kwargs)``, which includes the DB
+    Session (its repr has a memory address), so every request would be a miss.
+    Filtering by value type drops the Session without naming it, and ignores the
+    raw query string, so unknown query params cannot create new entries.
+    """
+    params = {
+        name: value.value if isinstance(value, Enum) else value
+        for name, value in kwargs.items()
+        if isinstance(value, (str, int, float, bool, Enum, type(None)))
+    }
+    return (
+        f"{namespace}:{func.__module__}.{func.__qualname__}:"
+        f"{json.dumps(params, sort_keys=True)}"
+    )
+
+
 def init_cache() -> None:
     """Create a fresh, empty cache; called on every application startup.
 
     FastAPICache.init is a no-op when already initialised, hence the reset.
     """
     FastAPICache.reset()
-    FastAPICache.init(ReferenceCacheBackend(), prefix="myths-cache")
+    FastAPICache.init(
+        ReferenceCacheBackend(),
+        prefix="myths-cache",
+        key_builder=reference_key_builder,
+    )

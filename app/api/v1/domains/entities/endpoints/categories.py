@@ -1,11 +1,13 @@
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from fastapi_cache.decorator import cache
 from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.api.common.cache import REFERENCE_TTL
 from app.api.v1.shared.deps import get_db, get_current_active_superuser
 from app.api.v1.domains.entities.services import category
 from app.api.v1.domains.entities.models.category import Category
@@ -28,6 +30,7 @@ router = APIRouter(prefix="/categories", tags=["categories"])
         200: {"description": "Successful retrieval of categories"},
     },
 )
+@cache(expire=REFERENCE_TTL)
 def list_categories(
     db: Annotated[Session, Depends(get_db)],
     page: Annotated[int, Query(ge=1, description="Page number")] = 1,
@@ -59,6 +62,7 @@ def list_categories(
         404: {"description": "Category not found"},
     },
 )
+@cache(expire=REFERENCE_TTL)
 def get_category(
     db: Annotated[Session, Depends(get_db)],
     id: Annotated[int, Path(gt=0, description="Category ID", examples=[1])],
