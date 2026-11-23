@@ -67,7 +67,7 @@ None. No dependency, config or schema change blocks the stories.
 - [X] T013 [US2] Implement `upgrade()` in that migration: for each entry build the query with `sa.table()` / `sa.column()` constructs (`select(col).distinct().where(col.not_in(allowed))`, no identifier interpolation into raw SQL) and run it via `op.get_bind()`; collect offenders across all five columns and raise one `RuntimeError` naming table, column and values (no data changes); only if none, call `op.create_check_constraint` for each
 - [X] T014 [US2] Implement `downgrade()`: `op.drop_constraint(name, table, type_='check')` for the five constraints, in reverse order
 - [X] T015 [US2] Run T011's sync test green and commit as `feat(db): add migration for enum CHECK constraints`
-- [ ] T016 [US2] Execute quickstart.md steps 3 to 7 against the dev PostgreSQL 15 (clean upgrade, direct invalid insert rejected per column, down, up again with identical `pg_dump -s`/constraint listing, abort on one deliberately dirty row then cleanup). Record the observed outputs (constraint listing, the abort message, final `alembic current`) in the PR description; leave the dev DB at head with no invalid rows
+- [X] T016 [US2] Execute quickstart.md steps 3 to 7 against the dev PostgreSQL 15 (clean upgrade, direct invalid insert rejected per column, down, up again with identical `pg_dump -s`/constraint listing, abort on one deliberately dirty row then cleanup). Record the observed outputs (constraint listing, the abort message, final `alembic current`) in the PR description; leave the dev DB at head with no invalid rows
 
 **Checkpoint**: migration verified up → down → up on real PostgreSQL (constitution V).
 
@@ -79,14 +79,14 @@ None. No dependency, config or schema change blocks the stories.
 
 **Independent Test**: full suite green with no pre-existing test modified.
 
-- [ ] T017 [US3] Run `./myths test` (full suite with coverage): expect all green, coverage at or above the 68% gate; confirm `git diff --stat -- tests/` shows only additions to the new file
-- [ ] T018 [US3] Execute quickstart.md step 8 (`GET /api/v1/categories`, `GET /api/v1/entity-types` return 200 with seeded values)
+- [X] T017 [US3] Run `./myths test` (full suite with coverage): expect all green, coverage at or above the 68% gate; confirm `git diff --stat -- tests/` shows only additions to the new file
+- [X] T018 [US3] Execute quickstart.md step 8 (`GET /api/v1/categories`, `GET /api/v1/entity-types` return 200 with seeded values)
 
 ---
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T019 Update `docs/ROADMAP.md`: mark session 1.1 done (feature `specs/002-enum-check-constraints/`, #68 to close by hand), refresh the status date, and record follow-ups: `./myths psql` targets nonexistent service `pgsql` (should be `db`); enum edits now require a migration (sync test guards it). Add an `[Unreleased]` CHANGELOG entry in `CHANGELOG.md`. Commit as `docs(roadmap): close session 1.1 and record follow-ups`
+- [X] T019 Update `docs/ROADMAP.md`: mark session 1.1 done (feature `specs/002-enum-check-constraints/`, #68 to close by hand), refresh the status date, and record follow-ups: `./myths psql` targets nonexistent service `pgsql` (should be `db`); enum edits now require a migration (sync test guards it). Add an `[Unreleased]` CHANGELOG entry in `CHANGELOG.md`. Commit as `docs(roadmap): close session 1.1 and record follow-ups`
 - [ ] T020 Self-review the full diff as if written by someone else (constitution workflow): naming, WHY comments, no stray files, `docs/superpowers/plans/` not included
 - [ ] T021 Push `feature/enum-check-constraints`, open a PR against `develop` (title under 70 chars, imperative), wait for green CI, merge with `gh pr merge --admin --merge`, confirm develop's post-merge CI is green, delete the branch, close #68 by hand after verifying against the code
 

@@ -21,11 +21,11 @@ Q='psql -U "$POSTGRES_USER" "$POSTGRES_DB" -At -c'
    "ck_category_name"`. Repeat one invalid insert per column.
 5. **Down**: `./myths alembic downgrade -1` → the five constraints are gone, row counts unchanged.
 6. **Up again**: `./myths alembic upgrade head` succeeds; capture
-   `pg_dump -s` (or the step 3 query) after steps 3 and 6 and confirm identical (SC-004).
+   `pg_dump -s` after steps 3 and 6 and confirm identical (SC-004). Filter the random `\restrict` / `\unrestrict` nonce lines first, e.g. `grep -v -E '^\\(un)?restrict'`; they are the only thing that differs between dumps.
 7. **Abort on dirty data (SC-003)**: after step 5 (constraints absent), insert one invalid row
    (e.g. `insert into source (entity_id, source_type, title) values (1, 'PODCAST', 'x')`), run
    `./myths alembic upgrade head`; expect a single error naming `source`, `source_type`,
    `PODCAST`, and `./myths alembic current` still at the previous revision with zero constraints.
    Delete the invalid row and re-run the upgrade successfully.
-8. **API smoke**: `GET /api/v1/categories` and `GET /api/v1/entity-types` return 200 with seeded
+8. **API smoke**: `curl -L` on `/api/v1/categories` and `/api/v1/entity-types` (without `-L` they answer 307 for the missing trailing slash) return 200 with seeded
    values.
