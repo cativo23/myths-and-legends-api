@@ -27,7 +27,7 @@ description: "Task list for caching public reference-data reads"
 
 ### Tests (write first, see them fail)
 
-- [ ] T003 Create `tests/test_cache_reference_reads.py` with `should_start_each_application_startup_with_an_empty_cache`: inside one test, enter `with TestClient(app)` (import `app` from `app.main`, override `get_db` like the `client` fixture does, or reuse a helper in the test file), write an entry through `FastAPICache.get_backend().set(...)` (async: use `asyncio.run` or anyio), leave the context, enter a new one and assert the backend store is empty
+- [ ] T003 Create `tests/test_cache_reference_reads.py` with `should_start_each_application_startup_with_an_empty_cache`: inside one test, enter `with TestClient(app)` (import `app` from `app.main`; no `get_db` override needed, this test never touches the DB), write an entry through `FastAPICache.get_backend().set(...)` (async: use `asyncio.run` or anyio), leave the context, enter a new one and assert the backend store is empty
 - [ ] T004 Run it and confirm it fails for the right reason (`FastAPICache` not initialised: "You must call init first"). Commit as `test(cache): add startup isolation test for the response cache`
 
 ### Implementation
@@ -46,7 +46,7 @@ description: "Task list for caching public reference-data reads"
 
 ### Tests (write first, see them fail)
 
-- [ ] T006 [US1] In `tests/test_cache_reference_reads.py` add, parametrised over categories, entity-types and sources: `should_serve_list_from_cache_within_ttl` (GET list, mutate the row via `db`, GET again: old body) and `should_serve_detail_from_cache_within_ttl` (same for `GET /{id}`)
+- [ ] T006 [US1] In `tests/test_cache_reference_reads.py` add, parametrised over categories, entity-types and sources: `should_serve_list_from_cache_within_ttl` (GET list, mutate the row via `db`, GET again: old body) and `should_serve_detail_from_cache_within_ttl` (same for `GET /{id}`), plus `should_keep_cached_endpoints_as_plain_def` (*guard*, FR-007 / Constitution IV: for the 6 endpoint functions, `inspect.iscoroutinefunction(fn.__wrapped__)` is False; the guard passes only once the decorators exist, so it is red until T010-T012)
 - [ ] T007 [US1] Add `should_keep_stale_data_after_a_superuser_update_until_ttl` (GET category, PUT a new name with `superuser_headers`, GET again still shows the old name: accepted staleness, spec Story 1 scenario 3) and `should_advertise_the_configured_ttl_in_cache_control` (first response `Cache-Control: max-age=300` for categories and entity-types, `max-age=60` for sources)
 - [ ] T008 [US1] Run the new tests and confirm they fail for the right reason (no caching yet: second GET returns fresh data; no `Cache-Control`). Commit as `test(cache): cover cached reads of reference data`
 
@@ -56,7 +56,7 @@ description: "Task list for caching public reference-data reads"
 - [ ] T010 [P] [US1] Add `@cache(expire=REFERENCE_TTL)` (from `fastapi_cache.decorator`) below `@router.get` on `list_categories` and `get_category` in `app/api/v1/domains/entities/endpoints/categories.py`; functions stay `def`
 - [ ] T011 [P] [US1] Same for `list_entity_types` and `get_entity_type` in `entity_types.py`
 - [ ] T012 [P] [US1] Same for `list_sources` and `get_source` in `sources.py` with `expire=SOURCES_TTL`
-- [ ] T013 [US1] Run T006-T007 until green, then the files of the three domains (`./myths test tests/domains --no-cov`) to confirm existing endpoint tests still pass (cache cleared per client startup). Commit as `feat(cache): cache public reads of categories, entity types and sources`
+- [ ] T013 [US1] Run T006-T007 until green, then the files of the three domains (`./myths test tests/domains --no-cov`) to confirm existing endpoint tests still pass unchanged (FR-014: same behavior on a miss; cache is fresh per client startup). Commit as `feat(cache): cache public reads of categories, entity types and sources`
 
 **Checkpoint**: MVP. The cache works; Story 2 hardens it.
 
@@ -72,7 +72,7 @@ description: "Task list for caching public reference-data reads"
 
 - [ ] T014 [US2] Add `should_return_data_matching_each_parameter_combination` (different `page`, `size`, `sort`, `order`, `source_type` each return their own correct data after being cached) and `should_ignore_unknown_query_params_in_the_cache_key` (*guard*: `?foo=1` and `?foo=2` produce no new store entries; passes already if T009 is right)
 - [ ] T015 [US2] Add `should_not_cache_not_found_responses` (*guard*: GET missing id gives 404, create it, GET gives 200), `should_not_cache_validation_errors` (*guard*: `size=0` gives 422 and the store stays empty) and `should_return_same_body_for_anonymous_and_authenticated_callers` (*guard*)
-- [ ] T016 [US2] Add `should_not_cache_empty_pages`: request `?page=99` on a list (store stays empty), then create enough rows that page 99 would exist... simpler: GET list of an empty table, assert store empty, insert a row, GET again shows it
+- [ ] T016 [US2] Add `should_not_cache_empty_pages`: GET a list on an empty table (the backend store has no entry), insert a row, GET again and the row appears; repeat with `?page=99` on a table that has rows (store gets no entry for that page)
 - [ ] T017 [US2] Run them; confirm `should_not_cache_empty_pages` fails for the right reason (empty page is stored, so the new row is hidden) and the *guard* tests pass. Commit as `test(cache): guard cache keys, error handling and empty pages`
 
 ### Implementation
@@ -103,8 +103,8 @@ description: "Task list for caching public reference-data reads"
 ## Phase 6: Polish and cross-cutting
 
 - [ ] T024 [P] Update `CHANGELOG.md` `[Unreleased]` (Added: response cache for categories, entity types and sources with TTLs and staleness note; closes #26) and `docs/ROADMAP.md` (mark 1.3 done, status line, notes: jinja2 hidden dependency, empty pages not cached, per-worker cache, `no-cache` bypass; keep the Redis/invalidation items out of scope). Commit as `docs(roadmap): close session 1.3 and record follow-ups`
-- [ ] T025 Run `uvx black --check app`, then the full `./myths test` (coverage at or above the 68% gate), then quickstart.md manual steps against the running stack
-- [ ] T026 Self-review the full diff as if written by someone else (secrets, keys, Constitution Check re-read, comments explain why); mark every task `[X]`; run `/speckit-analyze` before implementing and `/speckit-converge` after
+- [ ] T025 Run `uvx black --check app`, then the full `./myths test` (SC-005: green, coverage at or above the 68% gate), then quickstart.md manual steps against the running stack
+- [ ] T026 Self-review the full diff as if written by someone else (secrets, keys, Constitution Check re-read, comments explain why); mark every task `[X]`; run `/speckit-converge` after implementing (analyze already ran before implementation)
 
 ---
 
