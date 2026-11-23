@@ -29,7 +29,9 @@ class Entity(Base):
     entity_type_id: Mapped[int] = mapped_column(
         ForeignKey("entity_type.id"), nullable=False, index=True
     )
-    description: Mapped[str | None] = mapped_column(Text, nullable=True, index=True)
+    # No index=True: a B-tree cannot serve ILIKE '%term%'. Search uses the trigram
+    # index created in the migration (SQLite create_all cannot build it).
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
     origin: Mapped[str | None] = mapped_column(Text, nullable=True)
     behavior: Mapped[str | None] = mapped_column(Text, nullable=True)
     image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
