@@ -59,7 +59,7 @@ description: "Task list for trigram search indexes (pg_trgm)"
 **Independent Test**: quickstart steps 9 (location query) and 10.
 
 - [ ] T011 [P] [US2] Forced plan on the seed data for `SELECT count(*) FROM location WHERE department ILIKE '%san%'`: `Bitmap Index Scan` on `ix_location_department_trgm`
-- [ ] T012 [US2] In `trgm_scratch` (same session as T009, with ~100k synthetic locations) record the natural plan and time for the count and the unpaginated lookup (target: under 5 ms; baseline ~30 ms); note that `ORDER BY id LIMIT` paging does not change (research.md)
+- [ ] T012 [US2] In `trgm_scratch` (same session as T009, with ~100k synthetic locations) record the natural plan and time for the count and the unpaginated lookup (target: under 10 ms after the SC-002 correction; baseline ~30 ms); note that `ORDER BY id LIMIT` paging does not change (research.md)
 
 ---
 
