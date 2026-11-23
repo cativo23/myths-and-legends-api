@@ -87,7 +87,7 @@ None. No dependency, config or schema change blocks the stories.
 ## Phase 6: Polish & Cross-Cutting
 
 - [X] T019 Update `docs/ROADMAP.md`: mark session 1.1 done (feature `specs/002-enum-check-constraints/`, #68 to close by hand), refresh the status date, and record follow-ups: `./myths psql` targets nonexistent service `pgsql` (should be `db`); enum edits now require a migration (sync test guards it). Add an `[Unreleased]` CHANGELOG entry in `CHANGELOG.md`. Commit as `docs(roadmap): close session 1.1 and record follow-ups`
-- [ ] T020 Self-review the full diff as if written by someone else (constitution workflow): naming, WHY comments, no stray files, `docs/superpowers/plans/` not included
+- [X] T020 Self-review the full diff as if written by someone else (constitution workflow): naming, WHY comments, no stray files, `docs/superpowers/plans/` not included
 - [ ] T021 Push `feature/enum-check-constraints`, open a PR against `develop` (title under 70 chars, imperative), wait for green CI, merge with `gh pr merge --admin --merge`, confirm develop's post-merge CI is green, delete the branch, close #68 by hand after verifying against the code
 
 ---
