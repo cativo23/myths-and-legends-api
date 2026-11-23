@@ -7,6 +7,7 @@ which bypass both Pydantic and the Python enums.
 Every case gets its own `db` fixture (fresh database), so a failed statement
 can never contaminate the next case.
 """
+
 import pytest
 from sqlalchemy import insert, update
 from sqlalchemy.exc import IntegrityError
@@ -33,7 +34,9 @@ def _entity_ids(db, count):
     db.add_all([category, entity_type])
     db.flush()
     entities = [
-        Entity(name=f"parent-{i}", category_id=category.id, entity_type_id=entity_type.id)
+        Entity(
+            name=f"parent-{i}", category_id=category.id, entity_type_id=entity_type.id
+        )
         for i in range(count)
     ]
     db.add_all(entities)
@@ -81,13 +84,25 @@ def _label(model, column):
 
 
 ACCEPT_CASES = [
-    pytest.param(model, column, builder, member.value, id=f"{_label(model, column)}-{member.value}")
+    pytest.param(
+        model,
+        column,
+        builder,
+        member.value,
+        id=f"{_label(model, column)}-{member.value}",
+    )
     for model, column, enum_cls, builder in COLUMNS
     for member in enum_cls
 ]
 
 REJECT_CASES = [
-    pytest.param(model, column, builder, make(next(iter(enum_cls)).value), id=f"{_label(model, column)}-{kind}")
+    pytest.param(
+        model,
+        column,
+        builder,
+        make(next(iter(enum_cls)).value),
+        id=f"{_label(model, column)}-{kind}",
+    )
     for model, column, enum_cls, builder in COLUMNS
     for kind, make in INVALID_KINDS.items()
 ]
@@ -137,6 +152,4 @@ def test_should_reject_null_in_enum_column(db, model, column, enum_cls, builder)
     # NULL is refused by the existing NOT NULL, not by the new CHECK (a CHECK
     # passes on NULL); this pins the spec edge case so neither guard regresses.
     with pytest.raises(IntegrityError):
-        db.execute(
-            insert(model.__table__).values(**{column: None}, **builder(db))
-        )
+        db.execute(insert(model.__table__).values(**{column: None}, **builder(db)))
