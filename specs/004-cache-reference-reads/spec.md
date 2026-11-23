@@ -78,7 +78,7 @@ Cached responses carry standard HTTP cache headers so clients can cache and reva
 - A write (POST/PUT/DELETE) on a cached resource does not invalidate anything; data may be stale up to the TTL (60 s sources, 300 s categories/entity-types).
 - Multiple application workers each keep their own memory cache; staleness windows and ETags can differ between workers.
 - Cache entries are lost on restart; the first requests after a restart reach the database.
-- Cache state must not persist between tests (cleared by an autouse fixture).
+- Cache state must not persist between tests (a fresh cache is created on every application startup).
 - Cache storage failure must not break the endpoint (fall back to the database).
 
 ## Requirements *(mandatory)*
@@ -96,7 +96,7 @@ Cached responses carry standard HTTP cache headers so clients can cache and reva
 - **FR-009**: Cached endpoints MUST remain subject to rate limiting, security headers, CORS and request id.
 - **FR-010**: Memory growth of the cache MUST be bounded by the real data: list responses with no items (out-of-range pages) MUST NOT be cached, and error responses are never cached (FR-005), so the key space is limited to existing rows × valid `size`/`sort`/`order`/`source_type` values.
 - **FR-011**: A cache backend failure MUST degrade to a normal database read, not an error.
-- **FR-012**: The test suite MUST start every test with an empty cache, without a configuration flag.
+- **FR-012**: The test suite MUST start every test with an empty cache, without a configuration flag (fresh cache per application startup, which each test client triggers).
 - **FR-013**: The new dependency MUST be capped in `requirements.in` and the hashed lock regenerated; it MUST be compatible with the pinned FastAPI/Starlette/Pydantic and not pull Redis.
 - **FR-014**: Endpoint behaviour on a cache miss (bodies, status codes, pagination envelope, error envelope) MUST be identical to today.
 
