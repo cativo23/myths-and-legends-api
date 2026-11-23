@@ -59,14 +59,14 @@ None. No dependency, config or schema change blocks the stories.
 
 ### Tests (write first)
 
-- [ ] T011 [US2] Add to `tests/domains/test_enum_check_constraints.py` a sync test that loads the migration module by path (`importlib.util.spec_from_file_location` on `alembic/versions/*_add_enum_check_constraints.py`) and asserts its frozen `CHECKS` values equal the five enums and its constraint names equal the names on the models' `__table_args__` (research.md R5). Confirm it fails because the migration does not exist yet
+- [X] T011 [US2] Add to `tests/domains/test_enum_check_constraints.py` a sync test that loads the migration module by path (`importlib.util.spec_from_file_location` on `alembic/versions/*_add_enum_check_constraints.py`) and asserts its frozen `CHECKS` values equal the five enums and its constraint names equal the names on the models' `__table_args__` (research.md R5). Confirm it fails because the migration does not exist yet
 
 ### Implementation
 
-- [ ] T012 [US2] Create the migration with `./myths alembic revision -m "add enum check constraints"` (hand-written, not autogenerate: Alembic does not compare CHECK constraints), `down_revision = '0f2ce4cae13f'`. Define a module-level `CHECKS` list of `(table, column, constraint_name, allowed_values)` hardcoded from data-model.md for all five columns (`Category.name`, `EntityType.name`, `Characteristic.type`, `EntityRelation.relation_type`, `Source.source_type`)
-- [ ] T013 [US2] Implement `upgrade()` in that migration: for each entry build the query with `sa.table()` / `sa.column()` constructs (`select(col).distinct().where(col.not_in(allowed))`, no identifier interpolation into raw SQL) and run it via `op.get_bind()`; collect offenders across all five columns and raise one `RuntimeError` naming table, column and values (no data changes); only if none, call `op.create_check_constraint` for each
-- [ ] T014 [US2] Implement `downgrade()`: `op.drop_constraint(name, table, type_='check')` for the five constraints, in reverse order
-- [ ] T015 [US2] Run T011's sync test green and commit as `feat(db): add migration for enum CHECK constraints`
+- [X] T012 [US2] Create the migration with `./myths alembic revision -m "add enum check constraints"` (hand-written, not autogenerate: Alembic does not compare CHECK constraints), `down_revision = '0f2ce4cae13f'`. Define a module-level `CHECKS` list of `(table, column, constraint_name, allowed_values)` hardcoded from data-model.md for all five columns (`Category.name`, `EntityType.name`, `Characteristic.type`, `EntityRelation.relation_type`, `Source.source_type`)
+- [X] T013 [US2] Implement `upgrade()` in that migration: for each entry build the query with `sa.table()` / `sa.column()` constructs (`select(col).distinct().where(col.not_in(allowed))`, no identifier interpolation into raw SQL) and run it via `op.get_bind()`; collect offenders across all five columns and raise one `RuntimeError` naming table, column and values (no data changes); only if none, call `op.create_check_constraint` for each
+- [X] T014 [US2] Implement `downgrade()`: `op.drop_constraint(name, table, type_='check')` for the five constraints, in reverse order
+- [X] T015 [US2] Run T011's sync test green and commit as `feat(db): add migration for enum CHECK constraints`
 - [ ] T016 [US2] Execute quickstart.md steps 3 to 7 against the dev PostgreSQL 15 (clean upgrade, direct invalid insert rejected per column, down, up again with identical `pg_dump -s`/constraint listing, abort on one deliberately dirty row then cleanup). Record the observed outputs (constraint listing, the abort message, final `alembic current`) in the PR description; leave the dev DB at head with no invalid rows
 
 **Checkpoint**: migration verified up → down → up on real PostgreSQL (constitution V).

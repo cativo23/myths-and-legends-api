@@ -8,8 +8,11 @@ Every case gets its own `db` fixture (fresh database), so a failed statement
 can never contaminate the next case.
 """
 
+import importlib.util
+from pathlib import Path
+
 import pytest
-from sqlalchemy import insert, update
+from sqlalchemy import CheckConstraint, insert, update
 from sqlalchemy.exc import IntegrityError
 
 from app.api.v1.domains.entities.enums import (
@@ -153,3 +156,41 @@ def test_should_reject_null_in_enum_column(db, model, column, enum_cls, builder)
     # passes on NULL); this pins the spec edge case so neither guard regresses.
     with pytest.raises(IntegrityError):
         db.execute(insert(model.__table__).values(**{column: None}, **builder(db)))
+
+
+def _load_migration():
+    # Loaded by path: revision files are not importable packages.
+    path = next(
+        Path(__file__)
+        .resolve()
+        .parents[2]
+        .glob("alembic/versions/*_add_enum_check_constraints.py")
+    )
+    spec = importlib.util.spec_from_file_location("enum_check_migration", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_should_keep_migration_values_in_sync_with_enums_and_models():
+    # The migration freezes its own copy of the allowed values (history must not
+    # change when an enum does). If an enum is edited without a new migration,
+    # this fails instead of letting models and real databases diverge.
+    checks = {
+        (table, column): (name, set(allowed))
+        for table, column, name, allowed in _load_migration().CHECKS
+    }
+
+    expected = {
+        (model.__tablename__, column): set(member.value for member in enum_cls)
+        for model, column, enum_cls, _ in COLUMNS
+    }
+    assert {key: allowed for key, (_, allowed) in checks.items()} == expected
+
+    for model, column, _, _ in COLUMNS:
+        model_names = {
+            c.name
+            for c in model.__table__.constraints
+            if isinstance(c, CheckConstraint)
+        }
+        assert checks[(model.__tablename__, column)][0] in model_names
