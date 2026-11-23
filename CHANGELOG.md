@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Database-level `CHECK` constraints on the enum-like columns `category.name`,
+  `entity_type.name`, `characteristic.type`, `entity_relation.relation_type` and
+  `source.source_type` (migration `ce04f762989d`), so raw SQL or bulk imports can
+  no longer store values outside the allowed sets (#68). The upgrade aborts with
+  a message listing table, column and offending values if existing rows violate
+  them, and never modifies data. Adding or renaming an enum value now needs a
+  migration that updates the constraint (a test fails otherwise).
 - Write endpoints for the entities domain (all superuser-gated):
   - `POST`, `PUT`, `DELETE` for categories (`/api/v1/categories`)
   - `POST`, `PUT`, `DELETE` for entity types (`/api/v1/entity-types`)

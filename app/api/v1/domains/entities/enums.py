@@ -1,5 +1,17 @@
 from enum import Enum
 
+from sqlalchemy import CheckConstraint
+
+
+def enum_check(column: str, enum_cls: type[Enum], name: str) -> CheckConstraint:
+    """CHECK constraint restricting `column` to the values of `enum_cls`.
+
+    Built from the enum (not hand-typed) so the DB guard cannot drift from the
+    Python enum. Values are developer-defined constants, never user input.
+    """
+    values = ", ".join(f"'{member.value}'" for member in enum_cls)
+    return CheckConstraint(f"{column} IN ({values})", name=name)
+
 
 class CategoryName(str, Enum):
     MYTH = "MYTH"

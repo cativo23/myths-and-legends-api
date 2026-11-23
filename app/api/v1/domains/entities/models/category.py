@@ -4,7 +4,7 @@ from sqlalchemy import String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
-from app.api.v1.domains.entities.enums import CategoryName
+from app.api.v1.domains.entities.enums import CategoryName, enum_check
 
 if TYPE_CHECKING:
     from app.api.v1.domains.entities.models.entity import Entity
@@ -19,3 +19,5 @@ class Category(Base):
 
     # Relationships
     entities: Mapped[list["Entity"]] = relationship("Entity", back_populates="category")
+
+    __table_args__ = (enum_check("name", CategoryName, "ck_category_name"),)

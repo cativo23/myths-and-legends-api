@@ -4,7 +4,7 @@ from sqlalchemy import String, Text, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
-from app.api.v1.domains.entities.enums import RelationType
+from app.api.v1.domains.entities.enums import RelationType, enum_check
 
 if TYPE_CHECKING:
     from app.api.v1.domains.entities.models.entity import Entity
@@ -45,4 +45,5 @@ class EntityRelation(Base):
         ),
         Index("ix_entity_relation_origin", "entity_origin_id"),
         Index("ix_entity_relation_destination", "entity_destination_id"),
+        enum_check("relation_type", RelationType, "ck_entity_relation_relation_type"),
     )

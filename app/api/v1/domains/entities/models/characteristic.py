@@ -4,7 +4,7 @@ from sqlalchemy import String, Text, ForeignKey, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
-from app.api.v1.domains.entities.enums import CharacteristicType
+from app.api.v1.domains.entities.enums import CharacteristicType, enum_check
 
 if TYPE_CHECKING:
     from app.api.v1.domains.entities.models.entity import Entity
@@ -23,4 +23,7 @@ class Characteristic(Base):
     # Relationships
     entity: Mapped["Entity"] = relationship("Entity", back_populates="characteristics")
 
-    __table_args__ = (Index("ix_characteristic_entity_type", "entity_id", "type"),)
+    __table_args__ = (
+        Index("ix_characteristic_entity_type", "entity_id", "type"),
+        enum_check("type", CharacteristicType, "ck_characteristic_type"),
+    )

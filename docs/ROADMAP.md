@@ -5,7 +5,7 @@
 **Alcance:** API + frontend + deploy (decidido por Carlos).
 **Fuentes:** `docs/superpowers/specs/2026-07-16-backend-phase1-hardening-design.md`, issues/PRs abiertos, `reviews/code-review-report.md`, CHANGELOG.
 
-> Estado al 2026-11-18: Fase 0 completa (#73–#81 en `develop`; la sesión 0.5 está en su PR). Issues abiertos: #26, #31, #54, #60, #68.
+> Estado al 2026-11-23: Fase 0 completa; sesión 1.1 hecha (#68 se cierra a mano tras el merge). Issues abiertos: #26, #31, #54, #60.
 
 ---
 
@@ -27,7 +27,7 @@ Meta: contrato de API estable y robusto para el frontend. Cada sesión es una fe
 
 | Sesión | Feature | Cierra | Notas |
 |---|---|---|---|
-| **1.1** | CHECK constraints en columnas enum (`Category.name`, `EntityType.name`, `Characteristic.type`, `EntityRelation.relation_type`, `Source.source_type`) | #68 | Migración Alembic, verificar up/down/up en Postgres real |
+| **1.1** ✅ | CHECK constraints en columnas enum (`Category.name`, `EntityType.name`, `Characteristic.type`, `EntityRelation.relation_type`, `Source.source_type`) | #68 | `specs/002-enum-check-constraints/`. Migración `ce04f762989d` verificada up/down/up en Postgres 15; aborta sin tocar datos si hay filas fuera del enum. Editar un enum ahora exige migración (un test lo detecta) |
 | **1.2** | Búsqueda con `pg_trgm` (extensión + índices GIN; dropear `ix_entity_description`) | #60 | Sin cambio de query, solo índices |
 | **1.3** | Caching `fastapi-cache2` InMemory en GET de categories/entity-types (5–10 min) y sources (60 s) | #26 | Sin invalidación explícita |
 | **1.4** | Leftovers #54: validar `sort` en countries/users, `max_length` en params libres, rate limit en `reset-password`, docstring del limiter, test de `Settings()` sin secretos, quitar default `POSTGRES_PASSWORD:-myths` | #54 | Una concern por commit |
@@ -71,3 +71,5 @@ Meta: UI completa consumiendo la API. Decisión previa en 2.1: repo separado vs 
 5. **Dependencias:** resuelto en 0.4 y 0.5 (FastAPI 0.135, SQLAlchemy 2.0, Pydantic; topes en `requirements.in`, versiones exactas en el lock `requirements.txt`). Lección: un tope solo por major no alcanzó (`fastapi-pagination` 0.15.16 rompió la app en CI); el lock con hashes lo previene. Pendiente: subir el tope de `fastapi-pagination` (`<0.15.16`) cuando salga un fix, con `-P fastapi-pagination`.
 6. **Contenedor `api` corre como root** (el Dockerfile no define `USER`), lo que contradice Constitution II (least privilege) y origina artefactos root-owned en el bind mount. Sin sesión asignada; candidato a la fase de deploy (3.2) o a una sesión propia.
 7. **Passwords con bytes NUL:** pasaron de rechazados (500 latente) a aceptados al reemplazar passlib; verificado y con test. Sin acción pendiente.
+8. **`./myths psql` roto:** apunta al servicio `pgsql`, pero el servicio de compose se llama `db`. Hallado en 1.1 (se consultó con `docker compose exec -T db psql`). Sin sesión asignada; arreglo de una línea en `myths`.
+9. **Migraciones en modo offline (`alembic --sql`)** no funcionan con `ce04f762989d`: el pre-chequeo necesita conexión. El proyecto no usa modo offline; se deja así (YAGNI).
