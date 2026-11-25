@@ -942,3 +942,72 @@ class TestEntitiesEndpoints:
             headers=superuser_headers,
         )
         assert second.status_code == 409
+
+
+class TestEntitiesListSorting:
+    """sort/order are validated and applied before pagination (issue #54)."""
+
+    URL = "/api/v1/entities/"
+
+    @pytest.fixture
+    def entities(self, db: Session) -> None:
+        from datetime import datetime
+
+        category = Category(name=CategoryName.MYTH, description="A myth")
+        entity_type = EntityType(name=EntityTypeName.CHARACTER, description="A character")
+        db.add_all([category, entity_type])
+        db.commit()
+        # Insert order (id) differs from both name order and created_at order.
+        for name, day in [("Cyclops", 2), ("Anubis", 3), ("Bastet", 1)]:
+            db.add(
+                Entity(
+                    name=name,
+                    category_id=category.id,
+                    entity_type_id=entity_type.id,
+                    is_active=True,
+                    created_at=datetime(2026, 1, day),
+                )
+            )
+        db.commit()
+
+    def _all_names(self, client, **params):
+        """Walk every page (size=2) so ordering is proven across pages."""
+        names, page = [], 1
+        while True:
+            response = client.get(self.URL, params={"size": 2, "page": page, **params})
+            assert response.status_code == 200
+            items = response.json()["items"]
+            if not items:
+                return names
+            names += [e["name"] for e in items]
+            page += 1
+
+    @pytest.mark.parametrize(
+        "sort, order, expected",
+        [
+            ("name", "asc", ["Anubis", "Bastet", "Cyclops"]),
+            ("name", "desc", ["Cyclops", "Bastet", "Anubis"]),
+            ("id", "asc", ["Cyclops", "Anubis", "Bastet"]),
+            ("id", "desc", ["Bastet", "Anubis", "Cyclops"]),
+            ("created_at", "asc", ["Bastet", "Cyclops", "Anubis"]),
+            ("created_at", "desc", ["Anubis", "Cyclops", "Bastet"]),
+        ],
+    )
+    def test_should_order_across_pages(self, client, entities, sort, order, expected):
+        assert self._all_names(client, sort=sort, order=order) == expected
+
+    def test_should_default_to_name_ascending(self, client, entities):
+        assert self._all_names(client) == ["Anubis", "Bastet", "Cyclops"]
+
+    @pytest.mark.parametrize(
+        "params",
+        [
+            {"sort": "description"},
+            {"sort": "__class__"},
+            {"sort": "is_active"},
+            {"order": "sideways"},
+            {"order": "DESC"},
+        ],
+    )
+    def test_should_reject_values_outside_allowed_set(self, client, params):
+        assert client.get(self.URL, params=params).status_code == 422

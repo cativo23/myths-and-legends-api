@@ -6,6 +6,7 @@ from fastapi_pagination.bases import AbstractPage, AbstractParams
 from fastapi_pagination.ext.sqlalchemy import paginate as paginate_sqlalchemy
 
 from app.api.common.services.base_service import CRUDBaseService
+from app.api.common.sorting import SortOrder, apply_sort
 from app.api.v1.domains.entities.models.entity import Entity
 from app.api.v1.domains.entities.models.entity_relation import EntityRelation
 from app.api.v1.domains.entities.schemas.entity import EntityCreate, EntityUpdate
@@ -79,6 +80,8 @@ class EntityService(CRUDBaseService[Entity, EntityCreate, EntityUpdate]):
         category: CategoryName | None = None,
         is_active: bool | None = True,
         params: AbstractParams | None = None,
+        sort: str = "name",
+        order: SortOrder = "asc",
     ) -> AbstractPage:
         """Get entities with filters, paginated at the DB level.
 
@@ -99,7 +102,7 @@ class EntityService(CRUDBaseService[Entity, EntityCreate, EntityUpdate]):
             category=category,
             is_active=is_active,
         )
-        stmt = stmt.order_by(Entity.id)
+        stmt = apply_sort(stmt, Entity, sort, order)
         return paginate_sqlalchemy(db, stmt, params)
 
     def search(self, db: Session, *, term: str) -> list[Entity]:

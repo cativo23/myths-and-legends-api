@@ -40,8 +40,8 @@ description: "Task list for hardening leftovers of issue #54"
 
 ### Entities — commit `fix(entities): validate sort/order and apply ordering`
 
-- [ ] T011 [US2] Write failing tests in `tests/domains/test_entities.py`: ordering by id/name/created_at asc and desc across pages together with the existing filters, 422 for invalid `sort`/`order`, default name asc
-- [ ] T012 [US2] Add `sort`/`order` parameters to `get_paginated` in `app/api/v1/domains/entities/services/entity.py` using `apply_sort`, and type them in `list_entities` (`app/api/v1/domains/entities/endpoints/entities.py`) as `Literal["id","name","created_at"]` and `SortOrder`
+- [X] T011 [US2] Write failing tests in `tests/domains/test_entities.py`: ordering by id/name/created_at asc and desc across pages together with the existing filters, 422 for invalid `sort`/`order`, default name asc
+- [X] T012 [US2] Add `sort`/`order` parameters to `get_paginated` in `app/api/v1/domains/entities/services/entity.py` using `apply_sort`, and type them in `list_entities` (`app/api/v1/domains/entities/endpoints/entities.py`) as `Literal["id","name","created_at"]` and `SortOrder`
 
 ## Phase 5: User Story 3 — Compose password (P3) — commit `fix(compose): require POSTGRES_PASSWORD instead of a default`
 
