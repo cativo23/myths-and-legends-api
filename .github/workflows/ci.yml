@@ -141,10 +141,12 @@ jobs:
 
       - name: Compose requires POSTGRES_PASSWORD (no insecure default)
         run: |
+          # compose resolves `env_file: .env`, which is gitignored and absent in CI
+          touch .env
           if out=$(POSTGRES_PASSWORD= docker compose config 2>&1); then
             echo "docker compose config succeeded without POSTGRES_PASSWORD"; exit 1
           fi
-          echo "$out" | grep -q "POSTGRES_PASSWORD is required"
+          grep -q "POSTGRES_PASSWORD is required" <<< "$out"
           POSTGRES_PASSWORD=ci-test-postgres-password docker compose config > /dev/null
 
       - name: Build Docker image
