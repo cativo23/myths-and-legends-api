@@ -454,3 +454,31 @@ class TestSourcesEndpoints:
             f"/api/v1/sources/{source_id}", headers=auth_headers
         )
         assert response.status_code == 403
+
+    def test_should_list_null_author_last_in_both_directions(
+        self, client: TestClient, db: Session
+    ):
+        """The shared sort helper lists NULLs last, so `author=None` is never first."""
+        deps = self._seed_dependencies(db)
+        entity = Entity(
+            name="Test Entity",
+            category_id=deps["category_id"],
+            entity_type_id=deps["entity_type_id"],
+        )
+        db.add(entity)
+        db.commit()
+        db.add_all(
+            Source(
+                entity_id=entity.id,
+                source_type=SourceType.BOOK,
+                title=title,
+                author=author,
+            )
+            for title, author in [("A", None), ("B", "Zed"), ("C", "Amy")]
+        )
+        db.commit()
+
+        for order, expected in [("desc", ["Zed", "Amy", None]), ("asc", ["Amy", "Zed", None])]:
+            response = client.get(f"/api/v1/sources/?sort=author&order={order}")
+            assert response.status_code == 200
+            assert [s["author"] for s in response.json()["items"]] == expected

@@ -7,8 +7,8 @@ from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.common.sorting import SortOrder, apply_sort
 from app.api.common.cache import REFERENCE_TTL
+from app.api.common.sorting import SortOrder, apply_sort
 from app.api.v1.shared.deps import get_db, get_current_active_superuser
 from app.api.v1.domains.entities.services import entity_type
 from app.api.v1.domains.entities.models.entity_type import EntityType

@@ -100,7 +100,7 @@ A developer starts the stack without `POSTGRES_PASSWORD` configured. Today the d
 - **FR-008**: Validation failures MUST use the project's standard error envelope and MUST NOT expose internal details (attribute names, stack traces).
 - **FR-009**: The database service in the compose file MUST NOT define a default password; without `POSTGRES_PASSWORD` startup aborts with the message "POSTGRES_PASSWORD is required: set it in .env (see .env.example)".
 - **FR-010**: README MUST document `POSTGRES_PASSWORD` as required with no default.
-- **FR-011**: The observable behavior of categories, entity-types and sources lists (accepted values, default order, responses) MUST NOT change, even though they adopt the shared sorting helper; the reset-password rate limit, limiter docstring and `Settings()` tests MUST remain untouched.
+- **FR-011**: The observable behavior of categories, entity-types and sources lists (accepted values, default order, responses) MUST NOT change, even though they adopt the shared sorting helper. Only two deliberate effects of the helper apply: rows sharing a sort value are tie-broken by id, and NULL values are listed last (this only affects sources `author`, the one nullable sort column, when sorted descending); the reset-password rate limit, limiter docstring and `Settings()` tests MUST remain untouched.
 
 ### Key Entities
 
@@ -126,3 +126,4 @@ A developer starts the stack without `POSTGRES_PASSWORD` configured. Today the d
 - CI does not rely on the compose default (it passes its own password).
 - Entity `sort` allows id, name and created_at only; other columns (long text, flags) are not useful sort keys.
 - Verified 2026-11-25: `Country` has only id, name, status and `User` has no `created_at`; the old OpenAPI examples advertised `created_at` and it silently fell back to `id`. It is not offered for those two lists and no migration is added for it.
+- Entities currently ignore `sort` and always order by id; the documented default (`name` asc) now takes effect, so clients that relied on insertion order will see name order unless they pass `sort=id`.
