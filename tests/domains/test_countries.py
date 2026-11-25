@@ -226,3 +226,52 @@ class TestCountriesEndpoints:
 
         response = client.delete(f"/api/v1/countries/{country.id}", headers=auth_headers)
         assert response.status_code == 403
+
+
+class TestCountriesListValidation:
+    """sort/order accept only allowed values (issue #54)."""
+
+    URL = "/api/v1/countries/"
+
+    @pytest.fixture
+    def three_countries(self, db: Session):
+        db.add_all(
+            [Country(name=n, status=True) for n in ("Peru", "Chile", "Bolivia")]
+        )
+        db.commit()
+
+    @pytest.mark.parametrize("sort", ["__class__", "status", "created_at", "NAME"])
+    def test_should_reject_sort_outside_allowed_values(self, client, sort):
+        assert client.get(self.URL, params={"sort": sort}).status_code == 422
+
+    @pytest.mark.parametrize("order", ["sideways", "DESC", ""])
+    def test_should_reject_order_outside_allowed_values(self, client, order):
+        assert client.get(self.URL, params={"order": order}).status_code == 422
+
+    def test_should_ignore_removed_relations_param_instead_of_failing(
+        self, client, three_countries
+    ):
+        # Country has no relationships; `relations` used to hit getattr and 500.
+        response = client.get(self.URL, params={"relations": "entities"})
+        assert response.status_code == 200
+        assert len(response.json()) == 3
+
+    def test_should_ignore_removed_relations_param_on_detail(self, client, db):
+        country = Country(name="Peru", status=True)
+        db.add(country)
+        db.commit()
+
+        response = client.get(f"{self.URL}{country.id}", params={"relations": "entities"})
+        assert response.status_code == 200
+
+    def test_should_sort_by_name_descending(self, client, three_countries):
+        response = client.get(self.URL, params={"sort": "name", "order": "desc"})
+        assert [c["name"] for c in response.json()] == ["Peru", "Chile", "Bolivia"]
+
+    def test_should_default_to_name_ascending(self, client, three_countries):
+        response = client.get(self.URL)
+        assert [c["name"] for c in response.json()] == ["Bolivia", "Chile", "Peru"]
+
+    def test_should_sort_by_id(self, client, three_countries):
+        response = client.get(self.URL, params={"sort": "id", "order": "asc"})
+        assert [c["name"] for c in response.json()] == ["Peru", "Chile", "Bolivia"]

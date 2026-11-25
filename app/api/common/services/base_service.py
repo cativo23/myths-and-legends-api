@@ -10,6 +10,7 @@ from sqlalchemy.exc import ArgumentError, IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.common.exceptions.api_exception import RelationshipNotFoundException
+from app.api.common.sorting import SortOrder, apply_sort
 from app.db.base_class import Base
 
 ModelType = TypeVar("ModelType", bound=Base)
@@ -64,11 +65,17 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def __init__(self, model: Type[ModelType]):
         self.model = model
 
-    def _build_query(self, relations: List[str] | None = None):
-        """Build a select query with optional eager loading, ordered by id for
-        stable pagination (without an explicit ORDER BY, offset/limit results
-        are not guaranteed to be stable across concurrent writes)."""
-        stmt = select(self.model).order_by(self.model.id)
+    def _build_query(
+        self,
+        relations: List[str] | None = None,
+        sort: str = "id",
+        order: SortOrder = "asc",
+    ):
+        """Build a select query with optional eager loading, always ordered
+        (by id unless `sort` is given; without an explicit ORDER BY, offset/limit
+        results are not guaranteed to be stable across concurrent writes).
+        `sort` must be validated by the caller."""
+        stmt = apply_sort(select(self.model), self.model, sort, order)
         if relations:
             stmt = stmt.options(
                 *[selectinload(getattr(self.model, r)) for r in relations]
@@ -94,10 +101,12 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         skip: int = 0,
         limit: int = 100,
         relations: List[str] | None = None,
+        sort: str = "id",
+        order: SortOrder = "asc",
     ) -> list[ModelType]:
         """Get multiple items with pagination and optional relations."""
         try:
-            stmt = self._build_query(relations).offset(skip).limit(limit)
+            stmt = self._build_query(relations, sort, order).offset(skip).limit(limit)
             return db.execute(stmt).scalars().all()
         except ArgumentError as error:
             raise RelationshipNotFoundException(
@@ -110,6 +119,8 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         relations: List[str] | None = None,
         *,
         params: AbstractParams | None = None,
+        sort: str = "id",
+        order: SortOrder = "asc",
     ) -> AbstractPage:
         """Get all items with pagination (fastapi-pagination).
 
@@ -120,7 +131,7 @@ class CRUDBaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         other query params to validate) so the two don't drift out of sync.
         """
         try:
-            stmt = self._build_query(relations)
+            stmt = self._build_query(relations, sort, order)
             return paginate(db, stmt, params)
         except ArgumentError as error:
             raise RelationshipNotFoundException(

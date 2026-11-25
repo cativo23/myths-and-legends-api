@@ -32,7 +32,7 @@ services:
       - .env
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-myths}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-myths}
+      - "POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required: set it in .env (see .env.example)}"
       - POSTGRES_DB=${POSTGRES_DB:-myths}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-myths} -d ${POSTGRES_DB:-myths}"]

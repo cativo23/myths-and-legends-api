@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.common.cache import SOURCES_TTL
+from app.api.common.sorting import SortOrder, apply_sort
 from app.api.v1.shared.deps import get_db, get_current_active_superuser
 from app.api.v1.domains.entities.services import source
 from app.api.v1.domains.entities.models.source import Source
@@ -48,7 +49,7 @@ def list_sources(
         Query(description="Sort field", examples=["title", "author", "id"]),
     ] = "id",
     order: Annotated[
-        Literal["asc", "desc"],
+        SortOrder,
         Query(description="Sort order (asc, desc)", examples=["asc", "desc"]),
     ] = "asc",
 ):
@@ -57,10 +58,7 @@ def list_sources(
     if source_type:
         stmt = stmt.where(Source.source_type == source_type)
 
-    sort_column = getattr(Source, sort)
-    stmt = stmt.order_by(
-        sort_column.desc() if order.lower() == "desc" else sort_column.asc()
-    )
+    stmt = apply_sort(stmt, Source, sort, order)
     return paginate(db, stmt, Params(page=page, size=size))
 
 

@@ -1,9 +1,10 @@
-from typing import Annotated, List
+from typing import Annotated, List, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from fastapi_pagination import Page, Params
 from sqlalchemy.orm import Session
 
+from app.api.common.sorting import SortOrder
 from app.api.v1.shared.deps import get_db, get_current_active_superuser
 from app.api.v1.domains.entities.services import entity, relation
 from app.api.v1.domains.entities.schemas.entity import (
@@ -55,8 +56,14 @@ def list_entities(
     ] = True,
     page: Annotated[int, Query(ge=1, description="Page number")] = 1,
     size: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 20,
-    sort: Annotated[str | None, Query(description="Sort field")] = "name",
-    order: Annotated[str, Query(description="Sort order (asc, desc)")] = "asc",
+    sort: Annotated[
+        Literal["id", "name", "created_at"],
+        Query(description="Sort field", examples=["name", "id", "created_at"]),
+    ] = "name",
+    order: Annotated[
+        SortOrder,
+        Query(description="Sort order (asc, desc)", examples=["asc", "desc"]),
+    ] = "asc",
 ):
     """List all entities with optional filters and pagination."""
     return entity.get_paginated(
@@ -65,6 +72,8 @@ def list_entities(
         category=category,
         is_active=is_active,
         params=Params(page=page, size=size),
+        sort=sort,
+        order=order,
     )
 
 
