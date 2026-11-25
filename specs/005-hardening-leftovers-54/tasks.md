@@ -51,8 +51,8 @@ description: "Task list for hardening leftovers of issue #54"
 
 ## Phase 6: Polish — commit `docs(roadmap): close session 1.4`
 
-- [ ] T016 Full verification: `./myths test` (coverage gate 68%), `uvx black --check app`, run quickstart.md steps 3 and 5 by hand
-- [ ] T017 Update `docs/ROADMAP.md`: mark 1.4 done with a summary (items 1, 3, 4 were already resolved; helper `sorting.py`; users/entities ordering was ignored before) and add the detected debt (`datetime.utcnow()` in utils.py/health.py/entity.py, `.dict()` in api_responses.py, `Optional[X]` style, `python-jose` maintenance). Update the "Estado al" line
+- [X] T016 Full verification: `./myths test` (coverage gate 68%), `uvx black --check app`, run quickstart.md steps 3 and 5 by hand
+- [X] T017 Update `docs/ROADMAP.md`: mark 1.4 done with a summary (items 1, 3, 4 were already resolved; helper `sorting.py`; users/entities ordering was ignored before) and add the detected debt (`datetime.utcnow()` in utils.py/health.py/entity.py, `.dict()` in api_responses.py, `Optional[X]` style, `python-jose` maintenance). Update the "Estado al" line
 - [ ] T018 Push, PR against `develop`, wait for green CI, `gh pr merge --admin --merge --delete-branch`, confirm CI on develop, close #54 by hand with evidence per item, then write the prompt for session 1.5 (DELETE /entities/{id}/relations/{relation_id})
 
 ## Dependencies
