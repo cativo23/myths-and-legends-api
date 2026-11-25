@@ -8,4 +8,4 @@ No schema change and no migration. Sort fields available per list (all are exist
 | GET /users | id, email, full_name | email | id |
 | GET /entities | id, name, created_at | name | id |
 
-`order`: asc, desc (default asc). Countries `relations`: entities, locations.
+`order`: asc, desc (default asc). Countries have no relationships, so `relations` is removed.

@@ -1,9 +1,9 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
-from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session
 
 from app.api.common.services import CRUDBaseService
+from app.api.common.sorting import SortOrder
 from app.api.v1.domains.countries.models.country import Country
 from app.api.v1.domains.countries.schemas.country import CountryCreate, CountryUpdate
 
@@ -34,12 +34,14 @@ class CountryService(CRUDBaseService[Country, CountryCreate, CountryUpdate]):
         return super().update(db, db_obj=db_obj, obj_in=update_data)
 
     def get_multi(
-        self, db: Session, *, relations: Optional[List[str]] = None
+        self,
+        db: Session,
+        *,
+        sort: str = "id",
+        order: SortOrder = "asc",
     ) -> List[Country]:
-        """Get multiple countries with optional relations."""
-        stmt = select(Country)
-        if relations:
-            stmt = stmt.options(*[selectinload(getattr(Country, r)) for r in relations])
+        """Get all countries (unlike the base class, with no 100-row cap)."""
+        stmt = self._build_query(sort=sort, order=order)
         return db.execute(stmt).scalars().all()
 
 

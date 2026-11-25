@@ -1,9 +1,10 @@
-from typing import Any, List
+from typing import Annotated, Any, List, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.params import Path, Body
 from sqlalchemy.orm import Session
 
+from app.api.common.sorting import SortOrder
 from app.api.v1.domains.countries.schemas.country import (
     CountryCreate,
     CountryUpdate,
@@ -28,26 +29,16 @@ router = APIRouter()
 def list_countries(
     *,
     db: Session = Depends(get_db),
-    relations: str | None = Query(
-        None,
-        description="Comma-separated list of relations to include (e.g., 'entities,locations')",
-        examples=["entities,locations"],
-    ),
-    sort: str = Query(
-        "name", description="Field to sort by", examples=["name", "id", "created_at"]
-    ),
-    order: str = Query("asc", description="Sort order", examples=["asc", "desc"]),
+    sort: Annotated[
+        Literal["name", "id"],
+        Query(description="Field to sort by", examples=["name", "id"]),
+    ] = "name",
+    order: Annotated[
+        SortOrder, Query(description="Sort order", examples=["asc", "desc"])
+    ] = "asc",
 ) -> List[CountrySchema]:
-    """List all countries with optional sorting and relations."""
-    relations = (
-        [r.strip() for r in relations.split(",") if r.strip()] if relations else []
-    )
-    all_countries = country_service.get_multi(db, relations=relations)
-
-    # Sort results
-    if order.lower() == "desc":
-        return sorted(all_countries, key=lambda x: getattr(x, sort, x.id), reverse=True)
-    return sorted(all_countries, key=lambda x: getattr(x, sort, x.id))
+    """List all countries with optional sorting."""
+    return country_service.get_multi(db, sort=sort, order=order)
 
 
 @router.post(
@@ -91,17 +82,9 @@ def get_country(
     *,
     db: Session = Depends(get_db),
     country_id: int = Path(..., description="Country ID", examples=[1], gt=0),
-    relations: str | None = Query(
-        None,
-        description="Comma-separated list of relations to include",
-        examples=["entities,locations"],
-    ),
 ) -> CountrySchema:
-    """Get a country by ID with optional relations."""
-    relations = (
-        [r.strip() for r in relations.split(",") if r.strip()] if relations else []
-    )
-    country = country_service.get(db, item_id=country_id, relations=relations)
+    """Get a country by ID."""
+    country = country_service.get(db, item_id=country_id)
 
     if not country:
         raise HTTPException(status_code=404, detail="Country not found")

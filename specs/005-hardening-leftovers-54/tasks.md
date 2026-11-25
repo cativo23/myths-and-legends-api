@@ -21,13 +21,13 @@ description: "Task list for hardening leftovers of issue #54"
 - [X] T004 Replace the copied `getattr(...)`/asc/desc block and the inline `Literal["asc","desc"]` with the helper in `app/api/v1/domains/entities/endpoints/categories.py`, `entity_types.py` and `sources.py`; remove the now-unused `.lower()` branch. Behavior preserved (FR-011): existing `tests/domains/test_categories.py`, `test_entity_types.py`, `test_sources.py` and `tests/test_cache_reference_reads.py` stay green (note: the tie-breaker is the only new effect)
 - [X] T005 Extend `CRUDBaseService._build_query` in `app/api/common/services/base_service.py` with optional `sort`/`order` (default: current `order_by(id)`), implemented with `apply_sort`; pass them through `get_multi` and `get_all`. Add a test in `tests/test_sorting.py` that the default stays id-ordered
 
-## Phase 3: User Story 1 — Countries (P1) — commit `fix(countries): validate sort, order and relations`
+## Phase 3: User Story 1 — Countries (P1) — commit `fix(countries): validate sort/order and drop the dead relations param`
 
-**Independent test**: `GET /countries?sort=__class__`, `order=sideways`, `relations=bogus` each return 422; valid values work.
+**Independent test**: `GET /countries?sort=__class__`, `order=sideways` each return 422; valid values work; `relations=entities` no longer errors.
 
-- [ ] T006 [US1] Write failing tests in `tests/domains/test_countries.py`: 422 for `sort` outside {name,id}, 422 for `order` outside {asc,desc} (including `DESC`), 422 for unknown `relations` and for `relations` >100 chars on both list and detail (error body names no internal attribute, FR-008), 200 with `relations=entities,locations`, `sort=name&order=desc` returns descending names, default is name asc
-- [ ] T007 [US1] In `app/api/v1/domains/countries/endpoints/countries.py` define once a `CountryRelations` Annotated query type (comma list validated against {entities, locations}, `max_length=100`, converts to a list) and use it in both list (line ~31) and detail (line ~94); `sort` as `Annotated[Literal["name","id"], Query(...)]`, `order` as `SortOrder`
-- [ ] T008 [US1] In `app/api/v1/domains/countries/services/country.py` keep the `get_multi` override (it is unlimited, the base one caps at 100) but make it accept `sort`/`order` and build its query with `_build_query(relations, sort, order)` instead of its own `select`; delete the Python `sorted(...)` in the endpoint. T006 green, `tests/domains/test_countries.py` fully green
+- [X] T006 [US1] Write failing tests in `tests/domains/test_countries.py`: 422 for `sort` outside {name,id} and for `order` outside {asc,desc} (including `DESC`), `relations` ignored without error, `sort=name&order=desc` descending, default name asc, `sort=id`
+- [X] T007 [US1] In `app/api/v1/domains/countries/endpoints/countries.py` type `sort` as `Literal["name","id"]` and `order` as `SortOrder`; remove the `relations` parameter from list and detail
+- [X] T008 [US1] In `app/api/v1/domains/countries/services/country.py` keep the unlimited `get_multi` override (the base one caps at 100) but build its query with `_build_query(sort=, order=)`; delete the Python `sorted(...)` in the endpoint. `tests/domains/test_countries.py` fully green
 
 ## Phase 4: User Story 2 — Users and entities ordering (P2) — two commits
 

@@ -11,9 +11,9 @@
 - Alternatives: build `select(User)` inside the endpoint like categories (rejected: second copy of the same query logic).
 
 ## R3. Countries
-- Decision: sort in SQL via the same `_build_query`/helper; drop Python `sorted`. `relations` validated by one shared type for list and detail.
-- Rationale: today the override in `CountryService.get_multi` does `getattr(Country, r)` outside the `ArgumentError` handling, so an unknown name can raise `AttributeError` (500). The allowlist removes it at the boundary.
-- Alternatives: catch AttributeError (rejected: validation belongs at the boundary).
+- Decision: sort in SQL via `_build_query`/`apply_sort`; drop Python `sorted`. Remove `relations` from list and detail.
+- Rationale: `Country` has no relationships (id, name, status), so `getattr(Country, r)` raised `AttributeError` (500) for every non-empty value; nothing can be loaded. Found during implementation; Carlos chose removal (YAGNI).
+- Alternatives: empty allowlist returning 422 (rejected: keeps a parameter that can never work); model the relations (rejected: schema change, out of scope for #54).
 
 ## R4. Compose password
 - Decision: `${VAR:?message}`; CI passes its own password (no dependency on the default). `env_file: .env` already feeds the variable.
