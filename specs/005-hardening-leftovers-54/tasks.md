@@ -12,14 +12,14 @@ description: "Task list for hardening leftovers of issue #54"
 
 ## Phase 1: Setup
 
-- [ ] T001 Baseline on the untouched branch: `./myths up -d`, `./myths test` green (365 passed expected), `uvx black --check app`
+- [X] T001 Baseline on the untouched branch: `./myths up -d`, `./myths test` green (365 passed expected), `uvx black --check app`
 
 ## Phase 2: Foundational (blocks every story) — commit `refactor(api): share sort/order helper across list endpoints`
 
-- [ ] T002 Write failing tests in `tests/test_sorting.py` for `apply_sort`: orders asc/desc by the given column, nulls last in both directions, adds `id` as tie-breaker (equal values come out in id order), and `SortOrder` accepts only asc/desc
-- [ ] T003 Create `app/api/common/sorting.py` with `SortOrder = Literal["asc", "desc"]` and `apply_sort(stmt, model, sort, order)` using `.nulls_last()` (research.md R1, R6); T002 turns green
-- [ ] T004 Replace the copied `getattr(...)`/asc/desc block and the inline `Literal["asc","desc"]` with the helper in `app/api/v1/domains/entities/endpoints/categories.py`, `entity_types.py` and `sources.py`; remove the now-unused `.lower()` branch. Behavior preserved (FR-011): existing `tests/domains/test_categories.py`, `test_entity_types.py`, `test_sources.py` and `tests/test_cache_reference_reads.py` stay green (note: the tie-breaker is the only new effect)
-- [ ] T005 Extend `CRUDBaseService._build_query` in `app/api/common/services/base_service.py` with optional `sort`/`order` (default: current `order_by(id)`), implemented with `apply_sort`; pass them through `get_multi` and `get_all`. Add a test in `tests/test_sorting.py` that the default stays id-ordered
+- [X] T002 Write failing tests in `tests/test_sorting.py` for `apply_sort`: orders asc/desc by the given column, nulls last in both directions, adds `id` as tie-breaker (equal values come out in id order), and `SortOrder` accepts only asc/desc
+- [X] T003 Create `app/api/common/sorting.py` with `SortOrder = Literal["asc", "desc"]` and `apply_sort(stmt, model, sort, order)` using `.nulls_last()` (research.md R1, R6); T002 turns green
+- [X] T004 Replace the copied `getattr(...)`/asc/desc block and the inline `Literal["asc","desc"]` with the helper in `app/api/v1/domains/entities/endpoints/categories.py`, `entity_types.py` and `sources.py`; remove the now-unused `.lower()` branch. Behavior preserved (FR-011): existing `tests/domains/test_categories.py`, `test_entity_types.py`, `test_sources.py` and `tests/test_cache_reference_reads.py` stay green (note: the tie-breaker is the only new effect)
+- [X] T005 Extend `CRUDBaseService._build_query` in `app/api/common/services/base_service.py` with optional `sort`/`order` (default: current `order_by(id)`), implemented with `apply_sort`; pass them through `get_multi` and `get_all`. Add a test in `tests/test_sorting.py` that the default stays id-ordered
 
 ## Phase 3: User Story 1 — Countries (P1) — commit `fix(countries): validate sort, order and relations`
 

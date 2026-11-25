@@ -7,6 +7,7 @@ from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.api.common.sorting import SortOrder, apply_sort
 from app.api.common.cache import REFERENCE_TTL
 from app.api.v1.shared.deps import get_db, get_current_active_superuser
 from app.api.v1.domains.entities.services import category
@@ -40,15 +41,12 @@ def list_categories(
         Query(description="Sort field", examples=["name", "id"]),
     ] = "name",
     order: Annotated[
-        Literal["asc", "desc"],
+        SortOrder,
         Query(description="Sort order (asc, desc)", examples=["asc", "desc"]),
     ] = "asc",
 ):
     """List all categories, paginated and sorted at the database level."""
-    sort_column = getattr(Category, sort)
-    stmt = select(Category).order_by(
-        sort_column.desc() if order.lower() == "desc" else sort_column.asc()
-    )
+    stmt = apply_sort(select(Category), Category, sort, order)
     return paginate(db, stmt, Params(page=page, size=size))
 
 
