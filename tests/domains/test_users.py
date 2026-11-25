@@ -494,3 +494,74 @@ class TestUsersEndpoints:
         """Test listing users as non-superuser returns 403."""
         response = client.get("/api/v1/users/", headers=auth_headers)
         assert response.status_code == 403
+
+
+class TestUsersListSorting:
+    """sort/order are validated and applied before pagination (issue #54)."""
+
+    URL = "/api/v1/users/"
+
+    @pytest.fixture
+    def users(self, db: Session, superuser_headers: dict):
+        # The superuser (admin@example.com / "Admin User") is created first, so
+        # it has the lowest id.
+        for email, name in [
+            ("m1@x.com", "Zed"),
+            ("m2@x.com", None),
+            ("m3@x.com", "Bob"),
+        ]:
+            db.add(User(email=email, hashed_password="x", full_name=name))
+        db.commit()
+        return superuser_headers
+
+    def _all_emails(self, client, headers, **params):
+        """Walk every page (size=2) so ordering is proven across pages."""
+        emails, page = [], 1
+        while True:
+            response = client.get(
+                self.URL, headers=headers, params={"size": 2, "page": page, **params}
+            )
+            assert response.status_code == 200
+            items = response.json()["items"]
+            if not items:
+                return emails
+            emails += [u["email"] for u in items]
+            page += 1
+
+    @pytest.mark.parametrize(
+        "sort, order, expected",
+        [
+            ("email", "asc", ["admin", "m1", "m2", "m3"]),
+            ("email", "desc", ["m3", "m2", "m1", "admin"]),
+            ("id", "asc", ["admin", "m1", "m2", "m3"]),
+            ("id", "desc", ["m3", "m2", "m1", "admin"]),
+            ("full_name", "asc", ["admin", "m3", "m1", "m2"]),
+            # NULL full_name (m2) stays last in both directions.
+            ("full_name", "desc", ["m1", "m3", "admin", "m2"]),
+        ],
+    )
+    def test_should_order_across_pages_without_duplicates(
+        self, client, users, sort, order, expected
+    ):
+        emails = self._all_emails(client, users, sort=sort, order=order)
+        assert emails == [f"{e}@example.com" if e == "admin" else f"{e}@x.com" for e in expected]
+
+    def test_should_default_to_email_ascending(self, client, users):
+        emails = self._all_emails(client, users)
+        assert emails == sorted(emails)
+
+    @pytest.mark.parametrize(
+        "params",
+        [
+            {"sort": "hashed_password"},
+            {"sort": "created_at"},
+            {"sort": "__class__"},
+            {"order": "sideways"},
+            {"order": "ASC"},
+        ],
+    )
+    def test_should_reject_values_outside_allowed_set(
+        self, client, superuser_headers, params
+    ):
+        response = client.get(self.URL, headers=superuser_headers, params=params)
+        assert response.status_code == 422

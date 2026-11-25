@@ -35,8 +35,8 @@ description: "Task list for hardening leftovers of issue #54"
 
 ### Users — commit `fix(users): validate sort/order and apply ordering`
 
-- [ ] T009 [US2] Write failing tests in `tests/domains/test_users.py`: ordering by each of id/email/full_name asc and desc across two pages with no duplicates/omissions (use `size=2`), rows with null `full_name` always last in both directions, 422 for invalid `sort`/`order`, default email asc
-- [ ] T010 [US2] In `app/api/v1/domains/users/endpoints/users.py` type `sort` as `Annotated[Literal["id","email","full_name"], Query(...)]`, `order` as `SortOrder`, and pass both to `user_service.get_all(...)` (T005). (`User` and `Country` have no `created_at` column, verified 2026-11-25: the old examples advertised it and it silently fell back to `id`; it is not offered, no migration added.)
+- [X] T009 [US2] Write failing tests in `tests/domains/test_users.py`: ordering by each of id/email/full_name asc and desc across two pages with no duplicates/omissions (use `size=2`), rows with null `full_name` always last in both directions, 422 for invalid `sort`/`order`, default email asc
+- [X] T010 [US2] In `app/api/v1/domains/users/endpoints/users.py` type `sort` as `Annotated[Literal["id","email","full_name"], Query(...)]`, `order` as `SortOrder`, and pass both to `user_service.get_all(...)` (T005). (`User` and `Country` have no `created_at` column, verified 2026-11-25: the old examples advertised it and it silently fell back to `id`; it is not offered, no migration added.)
 
 ### Entities — commit `fix(entities): validate sort/order and apply ordering`
 
