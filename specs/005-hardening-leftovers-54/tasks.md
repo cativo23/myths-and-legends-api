@@ -45,9 +45,9 @@ description: "Task list for hardening leftovers of issue #54"
 
 ## Phase 5: User Story 3 — Compose password (P3) — commit `fix(compose): require POSTGRES_PASSWORD instead of a default`
 
-- [ ] T013 [US3] Add a step to the `build` job in `.github/workflows/ci.yml`: `POSTGRES_PASSWORD= docker compose config` must fail and its output contain "POSTGRES_PASSWORD is required" (the step fails if compose succeeds); a second command with `POSTGRES_PASSWORD=x` must succeed. Run both locally first and confirm the first one fails today (red) before T014
-- [ ] T014 [US3] In `docker-compose.yml` (db service, line ~35) replace `${POSTGRES_PASSWORD:-myths}` with `${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required: set it in .env (see .env.example)}`; check no other service or file relies on the default (`pgadmin`, `myths` script, CI)
-- [ ] T015 [US3] Update the README variable table (line ~108): `POSTGRES_PASSWORD` required, no default
+- [X] T013 [US3] Add a step to the `build` job in `.github/workflows/ci.yml`: `POSTGRES_PASSWORD= docker compose config` must fail and its output contain "POSTGRES_PASSWORD is required" (the step fails if compose succeeds); a second command with `POSTGRES_PASSWORD=x` must succeed. Run both locally first and confirm the first one fails today (red) before T014
+- [X] T014 [US3] In `docker-compose.yml` (db service, line ~35) replace `${POSTGRES_PASSWORD:-myths}` with `${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required: set it in .env (see .env.example)}`; check no other service or file relies on the default (`pgadmin`, `myths` script, CI)
+- [X] T015 [US3] Update the README variable table (line ~108): `POSTGRES_PASSWORD` required, no default
 
 ## Phase 6: Polish — commit `docs(roadmap): close session 1.4`
 

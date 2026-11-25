@@ -105,7 +105,7 @@ Copy `.env.example` to `.env` and configure the following variables:
 | `SECRET_KEY` | JWT secret key | Auto-generated |
 | `POSTGRES_HOST` | Database host | `db` |
 | `POSTGRES_USER` | Database user | `myths` |
-| `POSTGRES_PASSWORD` | Database password | `myths` |
+| `POSTGRES_PASSWORD` | Database password (required) | None, must be set |
 | `POSTGRES_DB` | Database name | `myths` |
 | `PGADMIN_EMAIL` | pgAdmin email | `admin@example.com` |
 | `PGADMIN_PASSWORD` | pgAdmin password | `admin123` |

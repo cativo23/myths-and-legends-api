@@ -139,6 +139,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
+      - name: Compose requires POSTGRES_PASSWORD (no insecure default)
+        run: |
+          if out=$(POSTGRES_PASSWORD= docker compose config 2>&1); then
+            echo "docker compose config succeeded without POSTGRES_PASSWORD"; exit 1
+          fi
+          echo "$out" | grep -q "POSTGRES_PASSWORD is required"
+          POSTGRES_PASSWORD=ci-test-postgres-password docker compose config > /dev/null
+
       - name: Build Docker image
         run: |
           docker build -t myths-and-legends-api:${{ github.sha }} .
