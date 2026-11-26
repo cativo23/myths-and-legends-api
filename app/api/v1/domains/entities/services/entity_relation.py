@@ -1,5 +1,5 @@
 from sqlalchemy import select, or_
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.common.services.base_service import (
@@ -41,6 +41,43 @@ class EntityRelationService(
             )
         )
         return db.execute(stmt).scalars().all()
+
+    def get_for_entity(
+        self, db: Session, *, entity_id: int, relation_id: int
+    ) -> EntityRelation | None:
+        """Get a relation by id only if it involves the entity (as origin or
+        destination), the same set get_by_entity lists. A relation of other
+        entities is indistinguishable from a missing one, so callers cannot
+        probe ids through this entity."""
+        stmt = select(EntityRelation).where(
+            EntityRelation.id == relation_id,
+            or_(
+                EntityRelation.entity_origin_id == entity_id,
+                EntityRelation.entity_destination_id == entity_id,
+            ),
+        )
+        return db.execute(stmt).scalar_one_or_none()
+
+    def remove_with_reverse(self, db: Session, *, relation: EntityRelation) -> None:
+        """Delete a relation and, for symmetric types, its reverse row, in one
+        commit so a failure never leaves a one-sided pair. A missing reverse
+        (legacy data) is tolerated."""
+        db.delete(relation)
+        if relation.relation_type in SYMMETRIC_RELATION_TYPES:
+            reverse = db.execute(
+                select(EntityRelation).where(
+                    EntityRelation.entity_origin_id == relation.entity_destination_id,
+                    EntityRelation.entity_destination_id == relation.entity_origin_id,
+                    EntityRelation.relation_type == relation.relation_type,
+                )
+            ).scalar_one_or_none()
+            if reverse is not None:
+                db.delete(reverse)
+        try:
+            db.commit()
+        except SQLAlchemyError:
+            db.rollback()
+            raise
 
     def create_bidirectional(
         self,

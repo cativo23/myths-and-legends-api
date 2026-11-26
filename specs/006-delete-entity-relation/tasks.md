@@ -24,10 +24,10 @@ description: "Task list for deleting an entity relation"
 **Goal**: superuser deletes a relation by id; symmetric pairs go together.
 **Independent test**: create, delete, list; entities remain.
 
-- [ ] T004 [US1] Write failing service tests in `tests/domains/test_entities.py` for `EntityRelationService.get_for_entity` (finds by origin, by destination; `None` for foreign or missing id) and `remove_with_reverse` (symmetric removes both rows; non-symmetric removes one; symmetric with missing reverse removes the existing row; other relation types between the same pair untouched)
-- [ ] T005 [US1] Implement `get_for_entity(db, *, entity_id, relation_id)` and `remove_with_reverse(db, *, relation)` in `app/api/v1/domains/entities/services/entity_relation.py` (research.md D2, D3, D5: reverse by `(destination, origin, type)`, single commit, rollback on error); T004 green
-- [ ] T006 [US1] Write failing endpoint tests in `tests/domains/test_entities.py`: 204 deleting non-symmetric via origin; 204 deleting symmetric via either entity and either row id (both gone from both lists); 204 via destination path; second delete → 404; entities still exist
-- [ ] T007 [US1] Add `DELETE /{id}/relations/{relation_id}` in `app/api/v1/domains/entities/endpoints/entities.py` (`status_code=204`, `get_current_active_superuser`, `Path(gt=0)`, responses 204/401/403/404/422 per contracts/delete-entity-relation.md); T006 green
+- [X] T004 [US1] Write failing service tests in `tests/domains/test_entities.py` for `EntityRelationService.get_for_entity` (finds by origin, by destination; `None` for foreign or missing id) and `remove_with_reverse` (symmetric removes both rows; non-symmetric removes one; symmetric with missing reverse removes the existing row; other relation types between the same pair untouched)
+- [X] T005 [US1] Implement `get_for_entity(db, *, entity_id, relation_id)` and `remove_with_reverse(db, *, relation)` in `app/api/v1/domains/entities/services/entity_relation.py` (research.md D2, D3, D5: reverse by `(destination, origin, type)`, single commit, rollback on error); T004 green
+- [X] T006 [US1] Write failing endpoint tests in `tests/domains/test_entities.py`: 204 deleting non-symmetric via origin; 204 deleting symmetric via either entity and either row id (both gone from both lists); 204 via destination path; second delete → 404; entities still exist
+- [X] T007 [US1] Add `DELETE /{id}/relations/{relation_id}` in `app/api/v1/domains/entities/endpoints/entities.py` (`status_code=204`, `get_current_active_superuser`, `Path(gt=0)`, responses 204/401/403/404/422 per contracts/delete-entity-relation.md); T006 green
 
 ## Phase 4: User Story 2 — Clear errors, no leak (P1) — commit `test(entities): pin error paths of relation delete`
 

@@ -351,3 +351,34 @@ def create_entity_relation(
         entity_origin_name=origin_entity.name,
         entity_destination_name=destination_entity.name,
     )
+
+
+@router.delete(
+    "/{id}/relations/{relation_id}",
+    status_code=204,
+    summary="Delete Entity Relation",
+    description="Delete a relation of this entity (as origin or destination). "
+    "Symmetric relation types (SIBLINGS, ALLIES, ENEMIES) are stored as a "
+    "pair, and both rows are deleted. Requires superuser privileges.",
+    responses={
+        204: {"description": "Relation successfully deleted"},
+        404: {"description": "Entity or relation not found"},
+        401: {"description": "Unauthorized - No valid token provided"},
+        403: {"description": "Forbidden - User is not a superuser"},
+        422: {"description": "Invalid entity or relation ID"},
+    },
+)
+def delete_entity_relation(
+    db: Annotated[Session, Depends(get_db)],
+    id: Annotated[int, Path(gt=0, description="Entity ID", examples=[1])],
+    relation_id: Annotated[int, Path(gt=0, description="Relation ID", examples=[1])],
+    current_user: UserModel = Depends(get_current_active_superuser),
+):
+    """Delete a relation of this entity. Requires superuser privileges."""
+    if not entity.exists(db, item_id=id):
+        raise HTTPException(status_code=404, detail="Entity not found")
+    # One message for "missing" and "belongs to other entities": no id probing.
+    db_relation = relation.get_for_entity(db, entity_id=id, relation_id=relation_id)
+    if not db_relation:
+        raise HTTPException(status_code=404, detail="Relation not found")
+    relation.remove_with_reverse(db, relation=db_relation)

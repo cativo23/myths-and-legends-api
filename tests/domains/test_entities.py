@@ -1065,3 +1065,178 @@ class TestSymmetricRelationTypes:
         expected_rows = 2 if relation_type in SYMMETRIC_TYPES else 1
         assert db.query(EntityRelation).count() == expected_rows
         assert (reverse is not None) == (relation_type in SYMMETRIC_TYPES)
+
+
+def _create_relation(db: Session, origin, destination, relation_type):
+    from app.api.v1.domains.entities.services import relation as relation_service
+
+    forward, reverse = relation_service.create_bidirectional(
+        db,
+        origin_id=origin.id,
+        destination_id=destination.id,
+        relation_type=relation_type,
+    )
+    return forward, reverse
+
+
+class TestEntityRelationDeleteService:
+    """Unit tests for EntityRelationService.get_for_entity / remove_with_reverse."""
+
+    def test_get_for_entity_finds_relation_by_origin(self, db: Session):
+        from app.api.v1.domains.entities.services import relation as relation_service
+
+        a, b = _seed_entities(db)
+        forward, _ = _create_relation(db, a, b, RelationType.MOTHER_CHILD)
+        found = relation_service.get_for_entity(
+            db, entity_id=a.id, relation_id=forward.id
+        )
+        assert found is not None and found.id == forward.id
+
+    def test_get_for_entity_finds_relation_by_destination(self, db: Session):
+        from app.api.v1.domains.entities.services import relation as relation_service
+
+        a, b = _seed_entities(db)
+        forward, _ = _create_relation(db, a, b, RelationType.MOTHER_CHILD)
+        found = relation_service.get_for_entity(
+            db, entity_id=b.id, relation_id=forward.id
+        )
+        assert found is not None and found.id == forward.id
+
+    def test_get_for_entity_returns_none_for_foreign_or_missing_relation(
+        self, db: Session
+    ):
+        from app.api.v1.domains.entities.services import relation as relation_service
+
+        a, b, c = _seed_entities(db, 3)
+        forward, _ = _create_relation(db, a, b, RelationType.MOTHER_CHILD)
+        assert (
+            relation_service.get_for_entity(db, entity_id=c.id, relation_id=forward.id)
+            is None
+        )
+        assert (
+            relation_service.get_for_entity(db, entity_id=a.id, relation_id=999999)
+            is None
+        )
+
+    @pytest.mark.parametrize("relation_type", SYMMETRIC_TYPES)
+    def test_remove_with_reverse_deletes_both_rows_of_a_symmetric_relation(
+        self, db: Session, relation_type: RelationType
+    ):
+        from app.api.v1.domains.entities.services import relation as relation_service
+
+        a, b = _seed_entities(db)
+        forward, reverse = _create_relation(db, a, b, relation_type)
+        relation_service.remove_with_reverse(db, relation=reverse)
+        db.expire_all()
+        assert db.query(EntityRelation).count() == 0
+        assert db.get(Entity, a.id) is not None and db.get(Entity, b.id) is not None
+
+    @pytest.mark.parametrize("relation_type", DIRECTED_TYPES)
+    def test_remove_with_reverse_deletes_only_the_row_of_a_directed_relation(
+        self, db: Session, relation_type: RelationType
+    ):
+        from app.api.v1.domains.entities.services import relation as relation_service
+
+        a, b = _seed_entities(db)
+        forward, _ = _create_relation(db, a, b, relation_type)
+        # An opposite-direction row of the same type is a different relation.
+        other, _ = _create_relation(db, b, a, relation_type)
+        relation_service.remove_with_reverse(db, relation=forward)
+        db.expire_all()
+        assert [r.id for r in db.query(EntityRelation).all()] == [other.id]
+
+    def test_remove_with_reverse_tolerates_a_missing_reverse_row(self, db: Session):
+        from app.api.v1.domains.entities.services import relation as relation_service
+
+        a, b = _seed_entities(db)
+        forward, reverse = _create_relation(db, a, b, RelationType.ALLIES)
+        db.delete(reverse)
+        db.commit()
+        relation_service.remove_with_reverse(db, relation=forward)
+        assert db.query(EntityRelation).count() == 0
+
+    def test_remove_with_reverse_leaves_other_types_between_the_pair(
+        self, db: Session
+    ):
+        from app.api.v1.domains.entities.services import relation as relation_service
+
+        a, b = _seed_entities(db)
+        sib, _ = _create_relation(db, a, b, RelationType.SIBLINGS)
+        enemies, enemies_rev = _create_relation(db, a, b, RelationType.ENEMIES)
+        relation_service.remove_with_reverse(db, relation=sib)
+        db.expire_all()
+        assert {r.id for r in db.query(EntityRelation).all()} == {
+            enemies.id,
+            enemies_rev.id,
+        }
+
+
+class TestDeleteEntityRelationEndpoint:
+    """DELETE /entities/{id}/relations/{relation_id}."""
+
+    def _url(self, entity_id: int, relation_id: int) -> str:
+        return f"/api/v1/entities/{entity_id}/relations/{relation_id}"
+
+    def _listed_ids(self, client: TestClient, entity_id: int) -> list[int]:
+        response = client.get(f"/api/v1/entities/{entity_id}/relations")
+        assert response.status_code == 200
+        return [r["id"] for r in response.json()]
+
+    def test_delete_relation_removes_a_directed_relation(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        a, b = _seed_entities(db)
+        forward, _ = _create_relation(db, a, b, RelationType.FATHER_CHILD)
+
+        response = client.delete(self._url(a.id, forward.id), headers=superuser_headers)
+
+        assert response.status_code == 204
+        assert response.content == b""
+        assert self._listed_ids(client, a.id) == []
+        assert self._listed_ids(client, b.id) == []
+        assert client.get(f"/api/v1/entities/{a.id}").status_code == 200
+        assert client.get(f"/api/v1/entities/{b.id}").status_code == 200
+
+    @pytest.mark.parametrize("via", ["forward_from_origin", "reverse_from_destination"])
+    def test_delete_relation_removes_both_rows_of_a_symmetric_relation(
+        self, client: TestClient, db: Session, superuser_headers: dict, via: str
+    ):
+        a, b = _seed_entities(db)
+        forward, reverse = _create_relation(db, a, b, RelationType.SIBLINGS)
+        entity_id, relation_id = (
+            (a.id, forward.id)
+            if via == "forward_from_origin"
+            else (b.id, reverse.id)
+        )
+
+        response = client.delete(
+            self._url(entity_id, relation_id), headers=superuser_headers
+        )
+
+        assert response.status_code == 204
+        assert self._listed_ids(client, a.id) == []
+        assert self._listed_ids(client, b.id) == []
+
+    def test_delete_relation_via_destination_path_uses_the_listed_id(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        a, b = _seed_entities(db)
+        _create_relation(db, a, b, RelationType.MOTHER_CHILD)
+        listed = self._listed_ids(client, b.id)
+        assert len(listed) == 1
+
+        response = client.delete(self._url(b.id, listed[0]), headers=superuser_headers)
+
+        assert response.status_code == 204
+        assert self._listed_ids(client, a.id) == []
+
+    def test_delete_relation_twice_returns_404_the_second_time(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        a, b = _seed_entities(db)
+        forward, _ = _create_relation(db, a, b, RelationType.MOTHER_CHILD)
+        url = self._url(a.id, forward.id)
+        assert client.delete(url, headers=superuser_headers).status_code == 204
+        second = client.delete(url, headers=superuser_headers)
+        assert second.status_code == 404
+        assert second.json()["detail"] == "Relation not found"
