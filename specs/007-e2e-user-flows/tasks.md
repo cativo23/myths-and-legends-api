@@ -54,8 +54,8 @@ description: "Task list for end-to-end user-flow tests"
 
 ## Phase 6: Polish — commit `docs(roadmap): close session 1.6`
 
-- [ ] T019 `uvx black --check app` and full `./myths test` (coverage gate; compare against 444 passed / 85.71%); confirm `-m e2e` and `-m "not e2e"` select as expected (quickstart); review own diff (including that no assertion repeats `tests/domains/` coverage, FR-007, and that tests are order-independent, FR-008), then run superpowers:code-reviewer on the diff
-- [ ] T020 Update `docs/ROADMAP.md`: mark 1.6 done with summary and decisions (in-process, `tests/e2e/`, `e2e` marker, scope vs issue #31, gaps covered); keep notes of pending items intact
+- [X] T019 `uvx black --check app` and full `./myths test` (coverage gate; compare against 444 passed / 85.71%); confirm `-m e2e` and `-m "not e2e"` select as expected (quickstart); review own diff (including that no assertion repeats `tests/domains/` coverage, FR-007, and that tests are order-independent, FR-008), then run superpowers:code-reviewer on the diff
+- [X] T020 Update `docs/ROADMAP.md`: mark 1.6 done with summary and decisions (in-process, `tests/e2e/`, `e2e` marker, scope vs issue #31, gaps covered); keep notes of pending items intact
 - [ ] T021 Push, PR against `develop`, wait for green CI, `gh pr merge --admin --merge --delete-branch`, confirm CI on develop; check in the CI log that `tests/e2e` tests ran and that total test time is within 10% of the latest green `develop` run (SC-004); close #31 by hand with evidence and a note on obsolete criteria (register flow, country CRUD, location/source journey, separate DB); then write the prompt for session 2.1 from `docs/ROADMAP.md`
 
 ## Dependencies
