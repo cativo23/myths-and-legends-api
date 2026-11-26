@@ -1240,3 +1240,66 @@ class TestDeleteEntityRelationEndpoint:
         second = client.delete(url, headers=superuser_headers)
         assert second.status_code == 404
         assert second.json()["detail"] == "Relation not found"
+
+
+class TestDeleteEntityRelationErrors:
+    """Error contract of DELETE /entities/{id}/relations/{relation_id}."""
+
+    def _url(self, entity_id: int, relation_id: int) -> str:
+        return f"/api/v1/entities/{entity_id}/relations/{relation_id}"
+
+    def test_delete_relation_without_token_returns_401(
+        self, client: TestClient, db: Session
+    ):
+        a, b = _seed_entities(db)
+        forward, _ = _create_relation(db, a, b, RelationType.MOTHER_CHILD)
+        assert client.delete(self._url(a.id, forward.id)).status_code == 401
+        assert db.query(EntityRelation).count() == 1
+
+    def test_delete_relation_as_regular_user_returns_403_without_deleting(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        a, b = _seed_entities(db)
+        forward, _ = _create_relation(db, a, b, RelationType.MOTHER_CHILD)
+        response = client.delete(self._url(a.id, forward.id), headers=auth_headers)
+        assert response.status_code == 403
+        assert db.query(EntityRelation).count() == 1
+
+    def test_delete_relation_as_regular_user_does_not_reveal_existence(
+        self, client: TestClient, db: Session, auth_headers: dict
+    ):
+        a, b = _seed_entities(db)
+        forward, _ = _create_relation(db, a, b, RelationType.MOTHER_CHILD)
+        existing = client.delete(self._url(a.id, forward.id), headers=auth_headers)
+        missing = client.delete(self._url(999999, 999999), headers=auth_headers)
+        assert existing.status_code == missing.status_code == 403
+        assert existing.json() == missing.json()
+
+    def test_delete_relation_of_missing_entity_returns_404(
+        self, client: TestClient, superuser_headers: dict
+    ):
+        response = client.delete(self._url(999999, 1), headers=superuser_headers)
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Entity not found"
+
+    def test_delete_missing_and_foreign_relations_return_the_same_404(
+        self, client: TestClient, db: Session, superuser_headers: dict
+    ):
+        a, b, c = _seed_entities(db, 3)
+        forward, _ = _create_relation(db, a, b, RelationType.SIBLINGS)
+
+        foreign = client.delete(self._url(c.id, forward.id), headers=superuser_headers)
+        missing = client.delete(self._url(a.id, 999999), headers=superuser_headers)
+
+        assert foreign.status_code == missing.status_code == 404
+        assert foreign.json() == missing.json() == {"detail": "Relation not found"}
+        assert db.query(EntityRelation).count() == 2  # nothing was deleted
+
+    @pytest.mark.parametrize("entity_id,relation_id", [(0, 1), (1, 0), (-1, 1), (1, -1)])
+    def test_delete_relation_rejects_non_positive_ids(
+        self, client: TestClient, superuser_headers: dict, entity_id, relation_id
+    ):
+        response = client.delete(
+            self._url(entity_id, relation_id), headers=superuser_headers
+        )
+        assert response.status_code == 422

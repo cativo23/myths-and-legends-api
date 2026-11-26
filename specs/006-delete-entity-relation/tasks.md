@@ -34,7 +34,7 @@ description: "Task list for deleting an entity relation"
 **Goal**: predictable errors; existence not revealed to unauthorized callers.
 **Independent test**: status codes and messages per contract.
 
-- [ ] T008 [US2] Write tests in `tests/domains/test_entities.py` (expected to pass already; if any fails, fix in T007): no token → 401; non-superuser → 403 for both existing and nonexistent ids (identical status/body); missing entity → 404 "Entity not found"; missing relation and relation of another entity → 404 "Relation not found" with identical bodies and nothing deleted; `id=0`/`relation_id=0`/negative → 422
+- [X] T008 [US2] Write tests in `tests/domains/test_entities.py` (expected to pass already; if any fails, fix in T007): no token → 401; non-superuser → 403 for both existing and nonexistent ids (identical status/body); missing entity → 404 "Entity not found"; missing relation and relation of another entity → 404 "Relation not found" with identical bodies and nothing deleted; `id=0`/`relation_id=0`/negative → 422
 
 ## Phase 5: Polish
 
