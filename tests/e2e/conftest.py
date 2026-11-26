@@ -17,7 +17,7 @@ def pytest_collection_modifyitems(items):
     """Mark every test under tests/e2e as `e2e` in one place, so a new test
     cannot forget it and `-m e2e` / `-m "not e2e"` always agree."""
     for item in items:
-        if E2E_DIR in Path(str(item.fspath)).parents:
+        if E2E_DIR in item.path.parents:
             item.add_marker(pytest.mark.e2e)
 
 

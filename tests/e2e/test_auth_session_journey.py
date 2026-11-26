@@ -54,6 +54,8 @@ def test_should_reject_a_reused_refresh_token_without_revoking_the_newer_session
     rotated = _refresh(client, session["refresh_token"])
     assert rotated.status_code == 200
 
+    # The 401 itself is pinned in tests/domains/test_auth.py; here it is the
+    # precondition for the assertion below, which is the new behavior.
     reused = _refresh(client, session["refresh_token"])
     assert reused.status_code == 401
 
