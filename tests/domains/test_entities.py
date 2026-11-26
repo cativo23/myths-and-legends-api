@@ -1052,15 +1052,8 @@ class TestSymmetricRelationTypes:
     def test_create_stores_a_pair_only_for_symmetric_types(
         self, db: Session, relation_type: RelationType
     ):
-        from app.api.v1.domains.entities.services import relation as relation_service
-
         origin, destination = _seed_entities(db)
-        _forward, reverse = relation_service.create_bidirectional(
-            db,
-            origin_id=origin.id,
-            destination_id=destination.id,
-            relation_type=relation_type,
-        )
+        _forward, reverse = _create_relation(db, origin, destination, relation_type)
 
         expected_rows = 2 if relation_type in SYMMETRIC_TYPES else 1
         assert db.query(EntityRelation).count() == expected_rows
@@ -1155,6 +1148,30 @@ class TestEntityRelationDeleteService:
         relation_service.remove_with_reverse(db, relation=forward)
         assert db.query(EntityRelation).count() == 0
 
+    def test_remove_with_reverse_rolls_back_and_reraises_when_the_commit_fails(
+        self, db: Session, monkeypatch
+    ):
+        """Both deletes share one commit, so a failing commit must roll back
+        and surface the error. (Row counts can't be asserted here: the test
+        session sits inside an outer transaction that rollback also undoes.)"""
+        from sqlalchemy.exc import SQLAlchemyError
+
+        from app.api.v1.domains.entities.services import relation as relation_service
+
+        a, b = _seed_entities(db)
+        forward, _ = _create_relation(db, a, b, RelationType.SIBLINGS)
+        rollbacks = []
+
+        def failing_commit():
+            raise SQLAlchemyError("boom")
+
+        monkeypatch.setattr(db, "commit", failing_commit)
+        monkeypatch.setattr(db, "rollback", lambda: rollbacks.append(True))
+        with pytest.raises(SQLAlchemyError):
+            relation_service.remove_with_reverse(db, relation=forward)
+
+        assert rollbacks == [True]
+
     def test_remove_with_reverse_leaves_other_types_between_the_pair(
         self, db: Session
     ):
@@ -1197,12 +1214,18 @@ class TestDeleteEntityRelationEndpoint:
         assert client.get(f"/api/v1/entities/{a.id}").status_code == 200
         assert client.get(f"/api/v1/entities/{b.id}").status_code == 200
 
+    @pytest.mark.parametrize("relation_type", SYMMETRIC_TYPES)
     @pytest.mark.parametrize("via", ["forward_from_origin", "reverse_from_destination"])
     def test_delete_relation_removes_both_rows_of_a_symmetric_relation(
-        self, client: TestClient, db: Session, superuser_headers: dict, via: str
+        self,
+        client: TestClient,
+        db: Session,
+        superuser_headers: dict,
+        via: str,
+        relation_type: RelationType,
     ):
         a, b = _seed_entities(db)
-        forward, reverse = _create_relation(db, a, b, RelationType.SIBLINGS)
+        forward, reverse = _create_relation(db, a, b, relation_type)
         entity_id, relation_id = (
             (a.id, forward.id)
             if via == "forward_from_origin"

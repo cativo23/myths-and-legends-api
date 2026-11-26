@@ -39,7 +39,7 @@ description: "Task list for deleting an entity relation"
 ## Phase 5: Polish
 
 - [X] T009 Update `docs/ROADMAP.md`: mark 1.5 done with a summary and decisions; add a follow-up item "auditoría transversal de escrituras (quién/qué se creó, modificó o borró)"; keep 1.6 as next
-- [ ] T010 Run `uvx black --check app` and `./myths test` (full, coverage gate), review own diff, then superpowers:code-reviewer on the diff
+- [X] T010 Run `uvx black --check app` and `./myths test` (full, coverage gate), review own diff, then superpowers:code-reviewer on the diff
 - [ ] T011 Push, PR against `develop`, wait for green CI, `gh pr merge --admin --merge --delete-branch`, confirm CI on develop, then write the prompt for session 1.6 (E2E tests: entity+relations cycle, auth with refresh, rate limits; issue #31)
 
 ## Dependencies
