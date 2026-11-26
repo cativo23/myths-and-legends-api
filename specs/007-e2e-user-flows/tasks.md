@@ -35,10 +35,10 @@ description: "Task list for end-to-end user-flow tests"
 **Goal**: login → refresh → reuse rejected → one session per user → logout.
 **Independent test**: `./myths test tests/e2e/test_auth_session_journey.py --no-cov`.
 
-- [ ] T009 [US2] In `tests/e2e/test_auth_session_journey.py`, write `test_should_keep_a_session_alive_across_refreshes_until_logout`: login, use the access token on `/auth/me`, refresh (new pair works on `/auth/me`), refresh again with the new token, then logout and assert the latest refresh token is rejected (401). Chain tokens from each previous step; do not re-assert malformed/expired-token cases
-- [ ] T010 [US2] In the same file, write `test_should_reject_a_reused_refresh_token_without_revoking_the_newer_session`: after one rotation, the first token returns 401 and the token from the rotation still refreshes successfully (research.md D5; `user.hashed_refresh_token` unchanged by the failed reuse)
-- [ ] T011 [US2] In the same file, write `test_should_allow_only_one_active_session_per_user`: log in twice with the same credentials, assert the first session's refresh token is rejected (401) and the second's works (`user.hashed_refresh_token` is replaced on login). Note that a gap, not covered anywhere else
-- [ ] T012 [US2] Red check: temporarily stop overwriting the stored refresh hash on login, or stop clearing it on logout, confirm T009/T011 fail for the right reason, restore with `git checkout -- app`
+- [X] T009 [US2] In `tests/e2e/test_auth_session_journey.py`, write `test_should_keep_a_session_alive_across_refreshes_until_logout`: login, use the access token on `/auth/me`, refresh (new pair works on `/auth/me`), refresh again with the new token, then logout and assert the latest refresh token is rejected (401). Chain tokens from each previous step; do not re-assert malformed/expired-token cases
+- [X] T010 [US2] In the same file, write `test_should_reject_a_reused_refresh_token_without_revoking_the_newer_session`: after one rotation, the first token returns 401 and the token from the rotation still refreshes successfully (research.md D5; `user.hashed_refresh_token` unchanged by the failed reuse)
+- [X] T011 [US2] In the same file, write `test_should_allow_only_one_active_session_per_user`: log in twice with the same credentials, assert the first session's refresh token is rejected (401) and the second's works (`user.hashed_refresh_token` is replaced on login). Note that a gap, not covered anywhere else
+- [X] T012 [US2] Red check: temporarily stop overwriting the stored refresh hash on login, or stop clearing it on logout, confirm T009/T011 fail for the right reason, restore with `git checkout -- app`
 
 ## Phase 5: User Story 3 — Rate-limit boundaries (P2) — commit `test(e2e): cover rate-limit boundaries`
 
