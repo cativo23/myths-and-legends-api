@@ -12,12 +12,12 @@ description: "Task list for deleting an entity relation"
 
 ## Phase 1: Setup
 
-- [ ] T001 Baseline on the untouched branch: `./myths up -d`, `./myths test` green (406 passed expected), `uvx black --check app`
+- [X] T001 Baseline on the untouched branch: `./myths up -d`, `./myths test` green (406 passed expected), `uvx black --check app`
 
 ## Phase 2: Foundational — commit `refactor(entities): share the symmetric relation types constant`
 
-- [ ] T002 Write a failing test in `tests/domains/test_entities.py` that `SYMMETRIC_RELATION_TYPES` equals `{SIBLINGS, ALLIES, ENEMIES}` and that creating each symmetric type yields two rows while MOTHER_CHILD/FATHER_CHILD/GUARDIAN_PLACE yield one (behavior pin; see data-model.md `entity_relation.relation_type`)
-- [ ] T003 Add `SYMMETRIC_RELATION_TYPES` (frozenset) after `RelationType` in `app/api/v1/domains/entities/enums.py` and replace the inline list in `create_bidirectional` in `app/api/v1/domains/entities/services/entity_relation.py` (research.md D4); T002 green, existing relation tests stay green
+- [X] T002 Write a failing test in `tests/domains/test_entities.py` that `SYMMETRIC_RELATION_TYPES` equals `{SIBLINGS, ALLIES, ENEMIES}` and that creating each symmetric type yields two rows while MOTHER_CHILD/FATHER_CHILD/GUARDIAN_PLACE yield one (behavior pin; see data-model.md `entity_relation.relation_type`)
+- [X] T003 Add `SYMMETRIC_RELATION_TYPES` (frozenset) after `RelationType` in `app/api/v1/domains/entities/enums.py` and replace the inline list in `create_bidirectional` in `app/api/v1/domains/entities/services/entity_relation.py` (research.md D4); T002 green, existing relation tests stay green
 
 ## Phase 3: User Story 1 — Remove a wrong relation (P1) — commit `feat(entities): delete an entity relation`
 

@@ -1011,3 +1011,57 @@ class TestEntitiesListSorting:
     )
     def test_should_reject_values_outside_allowed_set(self, client, params):
         assert client.get(self.URL, params=params).status_code == 422
+
+
+def _seed_entities(db: Session, count: int = 2) -> list[Entity]:
+    """Create the category/type dependencies and `count` entities."""
+    category = Category(name=CategoryName.MYTH, description="A myth")
+    entity_type = EntityType(name=EntityTypeName.CHARACTER, description="A character")
+    db.add_all([category, entity_type])
+    db.commit()
+    entities = [
+        Entity(
+            name=f"Relation Entity {i}",
+            category_id=category.id,
+            entity_type_id=entity_type.id,
+        )
+        for i in range(count)
+    ]
+    db.add_all(entities)
+    db.commit()
+    return entities
+
+
+SYMMETRIC_TYPES = [RelationType.SIBLINGS, RelationType.ALLIES, RelationType.ENEMIES]
+DIRECTED_TYPES = [
+    RelationType.MOTHER_CHILD,
+    RelationType.FATHER_CHILD,
+    RelationType.GUARDIAN_PLACE,
+]
+
+
+class TestSymmetricRelationTypes:
+    """The symmetric-type list has one definition shared by create and delete."""
+
+    def test_constant_holds_exactly_the_symmetric_types(self):
+        from app.api.v1.domains.entities.enums import SYMMETRIC_RELATION_TYPES
+
+        assert SYMMETRIC_RELATION_TYPES == set(SYMMETRIC_TYPES)
+
+    @pytest.mark.parametrize("relation_type", SYMMETRIC_TYPES + DIRECTED_TYPES)
+    def test_create_stores_a_pair_only_for_symmetric_types(
+        self, db: Session, relation_type: RelationType
+    ):
+        from app.api.v1.domains.entities.services import relation as relation_service
+
+        origin, destination = _seed_entities(db)
+        _forward, reverse = relation_service.create_bidirectional(
+            db,
+            origin_id=origin.id,
+            destination_id=destination.id,
+            relation_type=relation_type,
+        )
+
+        expected_rows = 2 if relation_type in SYMMETRIC_TYPES else 1
+        assert db.query(EntityRelation).count() == expected_rows
+        assert (reverse is not None) == (relation_type in SYMMETRIC_TYPES)

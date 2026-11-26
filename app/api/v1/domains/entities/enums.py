@@ -43,6 +43,12 @@ class RelationType(str, Enum):
     ALLIES = "ALLIES"
 
 
+# Stored as a forward/reverse row pair: creating or deleting one side acts on both.
+SYMMETRIC_RELATION_TYPES = frozenset(
+    {RelationType.SIBLINGS, RelationType.ALLIES, RelationType.ENEMIES}
+)
+
+
 class SourceType(str, Enum):
     BOOK = "BOOK"
     ORAL_TRADITION = "ORAL_TRADITION"

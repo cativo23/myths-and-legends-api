@@ -6,6 +6,7 @@ from app.api.common.services.base_service import (
     CRUDBaseService,
     raise_for_integrity_error,
 )
+from app.api.v1.domains.entities.enums import SYMMETRIC_RELATION_TYPES
 from app.api.v1.domains.entities.models.entity_relation import (
     EntityRelation,
     RelationType,
@@ -64,11 +65,7 @@ class EntityRelationService(
 
         # Create reverse for symmetric relations
         reverse = None
-        if relation_type in [
-            RelationType.SIBLINGS,
-            RelationType.ALLIES,
-            RelationType.ENEMIES,
-        ]:
+        if relation_type in SYMMETRIC_RELATION_TYPES:
             reverse = EntityRelation(
                 entity_origin_id=destination_id,
                 entity_destination_id=origin_id,
