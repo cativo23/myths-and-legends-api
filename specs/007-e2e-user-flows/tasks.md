@@ -45,12 +45,12 @@ description: "Task list for end-to-end user-flow tests"
 **Goal**: exact 429 boundary on the four missing endpoints, without leaking state to other tests.
 **Independent test**: `./myths test tests/e2e/test_rate_limit_boundaries.py --no-cov`, then another module right after (quickstart step 3).
 
-- [ ] T013 [US3] In `tests/e2e/test_rate_limit_boundaries.py`, write `test_should_return_429_on_password_recovery_after_the_auth_limit`: `POST /auth/password-recovery/{email}` with a non-existent email `settings.RATE_LIMIT_AUTH_PER_MINUTE` times (none 429), then once more: 429 with a valid JSON body (research.md D3)
-- [ ] T014 [US3] Same file, `test_should_return_429_on_password_reset_after_the_auth_limit`: `POST /auth/reset-password/` with a well-formed body (invalid `token`, valid-shaped `new_password`) `settings.RATE_LIMIT_AUTH_PER_MINUTE` times (all 400, none 429), then 429 with a valid JSON body
-- [ ] T015 [US3] Same file, `test_should_return_429_on_refresh_after_the_default_limit`: `POST /auth/refresh` with an invalid token `settings.RATE_LIMIT_PER_MINUTE` times (none 429), then 429
-- [ ] T016 [US3] Same file, `test_should_return_429_on_logout_after_the_default_limit`: unauthenticated `POST /auth/logout` `settings.RATE_LIMIT_PER_MINUTE` times (none 429), then 429
-- [ ] T017 [US3] No order-dependent test. Verify isolation (FR-004, US3 scenario 3) by running `./myths test tests/e2e/test_rate_limit_boundaries.py --no-cov` and immediately `./myths test tests/e2e/test_auth_session_journey.py --no-cov`; the second must pass. The guarantee is the existing autouse `limiter.reset()` in `tests/conftest.py`
-- [ ] T018 [US3] Red check: temporarily lower the loop count of one boundary test by one and confirm the 429 assertion fails (the last allowed request would no longer be the one before the limit), then restore. Then repeat the T017 chained run to prove no leakage
+- [X] T013 [US3] In `tests/e2e/test_rate_limit_boundaries.py`, write `test_should_return_429_on_password_recovery_after_the_auth_limit`: `POST /auth/password-recovery/{email}` with a non-existent email `settings.RATE_LIMIT_AUTH_PER_MINUTE` times (none 429), then once more: 429 with a valid JSON body (research.md D3)
+- [X] T014 [US3] Same file, `test_should_return_429_on_password_reset_after_the_auth_limit`: `POST /auth/reset-password/` with a well-formed body (invalid `token`, valid-shaped `new_password`) `settings.RATE_LIMIT_AUTH_PER_MINUTE` times (all 400, none 429), then 429 with a valid JSON body
+- [X] T015 [US3] Same file, `test_should_return_429_on_refresh_after_the_default_limit`: `POST /auth/refresh` with an invalid token `settings.RATE_LIMIT_PER_MINUTE` times (none 429), then 429
+- [X] T016 [US3] Same file, `test_should_return_429_on_logout_after_the_default_limit`: unauthenticated `POST /auth/logout` `settings.RATE_LIMIT_PER_MINUTE` times (none 429), then 429
+- [X] T017 [US3] No order-dependent test. Verify isolation (FR-004, US3 scenario 3) by running `./myths test tests/e2e/test_rate_limit_boundaries.py --no-cov` and immediately `./myths test tests/e2e/test_auth_session_journey.py --no-cov`; the second must pass. The guarantee is the existing autouse `limiter.reset()` in `tests/conftest.py`
+- [X] T018 [US3] Red check: temporarily lower the loop count of one boundary test by one and confirm the 429 assertion fails (the last allowed request would no longer be the one before the limit), then restore. Then repeat the T017 chained run to prove no leakage
 
 ## Phase 6: Polish — commit `docs(roadmap): close session 1.6`
 
