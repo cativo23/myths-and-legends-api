@@ -12,23 +12,23 @@ description: "Task list for end-to-end user-flow tests"
 
 ## Phase 1: Setup
 
-- [ ] T001 Baseline on the untouched branch: `./myths up -d`, `./myths test` green (444 passed, 85.71% expected), `uvx black --check app`
+- [X] T001 Baseline on the untouched branch: `./myths up -d`, `./myths test` green (444 passed, 85.71% expected), `uvx black --check app`
 
 ## Phase 2: Foundational — committed together with US1 (the marker is never committed unused)
 
-- [ ] T002 Register the `e2e` marker in `pytest.ini` under `markers` (`e2e: End-to-end user journeys`); required by `--strict-markers` (research.md D2)
-- [ ] T003 Create `tests/e2e/__init__.py` and `tests/e2e/conftest.py` with a `pytest_collection_modifyitems` hook that adds the `e2e` marker to every item under `tests/e2e/` (research.md D2)
-- [ ] T004 Manual verification, no permanent test: once T005 exists, check that `./myths test -m e2e --no-cov` collects it and `./myths test -m "not e2e" --no-cov --collect-only -q` does not (quickstart step 2)
+- [X] T002 Register the `e2e` marker in `pytest.ini` under `markers` (`e2e: End-to-end user journeys`); required by `--strict-markers` (research.md D2)
+- [X] T003 Create `tests/e2e/__init__.py` and `tests/e2e/conftest.py` with a `pytest_collection_modifyitems` hook that adds the `e2e` marker to every item under `tests/e2e/` (research.md D2)
+- [X] T004 Manual verification, no permanent test: once T005 exists, check that `./myths test -m e2e --no-cov` collects it and `./myths test -m "not e2e" --no-cov --collect-only -q` does not (quickstart step 2)
 
 ## Phase 3: User Story 1 — Entity and relations journey (P1) — commit `test(e2e): cover the entity graph journey`
 
 **Goal**: a superuser builds, reads and prunes a graph; every step's result is visible in later reads.
 **Independent test**: `./myths test tests/e2e/test_entity_graph_journey.py --no-cov`.
 
-- [ ] T005 [US1] In `tests/e2e/conftest.py` add small plain helper functions that create a category, an entity type, an entity and a relation through the API with `superuser_headers` and return the response JSON (no new helper module). Then, in `tests/e2e/test_entity_graph_journey.py`, write `test_should_build_read_and_prune_a_relation_graph`: create category and entity type and assert each is retrievable by GET, create at least four entities and assert each is retrievable and references that category and type, create one relation of each kind (a symmetric one such as SIBLINGS and directed ones such as MOTHER_CHILD and GUARDIAN_PLACE), then assert via `GET /entities/{id}/relations` and `GET /entities/{id}` that each entity sees exactly its edges (symmetric on both ends with each end's own row id, directed once on each end with correct direction), per `data-model.md` `entity_relation.relation_type`. Do not repeat the per-endpoint checks already in `tests/domains/test_entities.py`
-- [ ] T006 [US1] In the same file, write `test_should_remove_only_the_deleted_relation_from_the_graph`: delete the symmetric relation through `DELETE /entities/{id}/relations/{relation_id}` and assert it is gone from both entities' details while directed relations and all entities remain; then delete a directed relation and assert only it disappears
-- [ ] T007 [US1] In the same file, write `test_should_leave_the_graph_untouched_when_a_regular_user_tries_to_write`: with `auth_headers` attempt to create an entity, create a relation and delete a relation; assert 403 each time and the graph unchanged
-- [ ] T008 [US1] Red check: temporarily make symmetric creation or deletion touch only one row (e.g. skip the reverse row in `remove_with_reverse`), confirm T005/T006 fail for the right reason, restore with `git checkout -- app`
+- [X] T005 [US1] In `tests/e2e/conftest.py` add small plain helper functions that create a category, an entity type, an entity and a relation through the API with `superuser_headers` and return the response JSON (no new helper module). Then, in `tests/e2e/test_entity_graph_journey.py`, write `test_should_build_read_and_prune_a_relation_graph`: create category and entity type and assert each is retrievable by GET, create at least four entities and assert each is retrievable and references that category and type, create one relation of each kind (a symmetric one such as SIBLINGS and directed ones such as MOTHER_CHILD and GUARDIAN_PLACE), then assert via `GET /entities/{id}/relations` and `GET /entities/{id}` that each entity sees exactly its edges (symmetric on both ends with each end's own row id, directed once on each end with correct direction), per `data-model.md` `entity_relation.relation_type`. Do not repeat the per-endpoint checks already in `tests/domains/test_entities.py`
+- [X] T006 [US1] In the same file, write `test_should_remove_only_the_deleted_relation_from_the_graph`: delete the symmetric relation through `DELETE /entities/{id}/relations/{relation_id}` and assert it is gone from both entities' details while directed relations and all entities remain; then delete a directed relation and assert only it disappears
+- [X] T007 [US1] In the same file, write `test_should_leave_the_graph_untouched_when_a_regular_user_tries_to_write`: with `auth_headers` attempt to create an entity, create a relation and delete a relation; assert 403 each time and the graph unchanged
+- [X] T008 [US1] Red check: temporarily make symmetric creation or deletion touch only one row (e.g. skip the reverse row in `remove_with_reverse`), confirm T005/T006 fail for the right reason, restore with `git checkout -- app`
 
 ## Phase 4: User Story 2 — Authentication session journey (P1) — commit `test(e2e): cover the auth session journey`
 

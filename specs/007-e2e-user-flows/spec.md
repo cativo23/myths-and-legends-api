@@ -36,9 +36,9 @@ A superuser builds a small mythology graph from scratch and verifies, at each st
 **Acceptance Scenarios**:
 
 1. **Given** an authenticated superuser, **When** they create a category, an entity type and several entities, **Then** each is retrievable and the entities reference the created category and type.
-2. **Given** those entities, **When** a symmetric relation (siblings, allies or enemies) is created between two of them, **Then** both entities list the relation, each from its own side.
-3. **Given** those entities, **When** a directed relation (mother-child, father-child or guardian-place) is created, **Then** only the origin and destination lists show it, once each, with the right direction.
-4. **Given** an entity with several relations, **When** its details are requested, **Then** the relation graph shown matches exactly the relations created.
+2. **Given** those entities, **When** a symmetric relation (siblings, allies or enemies) is created between two of them, **Then** both entities list the relation, each end showing both stored rows (one per direction, as documented in spec 006).
+3. **Given** those entities, **When** a directed relation (mother-child, father-child or guardian-place) is created, **Then** only the origin and destination show it, once each, with the right direction.
+4. **Given** an entity with several relations, **When** its details are requested, **Then** the relation graph shown matches the relations created (symmetric ones as their two rows, directed ones once).
 5. **Given** that graph, **When** a symmetric relation is deleted, **Then** it disappears from both entities' details while other relations and the entities remain; **When** a directed relation is deleted, **Then** only that one disappears.
 6. **Given** a regular (non-superuser) user at any write step of the journey, **Then** the write is refused and the graph is unchanged.
 
