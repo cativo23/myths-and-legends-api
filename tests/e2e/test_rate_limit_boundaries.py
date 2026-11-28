@@ -72,3 +72,27 @@ def test_should_return_429_on_logout_after_the_default_limit(client: TestClient)
 
     assert _statuses_up_to_limit(send, limit) == [401] * limit
     _assert_429_envelope(send())
+
+
+def _assert_retry_after_is_seconds_to_wait(response) -> None:
+    retry_after = response.json()["detail"]["retry_after"]
+    assert isinstance(retry_after, int)
+    assert 1 <= retry_after <= 60  # both windows are one minute long
+
+
+def test_should_tell_how_long_to_wait_when_the_auth_limit_is_hit(client: TestClient):
+    for _ in range(settings.RATE_LIMIT_AUTH_PER_MINUTE):
+        client.post("/api/v1/auth/password-recovery/nobody@example.com")
+
+    _assert_retry_after_is_seconds_to_wait(
+        client.post("/api/v1/auth/password-recovery/nobody@example.com")
+    )
+
+
+def test_should_tell_how_long_to_wait_when_the_default_limit_is_hit(
+    client: TestClient,
+):
+    for _ in range(settings.RATE_LIMIT_PER_MINUTE):
+        client.post("/api/v1/auth/logout")
+
+    _assert_retry_after_is_seconds_to_wait(client.post("/api/v1/auth/logout"))
