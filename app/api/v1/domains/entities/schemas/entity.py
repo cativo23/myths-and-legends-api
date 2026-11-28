@@ -59,9 +59,7 @@ class EntityBase(BaseModel):
         None,
         title="Behavior",
         description="Typical behavior or characteristics",
-        examples=[
-            "Plays near rivers and throws pebbles at women who wander at night"
-        ],
+        examples=["Plays near rivers and throws pebbles at women who wander at night"],
     )
     image_url: str | None = Field(
         None,
