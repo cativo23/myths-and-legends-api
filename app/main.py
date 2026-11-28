@@ -57,7 +57,7 @@ The Myths and Legends API is a REST API for the myths, legends and traditions of
 
 ## Fair Use
 
-The content of this API is offered for educational and cultural purposes. Illustrations belong to the artists credited in each entity's `image_credit` field; please keep the credit when you show an image, and do not use the artwork commercially without the artist's permission. To request a correction or a removal, contact the maintainer listed at the top of this page.
+The content of this API is offered for educational and cultural purposes. When an entity has an `image_credit`, the image is the work of that artist: please keep the credit whenever you show it. To request a correction or a removal, contact the maintainer listed at the top of this page.
 
 ## Looking for Admin Documentation?
 
