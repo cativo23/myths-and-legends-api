@@ -6,21 +6,21 @@ from app.api.v1.domains.entities.enums import EntityTypeName
 class EntityTypeBase(BaseModel):
     """Base entity type properties.
 
-    Entity types classify entities by their mythological origin
-    (e.g., Egyptian, Greek, Norse, Aztec, Japanese).
+    Entity types classify entities by what they are
+    (CHARACTER, PLACE, OBJECT, GROUP or EVENT).
     """
 
     name: EntityTypeName = Field(
         ...,
         title="Name",
-        description="Entity type name representing a mythology or culture",
-        examples=["Egyptian", "Greek", "Norse", "Aztec", "Japanese"],
+        description="Kind of entity: CHARACTER, PLACE, OBJECT, GROUP or EVENT",
+        examples=["CHARACTER", "PLACE", "OBJECT", "GROUP", "EVENT"],
     )
     description: str | None = Field(
         None,
         title="Description",
-        description="Description of the mythology or culture",
-        examples=["Ancient Egyptian mythology from the Nile Valley"],
+        description="Description of this kind of entity",
+        examples=["A being from Salvadoran folklore, such as El Cipitío"],
     )
 
 
@@ -36,14 +36,14 @@ class EntityTypeUpdate(BaseModel):
     name: EntityTypeName | None = Field(
         None,
         title="Name",
-        description="Entity type name representing a mythology or culture",
-        examples=["Egyptian"],
+        description="Kind of entity: CHARACTER, PLACE, OBJECT, GROUP or EVENT",
+        examples=["CHARACTER"],
     )
     description: str | None = Field(
         None,
         title="Description",
-        description="Description of the mythology or culture",
-        examples=["Ancient Egyptian mythology from the Nile Valley"],
+        description="Description of this kind of entity",
+        examples=["A being from Salvadoran folklore, such as El Cipitío"],
     )
 
 

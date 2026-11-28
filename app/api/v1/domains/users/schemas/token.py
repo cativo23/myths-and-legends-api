@@ -1,4 +1,5 @@
-from typing import Optional, Any
+from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -21,7 +22,7 @@ class Token(BaseModel):
         description="Long-lived JWT used to obtain a new access token via /auth/refresh",
         examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."],
     )
-    expires_at: Any = Field(
+    expires_at: datetime = Field(
         ...,
         title="Expires At",
         description="Timestamp when the token expires",

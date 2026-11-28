@@ -4,6 +4,9 @@ Rate limiting configuration and setup.
 Uses slowapi for rate limiting with configurable limits per endpoint.
 """
 
+import math
+import time
+
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -39,8 +42,26 @@ limiter = Limiter(
 )
 
 
-# Custom rate limit exceeded response
-async def rate_limit_exception_handler(
+def _seconds_until_reset(request: Request) -> int | None:
+    """Seconds until the window of the limit that was just hit resets.
+
+    RateLimitExceeded carries no retry time, so it is read from the limiter's
+    window stats. A 429 must never turn into a 500, hence the broad except:
+    on any failure the client simply gets `None`.
+    """
+    try:
+        item, key_parts = request.state.view_rate_limit
+        reset_at = limiter.limiter.get_window_stats(item, *key_parts)[0]
+        return max(1, math.ceil(reset_at - time.time()))
+    except Exception:
+        return None
+
+
+# Custom rate limit exceeded response.
+# Must stay a plain `def`: SlowAPIMiddleware (which enforces the default limit)
+# swaps any coroutine handler for slowapi's own `{"error": ...}` one, so an
+# `async def` here would only apply to per-route limits.
+def rate_limit_exception_handler(
     request: Request, exc: RateLimitExceeded
 ) -> JSONResponse:
     """Return a JSON response for rate limit exceeded errors."""
@@ -50,7 +71,7 @@ async def rate_limit_exception_handler(
             "detail": {
                 "message": f"Rate limit exceeded. {exc.detail}",
                 "type": "rate_limit_exceeded",
-                "retry_after": getattr(exc, "retry_after", None),
+                "retry_after": _seconds_until_reset(request),
             }
         },
     )

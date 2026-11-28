@@ -3,11 +3,18 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
+def _blank_to_none(value):
+    """Trim the credit; a blank one means "no credit"."""
+    if isinstance(value, str):
+        return value.strip() or None
+    return value
+
+
 class EntityBase(BaseModel):
     """Base entity properties shared across schemas.
 
-    Entities represent mythological characters, creatures, places, or objects
-    from various mythologies and legends.
+    Entities are the characters, places, objects, groups and events of Salvadoran
+    myths, legends and traditions.
     """
 
     name: str = Field(
@@ -16,52 +23,57 @@ class EntityBase(BaseModel):
         description="Primary name of the entity",
         min_length=1,
         max_length=255,
-        examples=["Anubis", "Zeus", "Quetzalcoatl"],
+        examples=["El Cipitío", "La Siguanaba", "El Cadejo"],
     )
     alternative_names: list[str] | None = Field(
         None,
         title="Alternative Names",
         description="Other names or aliases for this entity",
-        examples=[["Anpu", "Inpu"]],
+        examples=[["Cipitío", "El Cipit"]],
     )
     category_id: int = Field(
         ...,
         title="Category ID",
-        description="ID of the entity category (e.g., Deity, Creature, Place)",
+        description="ID of the entity category (MYTH, LEGEND or TRADITION)",
         examples=[1],
     )
     entity_type_id: int = Field(
         ...,
         title="Entity Type ID",
-        description="ID of the entity type (e.g., Egyptian, Greek, Aztec)",
+        description="ID of the entity type (CHARACTER, PLACE, OBJECT, GROUP or EVENT)",
         examples=[2],
     )
     description: str | None = Field(
         None,
         title="Description",
         description="Detailed description of the entity",
-        examples=["God of mummification and the afterlife"],
+        examples=["A boy who never grows up, son of La Siguanaba"],
     )
     origin: str | None = Field(
         None,
         title="Origin",
         description="Origin story or background of the entity",
-        examples=["Born from the primordial waters of Nun"],
+        examples=["Said to be the child of La Siguanaba and a nobleman of Cuscatlán"],
     )
     behavior: str | None = Field(
         None,
         title="Behavior",
         description="Typical behavior or characteristics",
-        examples=[
-            "Guides souls to the underworld, weighs hearts against Ma'at feather"
-        ],
+        examples=["Plays near rivers and throws pebbles at women who wander at night"],
     )
     image_url: str | None = Field(
         None,
         title="Image URL",
         description="URL to an image representing the entity",
         max_length=500,
-        examples=["https://example.com/images/anubis.jpg"],
+        examples=["https://example.com/images/el-cipitio.jpg"],
+    )
+    image_credit: str | None = Field(
+        None,
+        title="Image Credit",
+        description="Artist credited for the image (blank is treated as no credit)",
+        max_length=255,
+        examples=["Ana Perez"],
     )
     is_active: bool = Field(
         True,
@@ -69,6 +81,8 @@ class EntityBase(BaseModel):
         description="Whether the entity is active in the system",
         examples=[True],
     )
+
+    _trim_credit = field_validator("image_credit", mode="before")(_blank_to_none)
 
 
 class EntityCreate(EntityBase):
@@ -93,13 +107,13 @@ class EntityUpdate(BaseModel):
         description="Primary name of the entity",
         min_length=1,
         max_length=255,
-        examples=["Anubis"],
+        examples=["El Cipitío"],
     )
     alternative_names: list[str] | None = Field(
         None,
         title="Alternative Names",
         description="Other names or aliases for this entity",
-        examples=[["Anpu", "Inpu"]],
+        examples=[["Cipitío", "El Cipit"]],
     )
     category_id: int | None = Field(
         None,
@@ -117,26 +131,33 @@ class EntityUpdate(BaseModel):
         None,
         title="Description",
         description="Detailed description of the entity",
-        examples=["God of mummification and the afterlife"],
+        examples=["A boy who never grows up, son of La Siguanaba"],
     )
     origin: str | None = Field(
         None,
         title="Origin",
         description="Origin story or background of the entity",
-        examples=["Born from the primordial waters of Nun"],
+        examples=["Said to be the child of La Siguanaba and a nobleman of Cuscatlán"],
     )
     behavior: str | None = Field(
         None,
         title="Behavior",
         description="Typical behavior or characteristics",
-        examples=["Guides souls to the underworld"],
+        examples=["Plays near rivers at night"],
     )
     image_url: str | None = Field(
         None,
         title="Image URL",
         description="URL to an image representing the entity",
         max_length=500,
-        examples=["https://example.com/images/anubis.jpg"],
+        examples=["https://example.com/images/el-cipitio.jpg"],
+    )
+    image_credit: str | None = Field(
+        None,
+        title="Image Credit",
+        description="Artist credited for the image (blank is treated as no credit)",
+        max_length=255,
+        examples=["Ana Perez"],
     )
     is_active: bool | None = Field(
         None,
@@ -144,6 +165,8 @@ class EntityUpdate(BaseModel):
         description="Whether the entity is active in the system",
         examples=[True],
     )
+
+    _trim_credit = field_validator("image_credit", mode="before")(_blank_to_none)
 
 
 class EntityInDB(EntityBase):
@@ -175,25 +198,25 @@ class Entity(EntityInDB):
         default={},
         title="Category",
         description="Category information",
-        examples=[{"id": 1, "name": "Deity"}],
+        examples=[{"id": 1, "name": "LEGEND"}],
     )
     entity_type: dict = Field(
         default={},
         title="Entity Type",
         description="Entity type information",
-        examples=[{"id": 2, "name": "Egyptian"}],
+        examples=[{"id": 2, "name": "CHARACTER"}],
     )
     characteristics: list[dict] = Field(
         default=[],
         title="Characteristics",
         description="List of characteristics",
-        examples=[[{"id": 1, "name": "Immortal", "value": "Yes"}]],
+        examples=[[{"id": 1, "name": "Never ages", "value": "Yes"}]],
     )
     locations: list[dict] = Field(
         default=[],
         title="Locations",
         description="List of associated locations",
-        examples=[[{"id": 1, "name": "Duat"}]],
+        examples=[[{"id": 1, "name": "Cuscatlán"}]],
     )
     sources: list[dict] = Field(
         default=[],

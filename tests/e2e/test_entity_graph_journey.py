@@ -7,20 +7,17 @@ from fastapi.testclient import TestClient
 
 from tests.e2e.conftest import graph_snapshot
 
-# A symmetric relation is stored as two rows (forward and reverse), and an
-# entity's details list every row where it is origin or destination, so each
-# end of SIBLINGS shows it twice: once per direction. Directed relations show
-# once per end.
+# A symmetric relation is stored as two rows (forward and reverse) but each
+# entity lists it once, from its own point of view (as origin). Directed
+# relations show once per end, with the stored direction.
 EXPECTED_GRAPH = {
     "Isis": {
         ("SIBLINGS", "Osiris", "origin"),
-        ("SIBLINGS", "Osiris", "destination"),
         ("MOTHER_CHILD", "Horus", "origin"),
         ("GUARDIAN_PLACE", "Temple of Philae", "origin"),
     },
     "Osiris": {
         ("SIBLINGS", "Isis", "origin"),
-        ("SIBLINGS", "Isis", "destination"),
         ("FATHER_CHILD", "Horus", "origin"),
     },
     "Horus": {
@@ -57,14 +54,15 @@ def test_should_build_read_and_prune_a_relation_graph(
     # ends, each directed one once on each end with the right direction.
     assert graph_snapshot(client, graph["ids"]) == EXPECTED_GRAPH
 
-    # The two rows of the symmetric relation have different ids and both ends
-    # list the same pair.
-    def sibling_ids(name: str) -> set[int]:
-        listing = client.get(f"/api/v1/entities/{graph['ids'][name]}/relations").json()
-        return {r["id"] for r in listing if r["relation_type"] == "SIBLINGS"}
+    # Both ends list the symmetric pair once each, in the details and in the
+    # relations listing, and every distinct relationship is counted once.
+    def listing(name: str) -> list[dict]:
+        return client.get(f"/api/v1/entities/{graph['ids'][name]}/relations").json()
 
-    assert len(sibling_ids("Isis")) == 2
-    assert sibling_ids("Isis") == sibling_ids("Osiris")
+    for name in ("Isis", "Osiris"):
+        siblings = [r for r in listing(name) if r["relation_type"] == "SIBLINGS"]
+        assert len(siblings) == 1 and siblings[0]["direction"] == "origin"
+    assert len(listing("Isis")) == 3  # siblings, mother-child, guardian-place
 
 
 def test_should_remove_only_the_deleted_relation_from_the_graph(

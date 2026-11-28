@@ -40,15 +40,15 @@ def list_entities(
     entity_type: Annotated[
         EntityTypeName | None,
         Query(
-            description="Filter by entity type (e.g., Egyptian, Greek, Norse)",
-            examples=["Egyptian", "Greek"],
+            description="Filter by entity type (CHARACTER, PLACE, OBJECT, GROUP or EVENT)",
+            examples=["CHARACTER", "PLACE"],
         ),
     ] = None,
     category: Annotated[
         CategoryName | None,
         Query(
-            description="Filter by category (e.g., Deity, Creature, Place)",
-            examples=["Deity", "Creature"],
+            description="Filter by category (MYTH, LEGEND or TRADITION)",
+            examples=["MYTH", "LEGEND"],
         ),
     ] = None,
     is_active: Annotated[
@@ -94,7 +94,7 @@ def search_entities(
             min_length=1,
             max_length=200,
             description="Search term (searches name, description, and origin)",
-            examples=["Zeus", "underworld", "god of thunder"],
+            examples=["El Cipitío", "river", "night spirit"],
         ),
     ],
 ):
@@ -124,30 +124,7 @@ def get_entity(
     # Get relations graph
     relations = entity.get_relations_graph(db, entity_id=id)
 
-    # Build response with relations
-    relations_summary = []
-    for r in relations:
-        if r.entity_origin_id == id:
-            related_entity = r.entity_destination
-            direction = "origin"
-        else:
-            related_entity = r.entity_origin
-            direction = "destination"
-
-        relations_summary.append(
-            EntityRelationSummary(
-                id=r.id,
-                relation_type=(
-                    r.relation_type.value
-                    if hasattr(r.relation_type, "value")
-                    else r.relation_type
-                ),
-                description=r.description,
-                related_entity_id=related_entity.id,
-                related_entity_name=related_entity.name,
-                direction=direction,
-            )
-        )
+    relations_summary = relation.summarize_for_entity(relations, entity_id=id)
 
     return EntityWithRelations(
         id=db_entity.id,
@@ -159,6 +136,7 @@ def get_entity(
         origin=db_entity.origin,
         behavior=db_entity.behavior,
         image_url=db_entity.image_url,
+        image_credit=db_entity.image_credit,
         is_active=db_entity.is_active,
         created_at=db_entity.created_at,
         category=db_entity.category,
@@ -261,32 +239,7 @@ def get_entity_relations(
 
     relations = relation.get_by_entity(db, entity_id=id)
 
-    # Build response
-    relations_summary = []
-    for r in relations:
-        if r.entity_origin_id == id:
-            related_entity = r.entity_destination
-            direction = "origin"
-        else:
-            related_entity = r.entity_origin
-            direction = "destination"
-
-        relations_summary.append(
-            EntityRelationSummary(
-                id=r.id,
-                relation_type=(
-                    r.relation_type.value
-                    if hasattr(r.relation_type, "value")
-                    else r.relation_type
-                ),
-                description=r.description,
-                related_entity_id=related_entity.id,
-                related_entity_name=related_entity.name,
-                direction=direction,
-            )
-        )
-
-    return relations_summary
+    return relation.summarize_for_entity(relations, entity_id=id)
 
 
 @router.post(

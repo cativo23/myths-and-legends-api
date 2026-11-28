@@ -1326,3 +1326,105 @@ class TestDeleteEntityRelationErrors:
             self._url(entity_id, relation_id), headers=superuser_headers
         )
         assert response.status_code == 422
+
+
+class TestEntityImageCredit:
+    """The optional artist credit of an entity's image (spec 008, FR-006/007)."""
+
+    @pytest.fixture
+    def deps(self, db: Session) -> dict:
+        category = Category(name=CategoryName.MYTH, description="A myth category")
+        entity_type = EntityType(
+            name=EntityTypeName.CHARACTER, description="A character type"
+        )
+        db.add_all([category, entity_type])
+        db.commit()
+        return {"category_id": category.id, "entity_type_id": entity_type.id}
+
+    def _create(self, client, headers, deps, **extra) -> dict:
+        response = client.post(
+            "/api/v1/entities/",
+            headers=headers,
+            json={"name": "El Cipitio", **deps, **extra},
+        )
+        return response
+
+    def test_should_store_and_return_the_credit_trimmed(
+        self, client: TestClient, deps: dict, superuser_headers: dict
+    ):
+        response = self._create(
+            client, superuser_headers, deps, image_credit="  Ana Perez  "
+        )
+
+        assert response.status_code == 201
+        assert response.json()["image_credit"] == "Ana Perez"
+
+    def test_should_return_null_credit_when_none_is_given(
+        self, client: TestClient, deps: dict, superuser_headers: dict
+    ):
+        response = self._create(client, superuser_headers, deps)
+
+        assert response.status_code == 201
+        assert response.json()["image_credit"] is None
+
+    def test_should_treat_a_blank_credit_as_absent(
+        self, client: TestClient, deps: dict, superuser_headers: dict
+    ):
+        response = self._create(client, superuser_headers, deps, image_credit="   ")
+
+        assert response.status_code == 201
+        assert response.json()["image_credit"] is None
+
+    def test_should_reject_a_credit_over_255_characters(
+        self, client: TestClient, deps: dict, superuser_headers: dict
+    ):
+        response = self._create(
+            client, superuser_headers, deps, image_credit="x" * 256
+        )
+
+        assert response.status_code == 422
+
+    def test_should_keep_the_credit_when_an_update_omits_it(
+        self, client: TestClient, deps: dict, superuser_headers: dict
+    ):
+        created = self._create(
+            client, superuser_headers, deps, image_credit="Ana Perez"
+        ).json()
+
+        response = client.put(
+            f"/api/v1/entities/{created['id']}",
+            headers=superuser_headers,
+            json={"description": "A boy who never grows up"},
+        )
+
+        assert response.status_code == 200
+        assert response.json()["image_credit"] == "Ana Perez"
+
+    def test_should_clear_the_credit_when_an_update_sends_an_empty_one(
+        self, client: TestClient, deps: dict, superuser_headers: dict
+    ):
+        created = self._create(
+            client, superuser_headers, deps, image_credit="Ana Perez"
+        ).json()
+
+        response = client.put(
+            f"/api/v1/entities/{created['id']}",
+            headers=superuser_headers,
+            json={"image_credit": ""},
+        )
+
+        assert response.status_code == 200
+        assert response.json()["image_credit"] is None
+
+    def test_should_return_the_credit_in_the_list_and_the_detail(
+        self, client: TestClient, deps: dict, superuser_headers: dict
+    ):
+        created = self._create(
+            client, superuser_headers, deps, image_credit="Ana Perez"
+        ).json()
+
+        detail = client.get(f"/api/v1/entities/{created['id']}").json()
+        listing = client.get("/api/v1/entities/").json()["items"]
+
+        assert detail["image_credit"] == "Ana Perez"
+        assert listing[0]["image_credit"] == "Ana Perez"

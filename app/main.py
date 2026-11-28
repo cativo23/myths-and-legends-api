@@ -36,13 +36,13 @@ app = FastAPI(
     description="""
 ## Overview
 
-The Myths and Legends API is a comprehensive REST API for managing mythological characters, creatures, places, and objects from various cultures and mythologies around the world.
+The Myths and Legends API is a REST API for the myths, legends and traditions of El Salvador: their characters, places, objects, groups and events.
 
 ## Features
 
-- **Entities Management**: Browse mythological entities (characters, creatures, places, objects)
-- **Countries**: Explore countries and their associated myths
-- **Categories & Types**: Classify entities by category and mythological origin
+- **Entities**: Browse Salvadoran myths, legends and traditions (types CHARACTER, PLACE, OBJECT, GROUP, EVENT)
+- **Countries**: Explore countries and their associated entities
+- **Categories & Types**: Classify entities as MYTH, LEGEND or TRADITION, and by what they are
 - **Relations**: Discover relationships between entities
 - **Characteristics**: Learn about powers, weaknesses, and physical features
 - **Locations**: Explore geographic places associated with myths
@@ -54,6 +54,10 @@ The Myths and Legends API is a comprehensive REST API for managing mythological 
 
 - General endpoints: 60 requests per minute
 - Authentication endpoints: 10 requests per minute
+
+## Fair Use
+
+The content of this API is offered for educational and cultural purposes. When an entity has an `image_credit`, the image is the work of that artist: please keep the credit whenever you show it. To request a correction or a removal, contact the maintainer listed at the top of this page.
 
 ## Looking for Admin Documentation?
 

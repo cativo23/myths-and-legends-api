@@ -27,7 +27,7 @@ class LocationBase(BaseModel):
         None,
         title="Place Description",
         description="Description of the specific place",
-        examples=["Ancient temple ruins near the mountain"],
+        examples=["A ravine on the outskirts of the town"],
         max_length=1000,
     )
 
@@ -66,7 +66,7 @@ class LocationUpdate(BaseModel):
         title="Place Description",
         description="Description of the specific place",
         max_length=1000,
-        examples=["Ancient temple ruins"],
+        examples=["A ravine on the outskirts"],
     )
 
 
