@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] - TBD (set the date when the tag is created)
+
+API frozen for the frontend: the contract changes below were made before the
+first consumer, so they are not versioned separately.
 
 ### Added
 
+- Optional `image_credit` on entities (max 255 characters, trimmed, blank means
+  none) to credit the artist of the image. Accepted on create and update (an update
+  that omits it keeps it, an empty one clears it) and returned by list and detail.
+- A "Fair Use" section in the public API documentation (`/docs`).
 - In-memory response cache (`fastapi-cache2`, no Redis) on the public `GET` endpoints
   of categories, entity types and sources (list and detail): 300 s for categories
   and entity types, 60 s for sources (#26). Writes do not invalidate it, so data can
@@ -45,6 +52,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Contract:** every `429` now answers `{"detail": {"message", "type":
+  "rate_limit_exceeded", "retry_after"}}`. The default limit used to answer
+  `{"error": ...}` because slowapi replaces a coroutine handler with its own, and
+  `retry_after` was always `null`; it is now the number of seconds until the window
+  resets.
+- **Contract:** `GET /entities/{id}` and `GET /entities/{id}/relations` list a
+  symmetric relation (siblings, allies, enemies) once, from the queried entity's
+  point of view (`direction: origin`). Storage is unchanged: two rows per pair, and
+  deleting either removes both.
+- **Contract:** `Token.expires_at` (login and refresh) is a `date-time` in the
+  OpenAPI document and is returned as UTC with an offset; it used to be untyped and
+  naive, so browsers read it as local time.
+- Descriptions, examples and the README describe the Salvadoran catalog (types
+  `CHARACTER`, `PLACE`, `OBJECT`, `GROUP`, `EVENT`; categories `MYTH`, `LEGEND`,
+  `TRADITION`) instead of Egyptian, Greek and Norse mythologies. A test scans the
+  OpenAPI so the old wording cannot return.
 - `POST /api/v1/auth/login` now also returns a `refresh_token`. One refresh
   token per user is stored (hashed), so a new login replaces the previous
   session's refresh token.
@@ -77,6 +100,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Database Migrations
 
+- `25d308c4dfa0`: adds nullable `entity.image_credit` (`VARCHAR(255)`). Written by
+  hand because `alembic revision --autogenerate` proposes dropping the trigram and
+  location indexes (it cannot see the GIN indexes of `b0ac58dc2755`).
 - `0f2ce4cae13f`: adds nullable `user.hashed_refresh_token` column
 
 ## [0.1.0] - 2026-04-02
