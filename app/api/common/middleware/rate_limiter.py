@@ -39,8 +39,11 @@ limiter = Limiter(
 )
 
 
-# Custom rate limit exceeded response
-async def rate_limit_exception_handler(
+# Custom rate limit exceeded response.
+# Must stay a plain `def`: SlowAPIMiddleware (which enforces the default limit)
+# swaps any coroutine handler for slowapi's own `{"error": ...}` one, so an
+# `async def` here would only apply to per-route limits.
+def rate_limit_exception_handler(
     request: Request, exc: RateLimitExceeded
 ) -> JSONResponse:
     """Return a JSON response for rate limit exceeded errors."""
