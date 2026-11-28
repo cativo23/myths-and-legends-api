@@ -3,6 +3,13 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
+def _blank_to_none(value):
+    """Trim the credit; a blank one means "no credit"."""
+    if isinstance(value, str):
+        return value.strip() or None
+    return value
+
+
 class EntityBase(BaseModel):
     """Base entity properties shared across schemas.
 
@@ -63,12 +70,21 @@ class EntityBase(BaseModel):
         max_length=500,
         examples=["https://example.com/images/anubis.jpg"],
     )
+    image_credit: str | None = Field(
+        None,
+        title="Image Credit",
+        description="Artist credited for the image (blank is treated as no credit)",
+        max_length=255,
+        examples=["Ana Perez"],
+    )
     is_active: bool = Field(
         True,
         title="Is Active",
         description="Whether the entity is active in the system",
         examples=[True],
     )
+
+    _trim_credit = field_validator("image_credit", mode="before")(_blank_to_none)
 
 
 class EntityCreate(EntityBase):
@@ -138,12 +154,21 @@ class EntityUpdate(BaseModel):
         max_length=500,
         examples=["https://example.com/images/anubis.jpg"],
     )
+    image_credit: str | None = Field(
+        None,
+        title="Image Credit",
+        description="Artist credited for the image (blank is treated as no credit)",
+        max_length=255,
+        examples=["Ana Perez"],
+    )
     is_active: bool | None = Field(
         None,
         title="Is Active",
         description="Whether the entity is active in the system",
         examples=[True],
     )
+
+    _trim_credit = field_validator("image_credit", mode="before")(_blank_to_none)
 
 
 class EntityInDB(EntityBase):

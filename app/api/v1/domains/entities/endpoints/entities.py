@@ -136,6 +136,7 @@ def get_entity(
         origin=db_entity.origin,
         behavior=db_entity.behavior,
         image_url=db_entity.image_url,
+        image_credit=db_entity.image_credit,
         is_active=db_entity.is_active,
         created_at=db_entity.created_at,
         category=db_entity.category,
