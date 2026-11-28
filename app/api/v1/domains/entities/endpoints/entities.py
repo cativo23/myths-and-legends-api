@@ -124,30 +124,7 @@ def get_entity(
     # Get relations graph
     relations = entity.get_relations_graph(db, entity_id=id)
 
-    # Build response with relations
-    relations_summary = []
-    for r in relations:
-        if r.entity_origin_id == id:
-            related_entity = r.entity_destination
-            direction = "origin"
-        else:
-            related_entity = r.entity_origin
-            direction = "destination"
-
-        relations_summary.append(
-            EntityRelationSummary(
-                id=r.id,
-                relation_type=(
-                    r.relation_type.value
-                    if hasattr(r.relation_type, "value")
-                    else r.relation_type
-                ),
-                description=r.description,
-                related_entity_id=related_entity.id,
-                related_entity_name=related_entity.name,
-                direction=direction,
-            )
-        )
+    relations_summary = relation.summarize_for_entity(relations, entity_id=id)
 
     return EntityWithRelations(
         id=db_entity.id,
@@ -261,32 +238,7 @@ def get_entity_relations(
 
     relations = relation.get_by_entity(db, entity_id=id)
 
-    # Build response
-    relations_summary = []
-    for r in relations:
-        if r.entity_origin_id == id:
-            related_entity = r.entity_destination
-            direction = "origin"
-        else:
-            related_entity = r.entity_origin
-            direction = "destination"
-
-        relations_summary.append(
-            EntityRelationSummary(
-                id=r.id,
-                relation_type=(
-                    r.relation_type.value
-                    if hasattr(r.relation_type, "value")
-                    else r.relation_type
-                ),
-                description=r.description,
-                related_entity_id=related_entity.id,
-                related_entity_name=related_entity.name,
-                direction=direction,
-            )
-        )
-
-    return relations_summary
+    return relation.summarize_for_entity(relations, entity_id=id)
 
 
 @router.post(

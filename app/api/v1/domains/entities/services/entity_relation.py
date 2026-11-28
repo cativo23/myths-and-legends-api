@@ -15,12 +15,59 @@ from app.api.v1.domains.entities.schemas.entity_relation import (
     EntityRelationCreate,
     EntityRelationUpdate,
 )
+from app.api.v1.domains.entities.schemas.entity_with_relations import (
+    EntityRelationSummary,
+)
 
 
 class EntityRelationService(
     CRUDBaseService[EntityRelation, EntityRelationCreate, EntityRelationUpdate]
 ):
     """Service for EntityRelation CRUD operations."""
+
+    @staticmethod
+    def summarize_for_entity(
+        relations: list[EntityRelation], *, entity_id: int
+    ) -> list[EntityRelationSummary]:
+        """Present an entity's relation rows as one summary per relationship.
+
+        A symmetric relation is stored as two rows (A->B and B->A), so both ends
+        match it twice. It is shown once per pair, preferring the row where the
+        queried entity is the origin; a lone row (legacy or hand-made data) is
+        kept whichever way it points. Directed relations are one row each.
+        """
+        chosen: dict[tuple, EntityRelation] = {}
+        for r in relations:
+            is_origin = r.entity_origin_id == entity_id
+            other = r.entity_destination if is_origin else r.entity_origin
+            key = (
+                (r.relation_type, other.id)
+                if r.relation_type in SYMMETRIC_RELATION_TYPES
+                else ("row", r.id)
+            )
+            kept = chosen.get(key)
+            if kept is None or (is_origin and kept.entity_origin_id != entity_id):
+                chosen[key] = r
+
+        summaries = []
+        for r in chosen.values():
+            is_origin = r.entity_origin_id == entity_id
+            other = r.entity_destination if is_origin else r.entity_origin
+            summaries.append(
+                EntityRelationSummary(
+                    id=r.id,
+                    relation_type=(
+                        r.relation_type.value
+                        if hasattr(r.relation_type, "value")
+                        else r.relation_type
+                    ),
+                    description=r.description,
+                    related_entity_id=other.id,
+                    related_entity_name=other.name,
+                    direction="origin" if is_origin else "destination",
+                )
+            )
+        return summaries
 
     def get_by_entity(self, db: Session, *, entity_id: int) -> list[EntityRelation]:
         """Get all relations for an entity (both directions), eager-loading
