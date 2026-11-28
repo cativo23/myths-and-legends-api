@@ -26,7 +26,7 @@ router = APIRouter(prefix="/categories", tags=["categories"])
     "/",
     response_model=Page[CategorySchema],
     summary="List Categories",
-    description="Retrieve a paginated list of categories for classifying entities (e.g., Deity, Creature, Place).",
+    description="Retrieve a paginated list of categories for classifying entities (MYTH, LEGEND or TRADITION).",
     responses={
         200: {"description": "Successful retrieval of categories"},
     },

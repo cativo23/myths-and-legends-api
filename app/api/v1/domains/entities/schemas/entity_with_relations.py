@@ -22,7 +22,7 @@ class EntityRelationSummary(BaseModel):
         None,
         title="Description",
         description="Description of the relationship",
-        examples=["Anubis is the son of Osiris"],
+        examples=["El Cipitío is the son of La Siguanaba"],
     )
     related_entity_id: int = Field(
         ...,
@@ -34,7 +34,7 @@ class EntityRelationSummary(BaseModel):
         ...,
         title="Related Entity Name",
         description="Name of the related entity",
-        examples=["Osiris"],
+        examples=["La Siguanaba"],
     )
     direction: str = Field(
         ...,

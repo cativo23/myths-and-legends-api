@@ -40,15 +40,15 @@ def list_entities(
     entity_type: Annotated[
         EntityTypeName | None,
         Query(
-            description="Filter by entity type (e.g., Egyptian, Greek, Norse)",
-            examples=["Egyptian", "Greek"],
+            description="Filter by entity type (CHARACTER, PLACE, OBJECT, GROUP or EVENT)",
+            examples=["CHARACTER", "PLACE"],
         ),
     ] = None,
     category: Annotated[
         CategoryName | None,
         Query(
-            description="Filter by category (e.g., Deity, Creature, Place)",
-            examples=["Deity", "Creature"],
+            description="Filter by category (MYTH, LEGEND or TRADITION)",
+            examples=["MYTH", "LEGEND"],
         ),
     ] = None,
     is_active: Annotated[
@@ -94,7 +94,7 @@ def search_entities(
             min_length=1,
             max_length=200,
             description="Search term (searches name, description, and origin)",
-            examples=["Zeus", "underworld", "god of thunder"],
+            examples=["El Cipitío", "river", "night spirit"],
         ),
     ],
 ):

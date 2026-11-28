@@ -6,20 +6,20 @@ from app.api.v1.domains.entities.enums import CategoryName
 class CategoryBase(BaseModel):
     """Base category properties.
 
-    Categories classify entities by their nature (e.g., Deity, Creature, Place, Object).
+    Categories classify entities as a MYTH, a LEGEND or a TRADITION.
     """
 
     name: CategoryName = Field(
         ...,
         title="Name",
         description="Category name",
-        examples=["Deity", "Creature", "Place", "Object", "Event"],
+        examples=["MYTH", "LEGEND", "TRADITION"],
     )
     description: str | None = Field(
         None,
         title="Description",
         description="Description of the category",
-        examples=["Divine beings and gods"],
+        examples=["Stories told as having happened in a real place"],
     )
 
 
@@ -36,13 +36,13 @@ class CategoryUpdate(BaseModel):
         None,
         title="Name",
         description="Category name",
-        examples=["Deity"],
+        examples=["LEGEND"],
     )
     description: str | None = Field(
         None,
         title="Description",
         description="Description of the category",
-        examples=["Divine beings and gods"],
+        examples=["Stories told as having happened in a real place"],
     )
 
 

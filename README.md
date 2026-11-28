@@ -1,6 +1,6 @@
 # Myths and Legends API
 
-> A RESTful API for managing mythological entities (characters, creatures, places, objects) and folklore data.
+> A RESTful API for the myths, legends and traditions of El Salvador: their characters, places, objects, groups and events.
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.135.2-green.svg)](https://fastapi.tiangolo.com/)
@@ -12,7 +12,9 @@
 
 ## Overview
 
-The Myths and Legends API is a production-ready RESTful service built with FastAPI. It provides endpoints for managing mythological entities, countries, and related folklore data with full CRUD operations, authentication, and image upload support.
+The Myths and Legends API is a production-ready RESTful service built with FastAPI. It is a catalog of Salvadoran myths, legends and traditions: entities (types `CHARACTER`, `PLACE`, `OBJECT`, `GROUP`, `EVENT`; categories `MYTH`, `LEGEND`, `TRADITION`), the relations between them, and the places and sources they come from. Reads are public; writes are for administrators. Entities can credit the artist of their image (`image_credit`).
+
+Every `429 Too Many Requests` answers the same body, whichever limit was hit: `{"detail": {"message", "type": "rate_limit_exceeded", "retry_after"}}`, with `retry_after` in seconds.
 
 ## Features
 
@@ -112,14 +114,14 @@ Copy `.env.example` to `.env` and configure the following variables:
 
 ## API Endpoints
 
-### Entities (Mythological Characters, Creatures, Places, Objects)
+### Entities (Characters, Places, Objects, Groups, Events)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/v1/entities/` | List entities (paginated, filterable) |
 | GET | `/api/v1/entities/search?q=term` | Search entities by name/description |
 | GET | `/api/v1/entities/{id}` | Get entity with full relations |
-| GET | `/api/v1/entities/{id}/relations` | Get entity relations |
+| GET | `/api/v1/entities/{id}/relations` | Get entity relations (a symmetric relation is listed once) |
 | POST | `/api/v1/entities/{id}/relations` | Create a relation (admin); symmetric types create the reverse row |
 | POST | `/api/v1/entities/` | Create entity (admin) |
 | PUT | `/api/v1/entities/{id}` | Update entity (admin) |
@@ -302,7 +304,7 @@ This project is licensed under the MIT License.
 
 ## Español
 
-> API RESTful para gestionar personajes mitológicos y datos de folclore.
+> API RESTful de los mitos, leyendas y tradiciones de El Salvador.
 
 ### Inicio Rápido
 

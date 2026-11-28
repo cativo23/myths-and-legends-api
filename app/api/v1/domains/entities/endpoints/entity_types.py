@@ -26,7 +26,7 @@ router = APIRouter(prefix="/entity-types", tags=["entity-types"])
     "/",
     response_model=Page[EntityTypeSchema],
     summary="List Entity Types",
-    description="Retrieve a paginated list of entity types representing mythological origins (e.g., Egyptian, Greek, Norse).",
+    description="Retrieve a paginated list of entity types (CHARACTER, PLACE, OBJECT, GROUP or EVENT).",
     responses={
         200: {"description": "Successful retrieval of entity types"},
     },
