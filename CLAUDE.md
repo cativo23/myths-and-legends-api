@@ -65,7 +65,7 @@ Direct dependencies and their caps (floor and next-breaking ceiling) live in `re
 - Errors are raised as `HTTPException` (standard envelope); duplicate names on write endpoints return `409`
 - Writes on reference data and entities are superuser-gated; reads are public
 - Auth: access token plus a single-use, rotated refresh token stored hashed on the user (one session per user); logout revokes the refresh token only
-- Image upload is integrated into entity create/update
+- There is no image upload: `GET /images/{name}` only serves files from `app/images/`; an entity stores an `image_url` and an optional `image_credit` (the artist)
 
 ## Environment Configuration
 
