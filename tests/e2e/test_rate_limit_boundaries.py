@@ -77,7 +77,9 @@ def test_should_return_429_on_logout_after_the_default_limit(client: TestClient)
 def _assert_retry_after_is_seconds_to_wait(response) -> None:
     retry_after = response.json()["detail"]["retry_after"]
     assert isinstance(retry_after, int)
-    assert 1 <= retry_after <= 60  # both windows are one minute long
+    # Both windows are one minute long and the test exhausts them in seconds,
+    # so the wait must be close to a full minute, not just any positive number.
+    assert 45 <= retry_after <= 60
 
 
 def test_should_tell_how_long_to_wait_when_the_auth_limit_is_hit(client: TestClient):

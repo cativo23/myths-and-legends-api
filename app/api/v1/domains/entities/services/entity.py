@@ -128,6 +128,7 @@ class EntityService(CRUDBaseService[Entity, EntityCreate, EntityUpdate]):
                     EntityRelation.entity_destination_id == entity_id,
                 )
             )
+            .order_by(EntityRelation.id)
             .options(
                 selectinload(EntityRelation.entity_origin),
                 selectinload(EntityRelation.entity_destination),
