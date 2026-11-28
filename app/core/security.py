@@ -1,7 +1,7 @@
 import hashlib
 import hmac
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Union
 
 import bcrypt
@@ -73,7 +73,9 @@ def get_token_expiry(token: str) -> datetime:
     `expires_at` field always matches the token's real expiry exactly
     instead of independently recomputing `now + delta` a moment later."""
     payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
-    return datetime.utcfromtimestamp(payload["exp"])
+    # Timezone-aware on purpose: a naive value serializes without an offset and
+    # browsers would read it as local time.
+    return datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
 
 
 def _to_bcrypt_input(password: str) -> bytes:

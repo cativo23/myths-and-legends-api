@@ -464,3 +464,52 @@ class TestAuthEndpoints:
         """Test that /auth/logout requires authentication."""
         response = client.post("/api/v1/auth/logout")
         assert response.status_code == 401
+
+
+class TestTokenExpiryFormat:
+    """`expires_at` is a typed, timezone-aware timestamp (spec 008, FR-009).
+
+    A naive value ("2026-11-27T10:30:00") is parsed as local time by browsers,
+    shifting the expiry by the user's UTC offset.
+    """
+
+    @staticmethod
+    def _assert_future_utc_timestamp(value: str) -> None:
+        from datetime import datetime, timedelta, timezone
+
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        assert parsed.utcoffset() == timedelta(0)
+        assert parsed > datetime.now(timezone.utc)
+
+    def test_login_expires_at_is_a_future_utc_timestamp(
+        self, client: TestClient, test_user: dict
+    ):
+        response = client.post(
+            "/api/v1/auth/login",
+            data={"username": test_user["email"], "password": test_user["password"]},
+        )
+
+        self._assert_future_utc_timestamp(response.json()["expires_at"])
+
+    def test_refresh_expires_at_is_a_future_utc_timestamp(
+        self, client: TestClient, test_user: dict
+    ):
+        login = client.post(
+            "/api/v1/auth/login",
+            data={"username": test_user["email"], "password": test_user["password"]},
+        ).json()
+
+        response = client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": login["refresh_token"]}
+        )
+
+        assert response.status_code == 200
+        self._assert_future_utc_timestamp(response.json()["expires_at"])
+
+    def test_openapi_declares_expires_at_as_a_date_time(self):
+        from app.main import app
+
+        # The full schema is what the frontend snapshots and generates from.
+        token = app.openapi()["components"]["schemas"]["Token"]
+
+        assert token["properties"]["expires_at"]["format"] == "date-time"
